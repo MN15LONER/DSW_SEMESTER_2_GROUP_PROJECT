@@ -1,4 +1,4 @@
-##Mzansi React
+Mzansi React
 
 Mzansi React is an application designed to help South Africans make smarter shopping decisions by comparing product prices across various regions of the country. This app aims to promote price transparency and empower consumers with real-time insights.
 
