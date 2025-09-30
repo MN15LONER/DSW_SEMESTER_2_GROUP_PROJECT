@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useGoogleAuth } from '../../services/googleAuth';
+import GoogleSignInButton from '../../components/GoogleSignInButton';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  const { login, loading } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const { login, loading, loginWithGoogle } = useAuth();
+  
+  // Google authentication hook
+  const { request, response, promptAsync } = useGoogleAuth();
 
   const validateForm = () => {
     const newErrors = {};
@@ -57,6 +63,55 @@ const LoginScreen = ({ navigation }) => {
     }
     // TODO: Implement password reset
     Alert.alert('Password Reset', 'Password reset functionality will be implemented soon.');
+  };
+
+  /**
+   * Handle Google Sign-In Response
+   * This effect listens for the Google authentication response
+   */
+  useEffect(() => {
+    if (response?.type === 'success') {
+      handleGoogleSignIn();
+    }
+  }, [response]);
+
+  /**
+   * Handle Google Sign-In
+   * Processes the Google authentication and handles errors
+   */
+  const handleGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      const result = await loginWithGoogle(promptAsync);
+      
+      if (!result.success) {
+        // Don't show alert if user cancelled
+        if (!result.cancelled) {
+          Alert.alert('Google Sign-In Failed', result.error);
+        }
+      }
+      // Success case is handled by AuthContext and navigation
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  /**
+   * Initiate Google Sign-In Flow
+   * Starts the Google authentication process
+   */
+  const initiateGoogleSignIn = async () => {
+    try {
+      setGoogleLoading(true);
+      await promptAsync();
+    } catch (error) {
+      console.error('Error initiating Google sign-in:', error);
+      Alert.alert('Error', 'Failed to start Google sign-in. Please try again.');
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -145,6 +200,13 @@ const LoginScreen = ({ navigation }) => {
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
+
+          {/* Google Sign-In Button */}
+          <GoogleSignInButton
+            onPress={initiateGoogleSignIn}
+            loading={googleLoading}
+            disabled={loading || !request}
+          />
 
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>Don't have an account? </Text>
@@ -268,6 +330,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 24,
   },
   signupText: {
     color: '#666',

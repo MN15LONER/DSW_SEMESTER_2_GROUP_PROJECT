@@ -9,6 +9,7 @@ import {
 import { auth } from '../services/firebase';
 import { firebaseService } from '../services/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { signInWithGoogle } from '../services/googleAuth';
 
 const AuthContext = createContext();
 
@@ -192,6 +193,59 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Google Sign-In
+   * Handles authentication with Google and creates user profile if new user
+   * @param {Function} promptAsync - The Google auth prompt function
+   * @returns {Promise<Object>} Result object with success status
+   */
+  const loginWithGoogle = async (promptAsync) => {
+    try {
+      setLoading(true);
+      
+      // Sign in with Google
+      const result = await signInWithGoogle(promptAsync);
+      
+      if (!result.success) {
+        return result;
+      }
+
+      const firebaseUser = result.user;
+      const isNewUser = result.isNewUser;
+
+      // If this is a new user, create their profile in Firestore
+      if (isNewUser) {
+        const userProfile = {
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || '',
+          firstName: firebaseUser.displayName?.split(' ')[0] || '',
+          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+          phone: '',
+          address: '',
+          city: '',
+          postalCode: '',
+          photoURL: firebaseUser.photoURL || '',
+          authProvider: 'google',
+          createdAt: new Date().toISOString()
+        };
+
+        await firebaseService.users.create(firebaseUser.uid, userProfile);
+      }
+
+      // The user state will be updated by the onAuthStateChanged listener
+      return { success: true, user: firebaseUser };
+      
+    } catch (error) {
+      console.error('Google login error:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Failed to sign in with Google. Please try again.' 
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -200,6 +254,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUserProfile,
+    loginWithGoogle,
     isAuthenticated: !!user
   };
 

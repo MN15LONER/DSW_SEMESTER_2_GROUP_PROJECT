@@ -6,18 +6,24 @@ module.exports = () => ({
     orientation: 'portrait',
     icon: './assets/icons/icon.png',
     userInterfaceStyle: 'light',
+    // Authentication scheme for OAuth redirects (required for Google Sign-In)
+    scheme: 'mzansireact',
     splash: {
       image: './assets/images/splash-icon.jpg',
       resizeMode: 'contain',
       backgroundColor: '#1B5E20',
     },
     assetBundlePatterns: ['**/*'],
-    ios: { supportsTablet: true },
+    ios: { 
+      supportsTablet: true,
+      bundleIdentifier: 'com.mzansireact.app',
+    },
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/icons/adaptive-icon.png',
         backgroundColor: '#1B5E20',
       },
+      package: 'com.mzansireact.app',
       config: {
         googleMaps: {
           apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyCBhYA1g0dEdw6VfjsVKsDUbrhop84MpfY',
