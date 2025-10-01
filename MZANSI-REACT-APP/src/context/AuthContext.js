@@ -10,6 +10,7 @@ import { auth } from '../services/firebase';
 import { firebaseService } from '../services/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signInWithGoogle } from '../services/googleAuth';
+import { sendPasswordReset } from '../services/passwordResetService';
 
 const AuthContext = createContext();
 
@@ -246,6 +247,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Request Password Reset
+   * Sends a password reset email to the user
+   * @param {string} email - User's email address
+   * @returns {Promise<Object>} Result object with success status
+   */
+  const requestPasswordReset = async (email) => {
+    try {
+      const result = await sendPasswordReset(email);
+      return result;
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      return {
+        success: false,
+        error: 'Failed to send password reset email. Please try again.',
+      };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -255,6 +275,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUserProfile,
     loginWithGoogle,
+    requestPasswordReset,
     isAuthenticated: !!user
   };
 

@@ -57,12 +57,8 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const handleForgotPassword = () => {
-    if (!email.trim()) {
-      Alert.alert('Email Required', 'Please enter your email address first.');
-      return;
-    }
-    // TODO: Implement password reset
-    Alert.alert('Password Reset', 'Password reset functionality will be implemented soon.');
+    // Navigate to ForgotPassword screen
+    navigation.navigate('ForgotPassword');
   };
 
   /**
