@@ -1,0 +1,49 @@
+module.exports = () => ({
+  expo: {
+    name: 'Mzansi React',
+    slug: 'mzansi-react',
+    version: '1.0.0',
+    orientation: 'portrait',
+    icon: './assets/icons/icon.png',
+    userInterfaceStyle: 'light',
+  // Authentication scheme for OAuth redirects (required for Google Sign-In)
+  // Keep the scheme consistent with the slug when possible
+  scheme: 'mzansi-react',
+  // The Expo account owner - required so the AuthSession proxy URI resolves correctly
+  owner: 'mn15loner',
+    splash: {
+      image: './assets/images/splash-icon.jpg',
+      resizeMode: 'contain',
+      backgroundColor: '#1B5E20',
+    },
+    assetBundlePatterns: ['**/*'],
+    ios: { 
+      supportsTablet: true,
+      bundleIdentifier: 'com.mzansireact.app',
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: './assets/icons/adaptive-icon.png',
+        backgroundColor: '#1B5E20',
+      },
+      package: 'com.mzansireact.app',
+      config: {
+        googleMaps: {
+          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyCBhYA1g0dEdw6VfjsVKsDUbrhop84MpfY',
+        },
+      },
+    },
+    web: { favicon: './assets/icons/favicon.png' },
+    extra: {
+      eas: { projectId: process.env.EAS_PROJECT_ID },
+      googlePlacesApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyCBhYA1g0dEdw6VfjsVKsDUbrhop84MpfY',
+      unsplashAccessKey: process.env.EXPO_PUBLIC_UNSPLASH_ACCESS_KEY,
+      seedOnStart: process.env.EXPO_PUBLIC_SEED_ON_START,
+    },
+    runtimeVersion: {
+      policy: 'sdkVersion',
+    },
+  },
+});
+
+

@@ -4,11 +4,28 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
+import ImageWithFallback from '../common/ImageWithFallback';
+import { getImageForProduct } from '../../utils/imageHelper';
+
+// Local logo assets for featured brands
+const localLogos = {
+  'pick n pay': require('../../../assets/images/Store_Logos/Pick_N_Pay.jpg'),
+  'mr price': require('../../../assets/images/Store_Logos/Mr-Price-logo.jpg'),
+  'incredible connection': require('../../../assets/images/Store_Logos/Incredible_connections.png'),
+};
+
+const getLocalLogoForStore = (store) => {
+  if (!store || !store.name) return null;
+  const name = store.name.toLowerCase();
+  if (name.includes('pick')) return localLogos['pick n pay'];
+  if (name.includes('mr')) return localLogos['mr price'];
+  if (name.includes('incredible')) return localLogos['incredible connection'];
+  return null;
+};
 
 const { width } = Dimensions.get('window');
 
@@ -16,8 +33,10 @@ export default function FlyerCard({ store, onPress }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       {/* Store Image/Flyer */}
-      <Image 
-        source={{ uri: store.flyerImage }} 
+      <ImageWithFallback
+        source={
+          getLocalLogoForStore(store) || { uri: store.flyerImage || store.image || getImageForProduct({ name: store.name, category: store.category }) }
+        }
         style={styles.flyerImage}
         resizeMode="cover"
       />
@@ -32,8 +51,8 @@ export default function FlyerCard({ store, onPress }) {
       {/* Store Info */}
       <View style={styles.storeInfo}>
         <View style={styles.storeHeader}>
-          <Image 
-            source={{ uri: store.image }} 
+          <ImageWithFallback
+            source={ getLocalLogoForStore(store) || { uri: store.image || getImageForProduct({ name: store.name, category: store.category }) } }
             style={styles.storeLogo}
             resizeMode="cover"
           />
@@ -128,6 +147,9 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 8,
     marginRight: 12,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   storeDetails: {
     flex: 1,

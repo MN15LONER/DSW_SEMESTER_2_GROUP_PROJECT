@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { CartContext } from '../../context/CartContext';
 import ProductDetailModal from './ProductDetailModal';
 import ImageWithFallback from '../common/ImageWithFallback';
+import { getImageForProduct } from '../../utils/imageHelper';
+import { unsplashService, imageCache, getOptimizedImageUrl } from '../../services/unsplashApi';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useContext(CartContext);
@@ -21,7 +23,26 @@ const ProductCard = ({ product }) => {
     <>
       <TouchableOpacity style={styles.card} onPress={handleProductPress}>
         <ImageWithFallback 
-          source={{ uri: product.image }} 
+          source={{ uri: product.image || getImageForProduct(product) }} 
+          loader={async () => {
+            const key = `product:${product.name}::${product.category}`;
+            if (imageCache.has(key)) {
+              const cached = imageCache.get(key);
+              const url = cached.url || cached.thumb || cached.small || null;
+              return getOptimizedImageUrl(url, 600, 600, 85) || url;
+            }
+            try {
+              const img = await unsplashService.getProductImages(product.name || '', product.category || '');
+              if (img) {
+                imageCache.set(key, img);
+                const raw = img.url || img.downloadUrl || img.thumb || img.small || null;
+                return getOptimizedImageUrl(raw, 600, 600, 85) || raw;
+              }
+            } catch (e) {
+              // ignore
+            }
+            return null;
+          }}
           style={styles.productImage}
           resizeMode="cover"
           fallbackIcon="basket-outline"
@@ -83,7 +104,7 @@ const styles = StyleSheet.create({
   },
   productImage: {
     width: '100%',
-    height: 120,
+    height: 160,
   },
   specialBadge: {
     position: 'absolute',

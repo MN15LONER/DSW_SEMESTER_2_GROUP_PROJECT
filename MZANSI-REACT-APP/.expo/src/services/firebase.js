@@ -19,6 +19,8 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
+// Track whether we've already warned about Firestore permission issues to avoid log spam
+let _warnedFirestorePermissions = false;
 
 // Firebase Services
 export const firebaseService = {
@@ -30,7 +32,13 @@ export const firebaseService = {
         const snapshot = await getDocs(storesRef);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error('Error fetching stores:', error);
+        // If permission error, warn once and fallback to mock data to keep the app usable in dev
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected. Falling back to mock stores.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching stores:', error);
+        }
         // Fallback to mock data
         const { mockStores } = await import('../data/mockData');
         return mockStores;
@@ -44,7 +52,12 @@ export const firebaseService = {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error('Error fetching stores by location:', error);
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected. Falling back to mock stores by location.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching stores by location:', error);
+        }
         // Fallback to mock data
         const { getMockStores } = await import('../data/mockData');
         return getMockStores(location);
@@ -87,7 +100,12 @@ export const firebaseService = {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error('Error fetching products:', error);
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected. Falling back to mock products.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching products:', error);
+        }
         // Fallback to mock data
         const { getStoreProducts } = await import('../data/mockData');
         return getStoreProducts(storeId);
@@ -146,10 +164,15 @@ export const firebaseService = {
           where('userId', '==', userId),
           orderBy('createdAt', 'desc')
         );
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const snapshot = await getDocs(q);
+          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error('Error fetching user orders:', error);
+          if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+            console.warn('Firestore permission error detected. Falling back to empty orders.');
+            _warnedFirestorePermissions = true;
+          } else if (!/permission/i.test(error.message)) {
+            console.error('Error fetching user orders:', error);
+          }
         return [];
       }
     },
@@ -191,7 +214,12 @@ export const firebaseService = {
         const snapshot = await getDoc(userRef);
         return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
       } catch (error) {
-        console.error('Error fetching user:', error);
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected when fetching user. Falling back to null user.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching user:', error);
+        }
         return null;
       }
     },
@@ -209,5 +237,134 @@ export const firebaseService = {
         return false;
       }
     }
+<<<<<<< Updated upstream:MZANSI-REACT-APP/.expo/src/services/firebase.js
+=======
+  },
+
+  // ADDRESSES
+  addresses: {
+    getByUser: async (userId) => {
+      try {
+        const addressesRef = collection(db, 'addresses');
+        const q = query(addressesRef, where('userId', '==', userId));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected when fetching addresses. Falling back to empty list.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching addresses:', error);
+        }
+        return [];
+      }
+    },
+
+    create: async (userId, addressData) => {
+      try {
+        const addressesRef = collection(db, 'addresses');
+        const docRef = await addDoc(addressesRef, {
+          ...addressData,
+          userId,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        return docRef.id;
+      } catch (error) {
+        console.error('Error creating address:', error);
+        throw error;
+      }
+    },
+
+    update: async (addressId, addressData) => {
+      try {
+        const addressRef = doc(db, 'addresses', addressId);
+        await updateDoc(addressRef, {
+          ...addressData,
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating address:', error);
+        throw error;
+      }
+    },
+
+    delete: async (addressId) => {
+      try {
+        const addressRef = doc(db, 'addresses', addressId);
+        await deleteDoc(addressRef);
+        return true;
+      } catch (error) {
+        console.error('Error deleting address:', error);
+        throw error;
+      }
+    }
+  },
+
+  // PAYMENT METHODS
+  paymentMethods: {
+    getByUser: async (userId) => {
+      try {
+        const paymentMethodsRef = collection(db, 'paymentMethods');
+        const q = query(paymentMethodsRef, where('userId', '==', userId));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected when fetching payment methods. Falling back to empty list.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching payment methods:', error);
+        }
+        return [];
+      }
+    },
+
+    create: async (userId, paymentMethodData) => {
+      try {
+        const paymentMethodsRef = collection(db, 'paymentMethods');
+        // Don't store sensitive data like CVV in production
+        const { cvv, ...safeData } = paymentMethodData;
+        const docRef = await addDoc(paymentMethodsRef, {
+          ...safeData,
+          userId,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        return docRef.id;
+      } catch (error) {
+        console.error('Error creating payment method:', error);
+        throw error;
+      }
+    },
+
+    update: async (paymentMethodId, paymentMethodData) => {
+      try {
+        const paymentMethodRef = doc(db, 'paymentMethods', paymentMethodId);
+        // Don't store sensitive data like CVV in production
+        const { cvv, ...safeData } = paymentMethodData;
+        await updateDoc(paymentMethodRef, {
+          ...safeData,
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating payment method:', error);
+        throw error;
+      }
+    },
+
+    delete: async (paymentMethodId) => {
+      try {
+        const paymentMethodRef = doc(db, 'paymentMethods', paymentMethodId);
+        await deleteDoc(paymentMethodRef);
+        return true;
+      } catch (error) {
+        console.error('Error deleting payment method:', error);
+        throw error;
+      }
+    }
+>>>>>>> Stashed changes:MZANSI-REACT-APP/src/services/firebase.js
   }
 };

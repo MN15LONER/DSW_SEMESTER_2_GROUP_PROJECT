@@ -23,6 +23,11 @@ export default function CartItem({ item }) {
     removeFromCart(item.id, item.storeId);
   };
 
+  // Normalize price to a safe number to avoid runtime errors when price is null/undefined
+  const price = Number(item?.price ?? 0) || 0;
+  const quantity = Number(item?.quantity ?? 0) || 0;
+  const total = price * quantity;
+
   return (
     <View style={styles.container}>
       <Image 
@@ -36,7 +41,7 @@ export default function CartItem({ item }) {
           {item.name}
         </Text>
         <Text style={styles.productPrice}>
-          R{item.price.toFixed(2)} each
+          R{price.toFixed(2)} each
         </Text>
         
         <View style={styles.quantityContainer}>
@@ -64,7 +69,7 @@ export default function CartItem({ item }) {
         </TouchableOpacity>
         
         <Text style={styles.totalPrice}>
-          R{(item.price * item.quantity).toFixed(2)}
+          R{total.toFixed(2)}
         </Text>
       </View>
     </View>
