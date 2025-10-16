@@ -83,13 +83,17 @@ export default function FlyerCard({ store, onPress }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       {/* Store Image/Flyer */}
-      <ImageWithFallback
-        source={
-          getLocalLogoForStore(store) || { uri: store.flyerImage || store.image || getImageForProduct({ name: store.name, category: store.category }) }
-        }
-        style={styles.flyerImage}
-        resizeMode="cover"
-      />
+      {(() => {
+        const logo = getLocalLogoForStore(store);
+        const src = logo || { uri: store.flyerImage || store.image || getImageForProduct({ name: store.name, category: store.category }) };
+        return (
+          <ImageWithFallback
+            source={src}
+            style={logo ? styles.logoHeroContainer : styles.flyerImage}
+            resizeMode={logo ? 'contain' : 'cover'}
+          />
+        );
+      })()}
       
       {/* Special Badge */}
       {store.promotions && store.promotions.length > 0 && (
@@ -101,11 +105,17 @@ export default function FlyerCard({ store, onPress }) {
       {/* Store Info */}
       <View style={styles.storeInfo}>
         <View style={styles.storeHeader}>
-          <ImageWithFallback
-            source={ getLocalLogoForStore(store) || { uri: store.image || getImageForProduct({ name: store.name, category: store.category }) } }
-            style={styles.storeLogo}
-            resizeMode="cover"
-          />
+          {(() => {
+            const logo = getLocalLogoForStore(store);
+            const src = logo || { uri: store.image || getImageForProduct({ name: store.name, category: store.category }) };
+            return (
+              <ImageWithFallback
+                source={src}
+                style={styles.storeLogo}
+                resizeMode={logo ? 'contain' : 'cover'}
+              />
+            );
+          })()}
           <View style={styles.storeDetails}>
             <Text style={styles.storeName}>{store.name}</Text>
             <Text style={styles.storeCategory}>{store.category}</Text>
@@ -171,6 +181,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 180,
   },
+  logoHeroContainer: {
+    width: '100%',
+    height: 180,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
   specialBadge: {
     position: 'absolute',
     top: 12,
@@ -200,6 +218,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 4,
   },
   storeDetails: {
     flex: 1,

@@ -62,14 +62,23 @@ export default function HomeScreen({ navigation }) {
     setFilters(newFilters);
   };
 
+  const inferCategory = (store) => {
+    if (store?.category) return store.category;
+    const name = (store?.brand || store?.name || '').toLowerCase();
+    if (/mr price|truworths|foschini|ackermans|edgars|pep|jet|exact|cotton on|h&m/.test(name)) return 'Clothing';
+    if (/incredible|hifi corp|game|istore|computer mania|vodacom|mtn|cell c|takealot|tech/.test(name)) return 'Electronics';
+    return 'Food';
+  };
+
   const filteredStores = stores.filter(store => {
     // Text search
+    const storeCategory = inferCategory(store);
     const matchesSearch = store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      store.category.toLowerCase().includes(searchQuery.toLowerCase());
+      (storeCategory || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     // Category filter
     const matchesCategory = !filters.category || filters.category === 'All' || 
-      (store.category && store.category.toLowerCase() === filters.category.toLowerCase());
+      (storeCategory && storeCategory.toLowerCase() === filters.category.toLowerCase());
     
     // Open only filter
     const matchesOpen = !filters.openOnly || store.isOpen;
