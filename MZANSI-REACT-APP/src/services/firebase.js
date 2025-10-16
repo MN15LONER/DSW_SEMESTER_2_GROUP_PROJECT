@@ -8,7 +8,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDsxqzXw5XEifHbelAYHqdkMUPoZVvg6ro",
   authDomain: "mzansi-react.firebaseapp.com",
   projectId: "mzansi-react",
-  storageBucket: "mzansi-react.firebasestorage.app",
+  storageBucket: "mzansi-react-storage",
   messagingSenderId: "239626456292",
   appId: "1:239626456292:web:7bdfeebb778f7cededf0f1"
 };
@@ -17,7 +17,7 @@ const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const storage = getStorage(app);
+export const storage = getStorage(app, 'gs://mzansi-react-storage');
 
 // Track whether we've already warned about Firestore permission issues to avoid log spam
 let _warnedFirestorePermissions = false;
@@ -237,8 +237,6 @@ export const firebaseService = {
         return false;
       }
     }
-<<<<<<< Updated upstream:MZANSI-REACT-APP/.expo/src/services/firebase.js
-=======
   },
 
   // ADDRESSES
@@ -365,6 +363,5 @@ export const firebaseService = {
         throw error;
       }
     }
->>>>>>> Stashed changes:MZANSI-REACT-APP/src/services/firebase.js
   }
 };

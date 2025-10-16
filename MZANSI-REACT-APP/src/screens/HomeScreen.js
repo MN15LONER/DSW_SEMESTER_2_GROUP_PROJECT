@@ -144,25 +144,10 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Shop by Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-<<<<<<< Updated upstream:MZANSI-REACT-APP/.expo/src/screens/HomeScreen.js
             {['Food', 'Clothing', 'Electronics', 'Health'].map((category) => (
               <TouchableOpacity key={category} style={styles.categoryCard}>
                 <Ionicons name="storefront-outline" size={30} color={COLORS.primary} />
                 <Text style={styles.categoryText}>{category}</Text>
-=======
-            {[
-              { name: 'Food', icon: 'restaurant-outline' },
-              { name: 'Clothing', icon: 'shirt-outline' },
-              { name: 'Electronics', icon: 'phone-portrait-outline' }
-            ].map((category) => (
-              <TouchableOpacity 
-                key={category.name} 
-                style={styles.categoryCard}
-                onPress={() => handleCategoryPress(category.name)}
-              >
-                <Ionicons name={category.icon} size={30} color={COLORS.primary} />
-                <Text style={styles.categoryText}>{category.name}</Text>
->>>>>>> Stashed changes:MZANSI-REACT-APP/src/screens/HomeScreen.js
               </TouchableOpacity>
             ))}
           </ScrollView>

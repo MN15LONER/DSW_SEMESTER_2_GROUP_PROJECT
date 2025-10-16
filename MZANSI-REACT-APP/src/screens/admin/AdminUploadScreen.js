@@ -28,11 +28,22 @@ export default function AdminUploadScreen() {
 
   const pickImage = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      // Backwards-compatible mediaTypes selection. Newer versions expose ImagePicker.MediaType
+      // older versions use ImagePicker.MediaTypeOptions. If neither exists we omit the option.
+      const mediaTypesOption =
+        ImagePicker && ImagePicker.MediaType && ImagePicker.MediaType.IMAGE
+          ? [ImagePicker.MediaType.IMAGE]
+          : ImagePicker && ImagePicker.MediaTypeOptions && ImagePicker.MediaTypeOptions.Images
+          ? ImagePicker.MediaTypeOptions.Images
+          : undefined;
+
+      const pickerOptions = {
         allowsEditing: true,
         quality: 0.8,
-      });
+      };
+      if (mediaTypesOption !== undefined) pickerOptions.mediaTypes = mediaTypesOption;
+
+      const result = await ImagePicker.launchImageLibraryAsync(pickerOptions);
       if (!result.canceled) {
         setImageUri(result.assets[0].uri);
       }
@@ -49,11 +60,21 @@ export default function AdminUploadScreen() {
         Alert.alert('Permissions required', 'Permission to access camera is required.');
         return;
       }
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      // Reuse same backwards-compatible mediaTypes logic as picker
+      const mediaTypesOption =
+        ImagePicker && ImagePicker.MediaType && ImagePicker.MediaType.IMAGE
+          ? [ImagePicker.MediaType.IMAGE]
+          : ImagePicker && ImagePicker.MediaTypeOptions && ImagePicker.MediaTypeOptions.Images
+          ? ImagePicker.MediaTypeOptions.Images
+          : undefined;
+
+      const cameraOptions = {
         allowsEditing: true,
         quality: 0.8,
-      });
+      };
+      if (mediaTypesOption !== undefined) cameraOptions.mediaTypes = mediaTypesOption;
+
+      const result = await ImagePicker.launchCameraAsync(cameraOptions);
       if (!result.canceled) {
         setImageUri(result.assets[0].uri);
       }
@@ -78,20 +99,53 @@ export default function AdminUploadScreen() {
       const response = await fetch(imageUri);
       const blob = await response.blob();
 
-      const storageRef = ref(storage, storagePath);
-      await uploadBytes(storageRef, blob);
-      const imageUrl = await getDownloadURL(storageRef);
+      // Helper that uploads and returns the download URL, with detailed error logging
+      const uploadImage = async (uri, path) => {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        const storageRef = ref(storage, path);
 
-      // Write Firestore doc
-      const docRef = await addDoc(collection(db, 'admin_docs'), {
-        title: title || null,
-        docType: docType || null,
-        imageUrl,
-        storagePath,
-        createdBy: user?.uid || null,
-        createdAt: serverTimestamp(),
-        notes: notes || null,
-      });
+        try {
+          const snapshot = await uploadBytes(storageRef, blob);
+          console.log('uploadBytes snapshot:', snapshot);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          console.log('downloadURL:', downloadURL);
+          return { snapshot, downloadURL };
+        } catch (error) {
+          console.error('Upload failed:', error);
+          console.error('Error code:', error?.code);
+          console.error('Error message:', error?.message);
+          if (error?.serverResponse) {
+            console.error('Server response:', error.serverResponse);
+          }
+          console.error('Full error object:', error);
+          Alert.alert('Upload failed', `${error.code || 'unknown'} - ${error.message || String(error)}`);
+          throw error;
+        }
+      };
+
+      // Perform upload and get download URL
+      const { downloadURL: imageUrl } = await uploadImage(imageUri, storagePath).then(res => ({ downloadURL: res.downloadURL || res.downloadURL }));
+
+      // Write Firestore doc with error logging
+      let docRef;
+      try {
+        docRef = await addDoc(collection(db, 'admin_docs'), {
+          title: title || null,
+          docType: docType || null,
+          imageUrl,
+          storagePath,
+          createdBy: user?.uid || null,
+          createdAt: serverTimestamp(),
+          notes: notes || null,
+        });
+      } catch (error) {
+        console.error('Firestore addDoc failed:', error);
+        console.error('Error code:', error?.code);
+        console.error('Error message:', error?.message);
+        console.error('Full error object:', error);
+        throw error;
+      }
 
       Alert.alert('Upload successful', `Document uploaded (id: ${docRef.id})`);
       // clear form
