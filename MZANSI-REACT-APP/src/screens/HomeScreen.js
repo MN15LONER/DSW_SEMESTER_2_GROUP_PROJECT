@@ -27,6 +27,26 @@ export default function HomeScreen({ navigation }) {
   const { selectedLocation } = useLocation();
   const { cartItems } = useCart();
 
+  const inferCategory = (store) => {
+    if (store?.category) return store.category;
+    const name = (store?.brand || store?.name || '').toLowerCase();
+    if (/mr price|truworths|foschini|ackermans|edgars|pep|jet|exact|cotton on|h&m/.test(name)) return 'Clothing';
+    if (/incredible|hifi corp|game|istore|computer mania|vodacom|mtn|cell c|takealot|tech/.test(name)) return 'Electronics';
+    return 'Food';
+  };
+
+  const dedupeStores = (list) => {
+    const seen = new Set();
+    const result = [];
+    for (const s of Array.isArray(list) ? list : []) {
+      const key = (s.id && String(s.id)) || `${(s.name||'').toLowerCase()}::${(s.location||'').toLowerCase()}::${(s.brand||'').toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push({ ...s, category: inferCategory(s) });
+    }
+    return result;
+  };
+
   const loadStores = useCallback(async () => {
     try {
       let storeData;
@@ -37,14 +57,14 @@ export default function HomeScreen({ navigation }) {
         // Try Firebase first, fallback to mock data
         storeData = await firebaseService.stores.getAll();
       }
-      setStores(storeData);
+      setStores(dedupeStores(storeData));
     } catch (error) {
       console.error('Error loading stores:', error);
       // Fallback to mock data on error
       const fallbackData = selectedLocation 
         ? getMockStores(selectedLocation)
         : mockStores;
-      setStores(fallbackData);
+      setStores(dedupeStores(fallbackData));
     }
   }, [selectedLocation]);
 
@@ -71,10 +91,13 @@ export default function HomeScreen({ navigation }) {
   };
 
   const filteredStores = stores.filter(store => {
-    // Text search
+    // Text search across name, brand, category, location
     const storeCategory = inferCategory(store);
-    const matchesSearch = store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (storeCategory || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const haystack = [store.name, store.brand, storeCategory, store.location]
+      .filter(Boolean)
+      .join(' ') 
+      .toLowerCase();
+    const matchesSearch = haystack.includes(searchQuery.toLowerCase());
     
     // Category filter
     const matchesCategory = !filters.category || filters.category === 'All' || 
