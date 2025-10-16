@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ProductGrid from '../components/store/ProductGrid';
 import StoreHeader from '../components/store/StoreHeader';
 import { useCart } from '../context/CartContext';
-import { getStoreProducts } from '../data/mockData';
+import { getStoreProducts, generateProductsForStore } from '../data/mockData';
 import { firebaseService } from '../services/firebase';
 import { COLORS } from '../styles/colors';
 
@@ -24,20 +24,20 @@ export default function StoreDetailScreen({ route, navigation }) {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        // Try Firebase first, fallback to mock data
+        // Try Firebase first, then fallback to local generated data
         const storeProducts = await firebaseService.products.getByStore(store.id);
-        // If firebase returns empty or no products, fall back to generated mock data
         if (!storeProducts || (Array.isArray(storeProducts) && storeProducts.length === 0)) {
-          const fallbackProducts = getStoreProducts(store.id);
-          setProducts(fallbackProducts);
+          // If store isn't in mockStores, generate products from the store's category
+          const generated = generateProductsForStore(store, 24);
+          setProducts(generated);
         } else {
           setProducts(storeProducts);
         }
       } catch (error) {
         console.error('Error loading products:', error);
-        // Fallback to mock data
-        const fallbackProducts = getStoreProducts(store.id);
-        setProducts(fallbackProducts);
+        // Fallback to generated data
+        const generated = generateProductsForStore(store, 24);
+        setProducts(generated);
       }
     };
     

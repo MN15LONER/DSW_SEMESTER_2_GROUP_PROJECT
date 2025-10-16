@@ -162,13 +162,14 @@ const productId = (storeId, idx) => `${storeId}-p-${idx}`;
 
 const generatedProductsCache = new Map();
 
-const generateProductsForStore = (store, count = 20) => {
+export const generateProductsForStore = (store, count = 20) => {
   const templates = PRODUCT_TEMPLATES[store.category] || PRODUCT_TEMPLATES.Food;
   const products = [];
   for (let i = 0; i < count; i++) {
     const tpl = pick(templates, i);
     const price = Math.round(randomBetween(tpl.price[0], tpl.price[1]) * 100) / 100;
-    const isSpecial = Math.random() < 0.35;
+    // Ensure every store shows specials: force first few items to be special
+    const isSpecial = i < 6 ? true : Math.random() < 0.35;
     const originalPrice = isSpecial ? Math.round(price * randomBetween(1.05, 1.25) * 100) / 100 : undefined;
     products.push({
       id: productId(store.id, i),

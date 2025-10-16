@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { Searchbar, FAB, IconButton } from 'react-native-paper';
+import { Searchbar, FAB, IconButton, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import FlyerGrid from '../components/flyers/FlyerGrid';
 import LocationPicker from '../components/common/LocationPicker';
@@ -69,7 +69,7 @@ export default function HomeScreen({ navigation }) {
     
     // Category filter
     const matchesCategory = !filters.category || filters.category === 'All' || 
-      store.category === filters.category;
+      (store.category && store.category.toLowerCase() === filters.category.toLowerCase());
     
     // Open only filter
     const matchesOpen = !filters.openOnly || store.isOpen;
@@ -103,6 +103,9 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.subText}>
             Browse flyers and shop from local retailers
           </Text>
+          <Button mode="contained" style={styles.leafletsBtn} onPress={() => navigation.navigate('Leaflets')}>
+            Browse Leaflets
+          </Button>
         </View>
 
         {/* Search Bar */}
@@ -144,8 +147,12 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Shop by Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {['Food', 'Clothing', 'Electronics', 'Health'].map((category) => (
-              <TouchableOpacity key={category} style={styles.categoryCard}>
+            {['Food', 'Clothing', 'Electronics'].map((category) => (
+              <TouchableOpacity 
+                key={category} 
+                style={styles.categoryCard}
+                onPress={() => setFilters({ ...filters, category })}
+              >
                 <Ionicons name="storefront-outline" size={30} color={COLORS.primary} />
                 <Text style={styles.categoryText}>{category}</Text>
               </TouchableOpacity>

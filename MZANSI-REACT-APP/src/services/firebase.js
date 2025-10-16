@@ -2,6 +2,9 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, orderBy, limit } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
+// Static import to avoid Metro dynamic import resolution issues
+import { mockStores, getMockStores, getStoreProducts } from '../data/mockData';
+import { mockStores as comprehensiveStores } from '../data/comprehensiveMockData';
 
 
 const firebaseConfig = {
@@ -39,9 +42,8 @@ export const firebaseService = {
         } else if (!/permission/i.test(error.message)) {
           console.error('Error fetching stores:', error);
         }
-        // Fallback to mock data
-        const { mockStores } = await import('../data/mockData');
-        return mockStores;
+        // Fallback to mock data (prefer comprehensive if available)
+        return (comprehensiveStores && comprehensiveStores.length > 0) ? comprehensiveStores : mockStores;
       }
     },
 
@@ -58,8 +60,11 @@ export const firebaseService = {
         } else if (!/permission/i.test(error.message)) {
           console.error('Error fetching stores by location:', error);
         }
-        // Fallback to mock data
-        const { getMockStores } = await import('../data/mockData');
+        // Fallback to mock data (prefer comprehensive filtered if available)
+        const comp = (comprehensiveStores && comprehensiveStores.length > 0)
+          ? comprehensiveStores.filter(s => (s.location || '').toLowerCase().includes((location || '').toLowerCase()))
+          : null;
+        if (comp && comp.length > 0) return comp;
         return getMockStores(location);
       }
     },
@@ -107,7 +112,6 @@ export const firebaseService = {
           console.error('Error fetching products:', error);
         }
         // Fallback to mock data
-        const { getStoreProducts } = await import('../data/mockData');
         return getStoreProducts(storeId);
       }
     },

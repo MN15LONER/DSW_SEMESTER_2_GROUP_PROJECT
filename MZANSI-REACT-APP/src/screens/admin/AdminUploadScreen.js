@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ActivityIndicator, Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
-import { storage, db } from '../../services/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { saveLeaflet } from '../../services/localLeafletsService';
 
 export default function AdminUploadScreen() {
   const { user } = useAuth();
@@ -92,62 +90,8 @@ export default function AdminUploadScreen() {
 
     setUploading(true);
     try {
-      const timestamp = Date.now();
-      const storagePath = `admin_docs/${timestamp}.jpg`;
-
-      // Convert to blob via fetch
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-
-      // Helper that uploads and returns the download URL, with detailed error logging
-      const uploadImage = async (uri, path) => {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        const storageRef = ref(storage, path);
-
-        try {
-          const snapshot = await uploadBytes(storageRef, blob);
-          console.log('uploadBytes snapshot:', snapshot);
-          const downloadURL = await getDownloadURL(snapshot.ref);
-          console.log('downloadURL:', downloadURL);
-          return { snapshot, downloadURL };
-        } catch (error) {
-          console.error('Upload failed:', error);
-          console.error('Error code:', error?.code);
-          console.error('Error message:', error?.message);
-          if (error?.serverResponse) {
-            console.error('Server response:', error.serverResponse);
-          }
-          console.error('Full error object:', error);
-          Alert.alert('Upload failed', `${error.code || 'unknown'} - ${error.message || String(error)}`);
-          throw error;
-        }
-      };
-
-      // Perform upload and get download URL
-      const { downloadURL: imageUrl } = await uploadImage(imageUri, storagePath).then(res => ({ downloadURL: res.downloadURL || res.downloadURL }));
-
-      // Write Firestore doc with error logging
-      let docRef;
-      try {
-        docRef = await addDoc(collection(db, 'admin_docs'), {
-          title: title || null,
-          docType: docType || null,
-          imageUrl,
-          storagePath,
-          createdBy: user?.uid || null,
-          createdAt: serverTimestamp(),
-          notes: notes || null,
-        });
-      } catch (error) {
-        console.error('Firestore addDoc failed:', error);
-        console.error('Error code:', error?.code);
-        console.error('Error message:', error?.message);
-        console.error('Full error object:', error);
-        throw error;
-      }
-
-      Alert.alert('Upload successful', `Document uploaded (id: ${docRef.id})`);
+      const saved = await saveLeaflet({ uri: imageUri, title, notes, docType });
+      Alert.alert('Saved', 'Leaflet saved locally on this device.');
       // clear form
       setTitle('');
       setDocType('photo');

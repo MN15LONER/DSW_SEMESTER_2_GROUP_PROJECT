@@ -11,19 +11,69 @@ import { COLORS } from '../../styles/colors';
 import ImageWithFallback from '../common/ImageWithFallback';
 import { getImageForProduct } from '../../utils/imageHelper';
 
-// Local logo assets for featured brands
+// Local logo assets for featured brands (static requires only)
+// Supports both standardized filenames and existing legacy filenames that were in the repo
 const localLogos = {
+  // Food
   'pick n pay': require('../../../assets/images/Store_Logos/Pick_N_Pay.jpg'),
-  'mr price': require('../../../assets/images/Store_Logos/Mr-Price-logo.jpg'),
+  'shoprite': require('../../../assets/images/Store_Logos/Shoprite.png'),
+  'checkers': require('../../../assets/images/Store_Logos/checkers.png'),
+  'woolworths food': require('../../../assets/images/Store_Logos/Woolworths-food.jpg'),
+  'spar': require('../../../assets/images/Store_Logos/SPAR.jpeg'),
+  "food lovers": require('../../../assets/images/Store_Logos/Food-Lovers.png'),
+  'boxer': require('../../../assets/images/Store_Logos/BOXER.png'),
+  'makro food': require('../../../assets/images/Store_Logos/makro-food.png'),
+  'ok foods': require('../../../assets/images/Store_Logos/ok-foods.jpg'),
+  'cambridge foods': require('../../../assets/images/Store_Logos/Cambridge-food.jpg'),
+
+  // Clothing
+  'mr price': require('../../../assets/images/Store_Logos/mr-price.jpg'),
+  'mr price (legacy)': require('../../../assets/images/Store_Logos/Mr-Price-logo.jpg'),
+  'truworths': require('../../../assets/images/Store_Logos/truworths.jpeg'),
+  'foschini': require('../../../assets/images/Store_Logos/Foschini.png'),
+  'ackermans': require('../../../assets/images/Store_Logos/Ackermans.png'),
+  'edgars': require('../../../assets/images/Store_Logos/edgars.jpg'),
+  'pep': require('../../../assets/images/Store_Logos/pep.jpeg'),
+  'jet': require('../../../assets/images/Store_Logos/Jet.png'),
+  'exact': require('../../../assets/images/Store_Logos/exact.jpg'),
+  'cotton on': require('../../../assets/images/Store_Logos/Cotton-On.jpg'),
+  'h&m': require('../../../assets/images/Store_Logos/h-and-m.png'),
+
+  // Electronics
   'incredible connection': require('../../../assets/images/Store_Logos/Incredible_connections.png'),
+  'game electronics': require('../../../assets/images/Store_Logos/game-electronics.jpg'),
+  'makro tech': require('../../../assets/images/Store_Logos/makro-tech.jpg'),
+  'takealot pickup': require('../../../assets/images/Store_Logos/takealot-pickup.png'),
+  'vodacom shop': require('../../../assets/images/Store_Logos/vodacom-shop.png'),
+  'mtn store': require('../../../assets/images/Store_Logos/mtn-store.jpg'),
+  'cell c': require('../../../assets/images/Store_Logos/cell-c.jpg'),
+  'istore': require('../../../assets/images/Store_Logos/istore.png'),
+  'computer mania': require('../../../assets/images/Store_Logos/Computer-Mania.jpg'),
 };
 
+const normalizeBrand = (text = '') => text.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, ' ').trim();
+
 const getLocalLogoForStore = (store) => {
-  if (!store || !store.name) return null;
-  const name = store.name.toLowerCase();
-  if (name.includes('pick')) return localLogos['pick n pay'];
-  if (name.includes('mr')) return localLogos['mr price'];
-  if (name.includes('incredible')) return localLogos['incredible connection'];
+  if (!store) return null;
+  const brand = normalizeBrand(store.brand || '');
+  const name = normalizeBrand(store.name || '');
+
+  // Prefer brand mapping
+  if (brand && localLogos[brand]) return localLogos[brand];
+  // Try legacy keys
+  if (brand && localLogos[`${brand} (legacy)`]) return localLogos[`${brand} (legacy)`];
+
+  // Fallback: detect by name substrings
+  const candidates = Object.keys(localLogos).filter(k => !k.endsWith('(legacy)'));
+  for (const key of candidates) {
+    if (name.includes(key)) return localLogos[key];
+  }
+  // Try legacy as last resort
+  const legacyCandidates = Object.keys(localLogos).filter(k => k.endsWith('(legacy)'));
+  for (const key of legacyCandidates) {
+    const base = key.replace(' (legacy)', '');
+    if (name.includes(base)) return localLogos[key];
+  }
   return null;
 };
 

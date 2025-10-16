@@ -22,6 +22,7 @@ import CategoryProductsScreen from '../screens/CategoryProductsScreen';
 import ProductSearchScreen from '../screens/ProductSearchScreen';
 import DailyDealsScreen from '../screens/DailyDealsScreen';
 import StoreFinderScreen from '../screens/StoreFinderScreen';
+import LeafletBrowserScreen from '../screens/LeafletBrowserScreen';
 import { COLORS } from '../styles/colors';
 
 const Stack = createStackNavigator();
@@ -147,6 +148,13 @@ const MainStack = () => {
         component={StoreFinderScreen}
         options={{
           headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="Leaflets" 
+        component={LeafletBrowserScreen}
+        options={{
+          title: 'Browse Leaflets',
         }}
       />
     </Stack.Navigator>
