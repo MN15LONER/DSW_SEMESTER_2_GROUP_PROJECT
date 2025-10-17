@@ -12,15 +12,14 @@ import ImageWithFallback from '../common/ImageWithFallback';
 import { getImageForProduct } from '../../utils/imageHelper';
 
 // Local logo assets for featured brands (static requires only)
-// Supports both standardized filenames and existing legacy filenames that were in the repo
 const localLogos = {
-  // Food
+   // Food
   'pick n pay': require('../../../assets/images/Store_Logos/Pick_N_Pay.jpg'),
   'shoprite': require('../../../assets/images/Store_Logos/Shoprite.png'),
   'checkers': require('../../../assets/images/Store_Logos/checkers.png'),
   'woolworths food': require('../../../assets/images/Store_Logos/Woolworths-food.jpg'),
   'spar': require('../../../assets/images/Store_Logos/SPAR.jpeg'),
-  "food lovers": require('../../../assets/images/Store_Logos/Food-Lovers.png'),
+  'food lovers': require('../../../assets/images/Store_Logos/Food-Lovers.png'),
   'boxer': require('../../../assets/images/Store_Logos/BOXER.png'),
   'makro food': require('../../../assets/images/Store_Logos/makro-food.png'),
   'ok foods': require('../../../assets/images/Store_Logos/ok-foods.jpg'),
@@ -58,42 +57,39 @@ const getLocalLogoForStore = (store) => {
   const brand = normalizeBrand(store.brand || '');
   const name = normalizeBrand(store.name || '');
 
-  // Prefer brand mapping
+  // Direct brand mapping
   if (brand && localLogos[brand]) return localLogos[brand];
-  // Try legacy keys
-  if (brand && localLogos[`${brand} (legacy)`]) return localLogos[`${brand} (legacy)`];
 
   // Fallback: detect by name substrings
-  const candidates = Object.keys(localLogos).filter(k => !k.endsWith('(legacy)'));
+  const candidates = Object.keys(localLogos);
   for (const key of candidates) {
-    if (name.includes(key)) return localLogos[key];
+    if (brand.includes(key) || name.includes(key)) {
+      return localLogos[key];
+    }
   }
-  // Try legacy as last resort
-  const legacyCandidates = Object.keys(localLogos).filter(k => k.endsWith('(legacy)'));
-  for (const key of legacyCandidates) {
-    const base = key.replace(' (legacy)', '');
-    if (name.includes(base)) return localLogos[key];
-  }
+  
   return null;
 };
 
 const { width } = Dimensions.get('window');
 
 export default function FlyerCard({ store, onPress }) {
+  // Prioritize logoUrl from API, then local logos, then fallback images
+  const localLogo = getLocalLogoForStore(store);
+  const logoSource = store.logoUrl 
+    ? { uri: store.logoUrl } 
+    : (localLogo || { uri: store.image });
+  
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      {/* Store Image/Flyer */}
-      {(() => {
-        const logo = getLocalLogoForStore(store);
-        const src = logo || { uri: store.flyerImage || store.image || getImageForProduct({ name: store.name, category: store.category }) };
-        return (
-          <ImageWithFallback
-            source={src}
-            style={logo ? styles.logoHeroContainer : styles.flyerImage}
-            resizeMode={logo ? 'contain' : 'cover'}
-          />
-        );
-      })()}
+      {/* Store Image/Flyer - Hero Section */}
+      <View style={styles.heroContainer}>
+        <ImageWithFallback
+          source={logoSource}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
+      </View>
       
       {/* Special Badge */}
       {store.promotions && store.promotions.length > 0 && (
@@ -105,17 +101,13 @@ export default function FlyerCard({ store, onPress }) {
       {/* Store Info */}
       <View style={styles.storeInfo}>
         <View style={styles.storeHeader}>
-          {(() => {
-            const logo = getLocalLogoForStore(store);
-            const src = logo || { uri: store.image || getImageForProduct({ name: store.name, category: store.category }) };
-            return (
-              <ImageWithFallback
-                source={src}
-                style={styles.storeLogo}
-                resizeMode={logo ? 'contain' : 'cover'}
-              />
-            );
-          })()}
+          <View style={styles.logoContainer}>
+            <ImageWithFallback
+              source={logoSource}
+              style={styles.storeLogo}
+              resizeMode="contain"
+            />
+          </View>
           <View style={styles.storeDetails}>
             <Text style={styles.storeName}>{store.name}</Text>
             <Text style={styles.storeCategory}>{store.category}</Text>
@@ -176,18 +168,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     overflow: 'hidden',
+    marginBottom: 16,
+  },
+  heroContainer: {
+    width: '100%',
+    height: 180,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   flyerImage: {
     width: '100%',
-    height: 180,
+    height: '100%',
   },
-  logoHeroContainer: {
-    width: '100%',
-    height: 180,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 12,
+  logoImage: {
+    width: '70%',
+    height: '70%',
   },
   specialBadge: {
     position: 'absolute',
@@ -197,6 +194,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
+    zIndex: 10,
   },
   specialText: {
     color: COLORS.white,
@@ -210,16 +208,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 12,
   },
-  storeLogo: {
+  logoContainer: {
     width: 50,
     height: 50,
     borderRadius: 8,
     marginRight: 12,
-    overflow: 'hidden',
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    overflow: 'hidden',
     padding: 4,
+  },
+  storeLogo: {
+    width: '100%',
+    height: '100%',
   },
   storeDetails: {
     flex: 1,

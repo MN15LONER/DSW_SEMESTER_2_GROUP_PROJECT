@@ -4,8 +4,6 @@ import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 // Static import to avoid Metro dynamic import resolution issues
 import { mockStores, getMockStores, getStoreProducts } from '../data/mockData';
-import { mockStores as comprehensiveStores } from '../data/comprehensiveMockData';
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyDsxqzXw5XEifHbelAYHqdkMUPoZVvg6ro",
@@ -42,8 +40,8 @@ export const firebaseService = {
         } else if (!/permission/i.test(error.message)) {
           console.error('Error fetching stores:', error);
         }
-        // Fallback to mock data (prefer comprehensive if available)
-        return (comprehensiveStores && comprehensiveStores.length > 0) ? comprehensiveStores : mockStores;
+        // Fallback to mock data
+        return mockStores;
       }
     },
 
@@ -60,11 +58,7 @@ export const firebaseService = {
         } else if (!/permission/i.test(error.message)) {
           console.error('Error fetching stores by location:', error);
         }
-        // Fallback to mock data (prefer comprehensive filtered if available)
-        const comp = (comprehensiveStores && comprehensiveStores.length > 0)
-          ? comprehensiveStores.filter(s => (s.location || '').toLowerCase().includes((location || '').toLowerCase()))
-          : null;
-        if (comp && comp.length > 0) return comp;
+        // Fallback to mock data filtered by location
         return getMockStores(location);
       }
     },
@@ -76,7 +70,8 @@ export const firebaseService = {
         return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
       } catch (error) {
         console.error('Error fetching store:', error);
-        return null;
+        // Fallback to mock data
+        return mockStores.find(s => s.id === storeId) || null;
       }
     },
 

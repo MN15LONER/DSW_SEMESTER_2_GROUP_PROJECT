@@ -1,11 +1,61 @@
 // Product search service with multi-store price comparison
-import { MAJOR_SA_STORES, COMPREHENSIVE_PRODUCTS, DAILY_DEALS } from '../data/comprehensiveMockData';
+import { mockStores, getStoreProducts, generateProductsForStore } from '../data/mockData';
 
 class ProductSearchService {
   constructor() {
-    this.stores = MAJOR_SA_STORES;
-    this.products = COMPREHENSIVE_PRODUCTS;
-    this.deals = DAILY_DEALS;
+    this.stores = mockStores;
+    // Generate a comprehensive product catalog from all stores
+    this.products = this.generateProductCatalog();
+  }
+
+  // Generate a unified product catalog from all stores
+  generateProductCatalog() {
+    const productMap = new Map();
+    
+    this.stores.forEach(store => {
+      const storeProducts = getStoreProducts(store.id);
+      
+      storeProducts.forEach(product => {
+        // Use product name as key to group same products across stores
+        const key = product.name.toLowerCase().trim();
+        
+        if (!productMap.has(key)) {
+          productMap.set(key, {
+            id: product.id,
+            name: product.name,
+            category: product.category,
+            image: product.image,
+            description: product.description,
+            rating: product.rating || 4.0,
+            reviews: product.reviews || 0,
+            stores: []
+          });
+        }
+        
+        // Add this store's pricing info
+        const productEntry = productMap.get(key);
+        productEntry.stores.push({
+          storeId: store.id,
+          storeName: store.name,
+          storeBrand: store.brand,
+          storeLocation: store.location,
+          storeDistance: store.distance,
+          storeRating: store.rating,
+          deliveryTime: store.deliveryTime,
+          coordinates: { latitude: store.latitude, longitude: store.longitude },
+          price: product.price,
+          originalPrice: product.originalPrice,
+          inStock: product.inStock,
+          promotion: product.isSpecial ? {
+            type: 'discount',
+            value: product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : 0,
+            originalPrice: product.originalPrice
+          } : null
+        });
+      });
+    });
+    
+    return Array.from(productMap.values());
   }
 
   // Search products across all stores with real-time filtering
@@ -17,19 +67,14 @@ class ProductSearchService {
       const searchTerm = query.toLowerCase();
       results = results.filter(product => 
         product.name.toLowerCase().includes(searchTerm) ||
-        product.brand.toLowerCase().includes(searchTerm) ||
-        product.category.toLowerCase().includes(searchTerm)
+        product.category.toLowerCase().includes(searchTerm) ||
+        product.description.toLowerCase().includes(searchTerm)
       );
     }
 
     // Category filter
     if (filters.category && filters.category !== 'All') {
       results = results.filter(product => product.category === filters.category);
-    }
-
-    // Brand filter
-    if (filters.brand && filters.brand !== 'All') {
-      results = results.filter(product => product.brand === filters.brand);
     }
 
     // Price range filter
@@ -65,19 +110,9 @@ class ProductSearchService {
   // Enrich products with store information and pricing
   enrichProductResults(products, filters = {}) {
     return products.map(product => {
-      const enrichedStores = product.stores.map(storeInfo => {
-        const store = this.stores.find(s => s.id === storeInfo.storeId);
-        return {
-          ...storeInfo,
-          storeName: store?.name || 'Unknown Store',
-          storeBrand: store?.brand || 'Unknown',
-          storeLocation: store?.location || 'Unknown Location',
-          storeDistance: store?.distance || 'N/A',
-          storeRating: store?.rating || 0,
-          deliveryTime: store?.deliveryTime || 'N/A',
-          coordinates: store?.coordinates
-        };
-      }).filter(store => store.inStock || !filters.inStockOnly);
+      const enrichedStores = product.stores.filter(store => 
+        store.inStock || !filters.inStockOnly
+      );
 
       // Calculate price statistics
       const prices = enrichedStores.map(store => store.price);
@@ -91,8 +126,8 @@ class ProductSearchService {
         priceRange: {
           min: minPrice,
           max: maxPrice,
-          average: avgPrice,
-          savings: maxPrice - minPrice
+          average: Math.round(avgPrice * 100) / 100,
+          savings: Math.round((maxPrice - minPrice) * 100) / 100
         },
         availableStores: enrichedStores.length,
         bestPrice: enrichedStores.find(store => store.price === minPrice),
@@ -117,9 +152,6 @@ class ProductSearchService {
       
       case 'name':
         return sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
-      
-      case 'brand':
-        return sortedProducts.sort((a, b) => a.brand.localeCompare(b.brand));
       
       case 'savings':
         return sortedProducts.sort((a, b) => b.priceRange.savings - a.priceRange.savings);
@@ -173,25 +205,16 @@ class ProductSearchService {
     return degrees * (Math.PI/180);
   }
 
-  // Get all unique categories
+  // Get all unique categories from products
   getCategories() {
     const categories = [...new Set(this.products.map(p => p.category))];
     return ['All', ...categories.sort()];
   }
 
-  // Get all unique brands
+  // Get all unique brands from stores
   getBrands() {
-    const brands = [...new Set(this.products.map(p => p.brand))];
+    const brands = [...new Set(this.stores.map(s => s.brand))];
     return ['All', ...brands.sort()];
-  }
-
-  // Get daily deals
-  getDailyDeals() {
-    const today = new Date();
-    return this.deals.filter(deal => {
-      const validUntil = new Date(deal.validUntil);
-      return validUntil >= today;
-    });
   }
 
   // Get products on promotion
@@ -216,7 +239,16 @@ class ProductSearchService {
 
   // Get stores by brand
   getStoresByBrand(brand) {
-    return this.stores.filter(store => store.brand === brand);
+    return this.stores.filter(store => 
+      store.brand.toLowerCase() === brand.toLowerCase()
+    );
+  }
+
+  // Get stores by category
+  getStoresByCategory(category) {
+    return this.stores.filter(store => 
+      store.category.toLowerCase() === category.toLowerCase()
+    );
   }
 
   // Get nearby stores based on user location
@@ -227,12 +259,18 @@ class ProductSearchService {
         distance: this.calculateDistance(
           userLocation.latitude,
           userLocation.longitude,
-          store.coordinates.latitude,
-          store.coordinates.longitude
+          store.latitude,
+          store.longitude
         )
       }))
       .filter(store => store.distance <= radiusKm)
       .sort((a, b) => a.distance - b.distance);
+  }
+
+  // Refresh product catalog (useful if stores are updated)
+  refreshCatalog() {
+    this.stores = mockStores;
+    this.products = this.generateProductCatalog();
   }
 }
 

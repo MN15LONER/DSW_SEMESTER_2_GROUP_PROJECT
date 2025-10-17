@@ -27,81 +27,64 @@ export default function HomeScreen({ navigation }) {
   const { selectedLocation } = useLocation();
   const { cartItems } = useCart();
 
-  const inferCategory = (store) => {
-    if (store?.category) return store.category;
-    const name = (store?.brand || store?.name || '').toLowerCase();
-    if (/mr price|truworths|foschini|ackermans|edgars|pep|jet|exact|cotton on|h&m/.test(name)) return 'Clothing';
-    if (/incredible|hifi corp|game|istore|computer mania|vodacom|mtn|cell c|takealot|tech/.test(name)) return 'Electronics';
-    return 'Food';
-  };
-
-  const dedupeStores = (list) => {
-    const seen = new Set();
-    const result = [];
-    for (const s of Array.isArray(list) ? list : []) {
-      const key = (s.id && String(s.id)) || `${(s.name||'').toLowerCase()}::${(s.location||'').toLowerCase()}::${(s.brand||'').toLowerCase()}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      result.push({ ...s, category: inferCategory(s) });
-    }
-    return result;
-  };
-
   const loadStores = useCallback(async () => {
-    try {
-      let storeData;
-      if (selectedLocation) {
-        // Try Firebase first, fallback to mock data
-        storeData = await firebaseService.stores.getByLocation(selectedLocation);
-      } else {
-        // Try Firebase first, fallback to mock data
-        storeData = await firebaseService.stores.getAll();
-      }
-      setStores(dedupeStores(storeData));
-    } catch (error) {
-      console.error('Error loading stores:', error);
-      // Fallback to mock data on error
-      const fallbackData = selectedLocation 
-        ? getMockStores(selectedLocation)
-        : mockStores;
-      setStores(dedupeStores(fallbackData));
-    }
-  }, [selectedLocation]);
+    // ONLY use mock data - show ALL stores (no location filtering)
+    const storeData = mockStores;
+    
+    console.log('✅ Loaded ALL mock stores:', storeData.length);
+    console.log('Sample stores:', storeData.slice(0, 5).map(s => `${s.name} (${s.category})`));
+    console.log('📊 Category breakdown:', {
+      Food: storeData.filter(s => s.category === 'Food').length,
+      Clothing: storeData.filter(s => s.category === 'Clothing').length,
+      Electronics: storeData.filter(s => s.category === 'Electronics').length
+    });
+    
+    setStores(storeData);
+  }, []);
 
   useEffect(() => {
     loadStores();
-  }, [selectedLocation]);
+  }, [loadStores]);
 
-  const onRefresh = React.useCallback(() => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadStores();
-    setTimeout(() => setRefreshing(false), 1000);
-  }, [selectedLocation]);
+    loadStores().finally(() => {
+      setTimeout(() => setRefreshing(false), 1000);
+    });
+  }, [loadStores]);
 
   const applyFilters = (newFilters) => {
     setFilters(newFilters);
   };
 
-  const inferCategory = (store) => {
-    if (store?.category) return store.category;
-    const name = (store?.brand || store?.name || '').toLowerCase();
-    if (/mr price|truworths|foschini|ackermans|edgars|pep|jet|exact|cotton on|h&m/.test(name)) return 'Clothing';
-    if (/incredible|hifi corp|game|istore|computer mania|vodacom|mtn|cell c|takealot|tech/.test(name)) return 'Electronics';
-    return 'Food';
-  };
-
   const filteredStores = stores.filter(store => {
-    // Text search across name, brand, category, location
-    const storeCategory = inferCategory(store);
-    const haystack = [store.name, store.brand, storeCategory, store.location]
+    // Normalize search query
+    const query = searchQuery.toLowerCase().trim().replace(/\s+/g, ' ');
+    
+    // Build searchable text from all store fields
+    const searchableText = [
+      store.name,
+      store.brand,
+      store.category,
+      store.location,
+      store.address,
+      store.description,
+      ...(store.services || []),
+      ...(store.specialties || [])
+    ]
       .filter(Boolean)
       .join(' ') 
-      .toLowerCase();
-    const matchesSearch = haystack.includes(searchQuery.toLowerCase());
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
     
-    // Category filter
-    const matchesCategory = !filters.category || filters.category === 'All' || 
-      (storeCategory && storeCategory.toLowerCase() === filters.category.toLowerCase());
+    // Check if query appears anywhere in searchable text
+    const matchesSearch = !query || searchableText.includes(query);
+    
+    // Category filter - Direct match with your mock data categories
+    let matchesCategory = true;
+    if (filters.category && filters.category !== 'All') {
+      matchesCategory = store.category === filters.category;
+    }
     
     // Open only filter
     const matchesOpen = !filters.openOnly || store.isOpen;
@@ -112,6 +95,17 @@ export default function HomeScreen({ navigation }) {
     
     return matchesSearch && matchesCategory && matchesOpen && matchesSpecials;
   });
+
+  // Debug log when filters change
+  useEffect(() => {
+    if (filters.category) {
+      console.log('🔍 Active filter:', filters.category);
+      console.log('📊 Filtered results:', filteredStores.length);
+      if (filteredStores.length > 0) {
+        console.log('Sample filtered:', filteredStores.slice(0, 3).map(s => s.name));
+      }
+    }
+  }, [filters, filteredStores.length]);
 
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -135,7 +129,11 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.subText}>
             Browse flyers and shop from local retailers
           </Text>
-          <Button mode="contained" style={styles.leafletsBtn} onPress={() => navigation.navigate('Leaflets')}>
+          <Button 
+            mode="contained" 
+            style={styles.leafletsBtn} 
+            onPress={() => navigation.navigate('Leaflets')}
+          >
             Browse Leaflets
           </Button>
         </View>
@@ -179,14 +177,27 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Shop by Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {['Food', 'Clothing', 'Electronics'].map((category) => (
+            {['All', 'Food', 'Clothing', 'Electronics'].map((category) => (
               <TouchableOpacity 
                 key={category} 
-                style={styles.categoryCard}
-                onPress={() => setFilters({ ...filters, category })}
+                style={[
+                  styles.categoryCard,
+                  filters.category === category && styles.categoryCardActive
+                ]}
+                onPress={() => {
+                  console.log('🔘 Category button clicked:', category);
+                  setFilters({ ...filters, category });
+                }}
               >
-                <Ionicons name="storefront-outline" size={30} color={COLORS.primary} />
-                <Text style={styles.categoryText}>{category}</Text>
+                <Ionicons 
+                  name="storefront-outline" 
+                  size={30} 
+                  color={filters.category === category ? COLORS.white : COLORS.primary} 
+                />
+                <Text style={[
+                  styles.categoryText,
+                  filters.category === category && styles.categoryTextActive
+                ]}>{category}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -194,13 +205,36 @@ export default function HomeScreen({ navigation }) {
 
         {/* Featured Stores */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Featured Stores & Deals</Text>
-          <FlyerGrid 
-            stores={filteredStores} 
-            onStorePress={(store) => 
-              navigation.navigate('StoreDetail', { store, storeName: store.name })
-            }
-          />
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Stores & Deals</Text>
+            <Text style={styles.resultsCount}>
+              {filteredStores.length} {filteredStores.length === 1 ? 'store' : 'stores'}
+            </Text>
+          </View>
+          {filteredStores.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="search-outline" size={48} color={COLORS.lightGray} />
+              <Text style={styles.emptyText}>No stores found</Text>
+              <Text style={styles.emptySubtext}>
+                {filters.category ? `Try selecting "All" or a different category` : 'Try adjusting your search'}
+              </Text>
+              {filters.category && (
+                <TouchableOpacity 
+                  style={styles.resetButton}
+                  onPress={() => setFilters({})}
+                >
+                  <Text style={styles.resetButtonText}>Clear Filters</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <FlyerGrid 
+              stores={filteredStores} 
+              onStorePress={(store) => 
+                navigation.navigate('StoreDetail', { store, storeName: store.name })
+              }
+            />
+          )}
         </View>
       </ScrollView>
 
@@ -251,6 +285,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.gray,
     textAlign: 'center',
+    marginBottom: 10,
+  },
+  leafletsBtn: {
+    marginTop: 10,
+    backgroundColor: COLORS.primary,
   },
   searchContainer: {
     paddingHorizontal: 16,
@@ -297,12 +336,21 @@ const styles = StyleSheet.create({
   sectionContainer: {
     marginBottom: 20,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.primary,
-    paddingHorizontal: 16,
-    marginBottom: 10,
+  },
+  resultsCount: {
+    fontSize: 14,
+    color: COLORS.gray,
   },
   categoryCard: {
     backgroundColor: COLORS.white,
@@ -312,12 +360,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
     width: 100,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  categoryCardActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   categoryText: {
     fontSize: 12,
     color: COLORS.gray,
     marginTop: 8,
     textAlign: 'center',
+    fontWeight: '600',
+  },
+  categoryTextActive: {
+    color: COLORS.white,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.gray,
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: COLORS.gray,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  resetButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+  },
+  resetButtonText: {
+    color: COLORS.white,
+    fontWeight: '600',
   },
   fab: {
     position: 'absolute',
