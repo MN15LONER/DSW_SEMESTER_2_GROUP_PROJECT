@@ -4,7 +4,8 @@ import {
   createUserWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  updateProfile 
+  updateProfile,
+  deleteUser
 } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import { firebaseService } from '../services/firebase';
@@ -266,6 +267,54 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Delete User Account
+   * Permanently deletes the user's account and all associated data
+   * @returns {Promise<Object>} Result object with success status
+   */
+  const deleteAccount = async () => {
+    try {
+      if (!user) return { success: false, error: 'No user logged in' };
+      
+      setLoading(true);
+      
+      // Delete user data from Firestore first
+      try {
+        await firebaseService.users.delete(user.uid);
+      } catch (error) {
+        console.error('Error deleting user data from Firestore:', error);
+        // Continue with Firebase Auth deletion even if Firestore deletion fails
+      }
+      
+      // Delete the Firebase Auth user
+      await deleteUser(auth.currentUser);
+      
+      // Clear local state and storage
+      setUser(null);
+      await AsyncStorage.removeItem('user');
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Delete account error:', error);
+      let errorMessage = 'Failed to delete account. Please try again.';
+      
+      switch (error.code) {
+        case 'auth/requires-recent-login':
+          errorMessage = 'For security reasons, you need to sign in again before deleting your account.';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'User account not found.';
+          break;
+        default:
+          errorMessage = error.message || errorMessage;
+      }
+      
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -276,6 +325,7 @@ export const AuthProvider = ({ children }) => {
     updateUserProfile,
     loginWithGoogle,
     requestPasswordReset,
+    deleteAccount,
     isAuthenticated: !!user
   };
 

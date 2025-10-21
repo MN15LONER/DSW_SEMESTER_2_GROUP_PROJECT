@@ -23,6 +23,7 @@
     "expo-auth-session": "^7.0.8",
     "expo-constants": "~18.0.8",
     "expo-crypto": "^15.0.7",
+    "expo-image-picker": "^17.0.8",
     "expo-location": "~19.0.7",
     "expo-modules-core": "~3.0.15",
     "expo-status-bar": "~3.0.8",
