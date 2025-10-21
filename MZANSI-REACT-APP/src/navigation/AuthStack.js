@@ -3,6 +3,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import DriverLoginScreen from '../screens/auth/DriverLoginScreen';
+import DriverRegisterScreen from '../screens/auth/DriverRegisterScreen';
 
 const Stack = createStackNavigator();
 
@@ -34,6 +36,20 @@ const AuthStack = () => {
       <Stack.Screen 
         name="ForgotPassword" 
         component={ForgotPasswordScreen}
+        options={{
+          animationTypeForReplace: 'push',
+        }}
+      />
+      <Stack.Screen 
+        name="DriverLogin" 
+        component={DriverLoginScreen}
+        options={{
+          animationTypeForReplace: 'push',
+        }}
+      />
+      <Stack.Screen 
+        name="DriverRegister" 
+        component={DriverRegisterScreen}
         options={{
           animationTypeForReplace: 'push',
         }}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,19 +13,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { useGoogleAuth } from '../../services/googleAuth';
-import GoogleSignInButton from '../../components/GoogleSignInButton';
 
-const LoginScreen = ({ navigation }) => {
+const DriverLoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const { login, loading, loginWithGoogle } = useAuth();
-  
-  // Google authentication hook
-  const { request, response, promptAsync } = useGoogleAuth();
+  const { login, loading, logout } = useAuth();
 
   const validateForm = () => {
     const newErrors = {};
@@ -46,67 +40,45 @@ const LoginScreen = ({ navigation }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = async () => {
-    if (!validateForm()) return;
+  const handleDriverLogin = async () => {
+    console.log('Driver login button pressed');
+    console.log('Email:', email);
+    console.log('Password length:', password.length);
+    
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
 
+    console.log('Starting login process...');
     const result = await login(email.trim().toLowerCase(), password);
     
+    console.log('Login result:', result);
+    
     if (!result.success) {
-      Alert.alert('Login Failed', result.error);
-    }
-  };
-
-  const handleForgotPassword = () => {
-    // Navigate to ForgotPassword screen
-    navigation.navigate('ForgotPassword');
-  };
-
-  /**
-   * Handle Google Sign-In Response
-   * This effect listens for the Google authentication response
-   */
-  useEffect(() => {
-    if (response?.type === 'success') {
-      handleGoogleSignIn();
-    }
-  }, [response]);
-
-  /**
-   * Handle Google Sign-In
-   * Processes the Google authentication and handles errors
-   */
-  const handleGoogleSignIn = async () => {
-    try {
-      setGoogleLoading(true);
-      const result = await loginWithGoogle(promptAsync);
-      
-      if (!result.success) {
-        // Don't show alert if user cancelled
-        if (!result.cancelled) {
-          Alert.alert('Google Sign-In Failed', result.error);
-        }
+      // Provide more helpful error messages
+      let errorMessage = result.error;
+      if (result.error.includes('invalid-credential')) {
+        errorMessage = 'Invalid email or password. Please check your credentials or register as a new driver.';
       }
-      // Success case is handled by AuthContext and navigation
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
-  /**
-   * Initiate Google Sign-In Flow
-   * Starts the Google authentication process
-   */
-  const initiateGoogleSignIn = async () => {
-    try {
-      setGoogleLoading(true);
-      await promptAsync();
-    } catch (error) {
-      console.error('Error initiating Google sign-in:', error);
-      Alert.alert('Error', 'Failed to start Google sign-in. Please try again.');
-      setGoogleLoading(false);
+      console.log('Login failed:', errorMessage);
+      Alert.alert('Login Failed', errorMessage);
+    } else {
+      // Debug: Log user data to help troubleshoot
+      console.log('Login successful. User data:', result.user);
+      console.log('User type:', result.user?.userType);
+      
+      // Check if user is a driver
+      if (result.user && result.user.userType === 'driver') {
+        console.log('Driver login successful - user will be redirected to driver dashboard');
+        // The authentication state change should automatically navigate to DriverStack
+        // No manual navigation needed - the AppNavigator will handle this
+      } else {
+        console.log('Access denied - user type:', result.user?.userType);
+        Alert.alert('Access Denied', `This account is not authorized for driver access. User type: ${result.user?.userType || 'undefined'}`);
+        // Sign out the user
+        await logout();
+      }
     }
   };
 
@@ -117,18 +89,21 @@ const LoginScreen = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to your Mzansi account</Text>
+          <View style={styles.iconContainer}>
+            <Ionicons name="car-outline" size={40} color="#007AFF" />
+          </View>
+          <Text style={styles.title}>Driver Portal</Text>
+          <Text style={styles.subtitle}>Sign in to access your delivery dashboard</Text>
         </View>
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={styles.label}>Driver Email</Text>
             <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
               <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter your email"
+                placeholder="Enter your driver email"
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -175,56 +150,55 @@ const LoginScreen = ({ navigation }) => {
             {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
 
-          <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+          <View style={styles.helpTextContainer}>
+            <Text style={styles.helpText}>
+              Don't have a driver account? Tap "Sign Up as Driver" below to register.
+            </Text>
+          </View>
 
           <TouchableOpacity 
             style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
-            onPress={handleLogin}
+            onPress={handleDriverLogin}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
+              <Text style={styles.loginButtonText}>Sign In as Driver</Text>
             )}
           </TouchableOpacity>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Google Sign-In Button */}
-          <GoogleSignInButton
-            onPress={initiateGoogleSignIn}
-            loading={googleLoading}
-            disabled={loading || !request}
-          />
-
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.signupLink}>Sign Up</Text>
-            </TouchableOpacity>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Need driver access?</Text>
+            <Text style={styles.footerText}>Contact your store manager</Text>
           </View>
 
           <TouchableOpacity 
-            style={styles.driverLoginButton}
-            onPress={() => navigation.navigate('DriverLogin')}
+            style={styles.signupButton}
+            onPress={() => {
+              try {
+                navigation.navigate('DriverRegister');
+              } catch (error) {
+                console.log('Navigation error (expected if not in AuthStack):', error.message);
+              }
+            }}
           >
-            <Ionicons name="car-outline" size={20} color="#007AFF" />
-            <Text style={styles.driverLoginText}>Driver Login</Text>
+            <Ionicons name="person-add-outline" size={20} color="#007AFF" />
+            <Text style={styles.signupButtonText}>Sign Up as Driver</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.driverSignupButton}
-            onPress={() => navigation.navigate('DriverRegister')}
+            style={styles.backButton}
+            onPress={() => {
+              try {
+                navigation.navigate('Login');
+              } catch (error) {
+                console.log('Navigation error (expected if not in AuthStack):', error.message);
+              }
+            }}
           >
-            <Ionicons name="person-add-outline" size={20} color="#34C759" />
-            <Text style={styles.driverSignupText}>Become a Driver</Text>
+            <Ionicons name="arrow-back-outline" size={20} color="#007AFF" />
+            <Text style={styles.backButtonText}>Back to Customer Login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -239,13 +213,22 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
     marginBottom: 40,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f0f8ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
@@ -259,7 +242,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   form: {
-    width: '100%',
+    flex: 1,
   },
   inputContainer: {
     marginBottom: 20,
@@ -277,17 +260,18 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
     borderRadius: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#f8f9fa',
+    paddingVertical: 12,
+    backgroundColor: '#f9f9f9',
   },
   inputError: {
-    borderColor: '#ff4444',
+    borderColor: '#FF6B6B',
+    backgroundColor: '#fff5f5',
   },
   inputIcon: {
     marginRight: 12,
   },
   input: {
     flex: 1,
-    paddingVertical: 16,
     fontSize: 16,
     color: '#333',
   },
@@ -295,65 +279,47 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   errorText: {
-    color: '#ff4444',
+    color: '#FF6B6B',
     fontSize: 14,
     marginTop: 4,
+    marginLeft: 4,
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
+  helpTextContainer: {
+    marginBottom: 16,
+    paddingHorizontal: 16,
   },
-  forgotPasswordText: {
-    color: '#007AFF',
+  helpText: {
     fontSize: 14,
-    fontWeight: '600',
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   loginButton: {
     backgroundColor: '#007AFF',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   loginButtonDisabled: {
-    opacity: 0.7,
+    backgroundColor: '#ccc',
   },
   loginButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
   },
-  divider: {
-    flexDirection: 'row',
+  footer: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginBottom: 20,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    marginHorizontal: 16,
+  footerText: {
     color: '#666',
     fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 4,
   },
-  signupContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  signupText: {
-    color: '#666',
-    fontSize: 16,
-  },
-  signupLink: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  driverLoginButton: {
+  signupButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -364,29 +330,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#f0f8ff',
   },
-  driverLoginText: {
+  signupButtonText: {
     color: '#007AFF',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
-  driverSignupButton: {
+  backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#34C759',
-    borderRadius: 12,
-    backgroundColor: '#f0fff4',
   },
-  driverSignupText: {
-    color: '#34C759',
+  backButtonText: {
+    color: '#007AFF',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
 });
 
-export default LoginScreen;
+export default DriverLoginScreen;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
@@ -21,13 +21,58 @@ import CategoryProductsScreen from '../screens/CategoryProductsScreen';
 import ProductSearchScreen from '../screens/ProductSearchScreen';
 import DailyDealsScreen from '../screens/DailyDealsScreen';
 import StoreFinderScreen from '../screens/StoreFinderScreen';
+// New driver and chat screens
+import DriverLoginScreen from '../screens/auth/DriverLoginScreen';
+import DriverDashboard from '../screens/DriverDashboard';
+import DriverChat from '../screens/DriverChat';
+import CustomerChat from '../screens/CustomerChat';
+import StockManagementScreen from '../screens/StockManagementScreen';
+import OrderTrackingScreen from '../screens/OrderTrackingScreen';
 import { COLORS } from '../styles/colors';
 
 const Stack = createStackNavigator();
 
-const MainStack = () => {
+const DriverStack = () => {
   return (
     <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: COLORS.primary,
+        },
+        headerTintColor: COLORS.white,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
+      <Stack.Screen 
+        name="DriverDashboard" 
+        component={DriverDashboard}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="DriverChat" 
+        component={DriverChat}
+        options={{
+          headerShown: false,
+        }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+const MainStack = () => {
+  const { user } = useAuth();
+  
+  console.log('MainStack render - user:', user);
+  console.log('MainStack render - userType:', user?.userType);
+  console.log('MainStack render - initialRouteName:', user?.userType === 'driver' ? 'DriverDashboard' : 'Main');
+  
+  return (
+    <Stack.Navigator
+      initialRouteName="Main"
       screenOptions={{
         headerStyle: {
           backgroundColor: COLORS.primary,
@@ -148,12 +193,58 @@ const MainStack = () => {
           headerShown: false,
         }}
       />
+      {/* Driver and Chat Screens */}
+      <Stack.Screen 
+        name="DriverLogin" 
+        component={DriverLoginScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="DriverDashboard" 
+        component={DriverDashboard}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="DriverChat" 
+        component={DriverChat}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="CustomerChat" 
+        component={CustomerChat}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="StockManagement" 
+        component={StockManagementScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="OrderTracking" 
+        component={OrderTrackingScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack.Navigator>
   );
 };
 
 export default function AppNavigator() {
-  const { isAuthenticated, initializing } = useAuth();
+  const { isAuthenticated, initializing, user } = useAuth();
+
+  console.log('AppNavigator render - isAuthenticated:', isAuthenticated, 'initializing:', initializing);
+  console.log('AppNavigator render - userType:', user?.userType);
 
   if (initializing) {
     return (
@@ -163,5 +254,13 @@ export default function AppNavigator() {
     );
   }
 
+  // Simple approach: if authenticated and user is driver, show DriverStack
+  if (isAuthenticated && user?.userType === 'driver') {
+    console.log('Rendering DriverStack for driver');
+    return <DriverStack />;
+  }
+
+  // Otherwise show normal app flow
+  console.log('Rendering:', isAuthenticated ? 'MainStack' : 'AuthStack');
   return isAuthenticated ? <MainStack /> : <AuthStack />;
 }

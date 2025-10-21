@@ -1,11 +1,12 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, orderBy, limit, setDoc } from 'firebase/firestore';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, orderBy, limit, setDoc, onSnapshot } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-const firebaseConfig = {
+// PRODUCTION CONFIG (BOSS'S FIREBASE)
+const productionConfig = {
   apiKey: "AIzaSyDsxqzXw5XEifHbelAYHqdkMUPoZVvg6ro",
   authDomain: "mzansi-react.firebaseapp.com",
   projectId: "mzansi-react",
@@ -14,12 +15,24 @@ const firebaseConfig = {
   appId: "1:239626456292:web:7bdfeebb778f7cededf0f1"
 };
 
+// TEST CONFIG (YOUR FIREBASE) - Your new test project
+const testConfig = {
+  apiKey: "AIzaSyC0BGeREyZQNvLDAT4CW4avAqFSkUK6Pys",
+  authDomain: "project-9944b.firebaseapp.com",
+  projectId: "project-9944b",
+  storageBucket: "project-9944b.firebasestorage.app",
+  messagingSenderId: "23598729763",
+  appId: "1:23598729763:web:0e0ff5f511fe35535d3f96"
+};
+
+// Switch between configs easily
+const firebaseConfig = testConfig; // ✅ Currently using TEST database (project-9944b)
+// const firebaseConfig = productionConfig; // Switch to this for production (mzansi-react)
+
 const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage)
-});
+export const auth = getAuth(app);
 export const storage = getStorage(app);
 
 
@@ -127,9 +140,25 @@ export const firebaseService = {
   orders: {
     create: async (orderData) => {
       try {
+        // Clean the order data to remove any undefined values
+        const cleanedOrderData = JSON.parse(JSON.stringify(orderData, (key, value) => {
+          if (value === undefined) {
+            console.warn(`Removing undefined field: ${key}`);
+            return null;
+          }
+          return value;
+        }));
+
+        // Remove null values
+        const finalOrderData = Object.fromEntries(
+          Object.entries(cleanedOrderData).filter(([_, value]) => value !== null)
+        );
+
+        console.log('Cleaned order data:', finalOrderData);
+
         const ordersRef = collection(db, 'orders');
         const docRef = await addDoc(ordersRef, {
-          ...orderData,
+          ...finalOrderData,
           createdAt: new Date(),
           status: 'pending'
         });
@@ -146,11 +175,17 @@ export const firebaseService = {
         const ordersRef = collection(db, 'orders');
         const q = query(
           ordersRef, 
-          where('userId', '==', userId),
-          orderBy('createdAt', 'desc')
+          where('userId', '==', userId)
         );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort orders by creation date on the client side
+        return orders.sort((a, b) => {
+          const timeA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.orderDate);
+          const timeB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.orderDate);
+          return timeB - timeA; // Most recent first
+        });
       } catch (error) {
         console.error('Error fetching user orders:', error);
         return [];
@@ -326,6 +361,335 @@ export const firebaseService = {
       } catch (error) {
         console.error('Error deleting payment method:', error);
         throw error;
+      }
+    }
+  },
+
+  // CHAT SYSTEM
+  chat: {
+    sendMessage: async (messageData) => {
+      try {
+        const messagesRef = collection(db, 'messages');
+        const docRef = await addDoc(messagesRef, {
+          ...messageData,
+          timestamp: new Date(),
+          createdAt: new Date()
+        });
+        return docRef.id;
+      } catch (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+    },
+
+    getMessages: async (orderId) => {
+      try {
+        const messagesRef = collection(db, 'messages');
+        const q = query(
+          messagesRef,
+          where('orderId', '==', orderId)
+        );
+        const snapshot = await getDocs(q);
+        const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort messages by timestamp on the client side
+        return messages.sort((a, b) => {
+          const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+          const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+          return timeA - timeB;
+        });
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        return [];
+      }
+    },
+
+    listenToMessages: (orderId, callback) => {
+      const messagesRef = collection(db, 'messages');
+      const q = query(
+        messagesRef,
+        where('orderId', '==', orderId)
+      );
+      
+      return onSnapshot(q, (snapshot) => {
+        const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort messages by timestamp on the client side
+        const sortedMessages = messages.sort((a, b) => {
+          const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+          const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+          return timeA - timeB;
+        });
+        
+        callback(sortedMessages);
+      });
+    },
+
+    markAsRead: async (messageId) => {
+      try {
+        const messageRef = doc(db, 'messages', messageId);
+        await updateDoc(messageRef, { isRead: true });
+        return true;
+      } catch (error) {
+        console.error('Error marking message as read:', error);
+        return false;
+      }
+    }
+  },
+
+  // DRIVER SERVICES
+  drivers: {
+    create: async (driverId, driverData) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        await setDoc(driverRef, {
+          ...driverData,
+          userType: 'driver',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error creating driver:', error);
+        return false;
+      }
+    },
+
+    get: async (driverId) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        const snapshot = await getDoc(driverRef);
+        return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+      } catch (error) {
+        console.error('Error fetching driver:', error);
+        return null;
+      }
+    },
+
+    update: async (driverId, driverData) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        await updateDoc(driverRef, {
+          ...driverData,
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating driver:', error);
+        return false;
+      }
+    },
+
+    updateLocation: async (driverId, location) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        await updateDoc(driverRef, {
+          currentLocation: location,
+          lastLocationUpdate: new Date(),
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating driver location:', error);
+        return false;
+      }
+    },
+
+    setAvailability: async (driverId, isAvailable) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        await updateDoc(driverRef, {
+          isAvailable,
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating driver availability:', error);
+        return false;
+      }
+    }
+  },
+
+  // ENHANCED ORDERS SERVICE
+  orders: {
+    create: async (orderData) => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const docRef = await addDoc(ordersRef, {
+          ...orderData,
+          status: 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        return docRef.id;
+      } catch (error) {
+        console.error('Error creating order:', error);
+        // For prototype, return mock order ID
+        return 'order_' + Date.now();
+      }
+    },
+
+    getAll: async () => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const snapshot = await getDocs(ordersRef);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching all orders:', error);
+        return [];
+      }
+    },
+
+    getByUser: async (userId) => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(
+          ordersRef, 
+          where('userId', '==', userId)
+        );
+        const snapshot = await getDocs(q);
+        const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort orders by creation date on the client side
+        return orders.sort((a, b) => {
+          const timeA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.orderDate);
+          const timeB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.orderDate);
+          return timeB - timeA; // Most recent first
+        });
+      } catch (error) {
+        console.error('Error fetching user orders:', error);
+        return [];
+      }
+    },
+
+    getByDriver: async (driverId) => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(
+          ordersRef,
+          where('driverId', '==', driverId),
+          orderBy('createdAt', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching driver orders:', error);
+        return [];
+      }
+    },
+
+    getPending: async () => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(
+          ordersRef,
+          where('status', '==', 'pending'),
+          orderBy('createdAt', 'asc')
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching pending orders:', error);
+        return [];
+      }
+    },
+
+    assignDriver: async (orderId, driverId) => {
+      try {
+        const orderRef = doc(db, 'orders', orderId);
+        await updateDoc(orderRef, {
+          driverId,
+          status: 'assigned',
+          assignedAt: new Date(),
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error assigning driver:', error);
+        return false;
+      }
+    },
+
+    updateStatus: async (orderId, status) => {
+      try {
+        const orderRef = doc(db, 'orders', orderId);
+        const updateData = {
+          status,
+          updatedAt: new Date()
+        };
+
+        // Add specific timestamps based on status
+        switch (status) {
+          case 'accepted':
+            updateData.acceptedAt = new Date();
+            break;
+          case 'in_transit':
+            updateData.startedAt = new Date();
+            break;
+          case 'delivered':
+            updateData.deliveredAt = new Date();
+            break;
+          case 'rejected':
+            updateData.rejectedAt = new Date();
+            break;
+        }
+
+        await updateDoc(orderRef, updateData);
+        return true;
+      } catch (error) {
+        console.error('Error updating order status:', error);
+        return false;
+      }
+    }
+  },
+
+  // STOCK MANAGEMENT
+  stock: {
+    updateProductStock: async (productId, newStock) => {
+      try {
+        const productRef = doc(db, 'products', productId);
+        await updateDoc(productRef, {
+          inStock: newStock > 0,
+          stockQuantity: newStock,
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating product stock:', error);
+        return false;
+      }
+    },
+
+    getLowStockProducts: async (storeId, threshold = 5) => {
+      try {
+        const productsRef = collection(db, 'products');
+        const q = query(
+          productsRef,
+          where('storeId', '==', storeId),
+          where('stockQuantity', '<=', threshold)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching low stock products:', error);
+        return [];
+      }
+    },
+
+    getOutOfStockProducts: async (storeId) => {
+      try {
+        const productsRef = collection(db, 'products');
+        const q = query(
+          productsRef,
+          where('storeId', '==', storeId),
+          where('inStock', '==', false)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching out of stock products:', error);
+        return [];
       }
     }
   }
