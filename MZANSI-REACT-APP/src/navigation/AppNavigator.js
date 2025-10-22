@@ -70,7 +70,6 @@ const MainStack = () => {
   
   console.log('MainStack render - user:', user);
   console.log('MainStack render - userType:', user?.userType);
-  console.log('MainStack render - initialRouteName:', user?.userType === 'driver' ? 'DriverDashboard' : 'Main');
   
   return (
     <Stack.Navigator
@@ -253,8 +252,11 @@ export default function AppNavigator() {
   const { isAuthenticated, initializing, user, isAdmin } = useAuth();
 
   console.log('AppNavigator render - isAuthenticated:', isAuthenticated, 'initializing:', initializing);
+  console.log('AppNavigator render - user:', user);
   console.log('AppNavigator render - userType:', user?.userType);
+  console.log('AppNavigator render - isAdmin:', isAdmin);
 
+  // Show loading screen while initializing
   if (initializing) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
@@ -263,19 +265,23 @@ export default function AppNavigator() {
     );
   }
 
-  // Simple approach: if authenticated and user is driver, show DriverStack
-  if (isAuthenticated && user?.userType === 'driver') {
+  // Check authentication first
+  if (!isAuthenticated) return <AuthStack />;
+
+  // If authenticated, check user type in priority order
+  // Admin takes precedence
+  if (isAdmin) {
+    console.log('Rendering AdminStack for admin');
+    return <AdminStack />;
+  }
+
+  // Then check for driver
+  if (user?.userType === 'driver') {
     console.log('Rendering DriverStack for driver');
     return <DriverStack />;
   }
 
-  // Otherwise show normal app flow
-  console.log('Rendering:', isAuthenticated ? 'MainStack' : 'AuthStack');
-  if (!isAuthenticated) return <AuthStack />;
-
-  // If authenticated and admin -> AdminStack
-  if (isAdmin) return <AdminStack />;
-
-  // Default authenticated user
+  // Default authenticated user (regular user)
+  console.log('Rendering MainStack for regular user');
   return <MainStack />;
 }

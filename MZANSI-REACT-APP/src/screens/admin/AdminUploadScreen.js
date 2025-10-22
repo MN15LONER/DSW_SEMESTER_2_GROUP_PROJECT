@@ -91,7 +91,7 @@ export default function AdminUploadScreen() {
     setUploading(true);
     try {
       const saved = await saveLeaflet({ uri: imageUri, title, notes, docType });
-      Alert.alert('Saved', 'Leaflet saved locally on this device.');
+      Alert.alert('Success', 'Leaflet has been posted successfully!');
       // clear form
       setTitle('');
       setDocType('photo');

@@ -10,7 +10,18 @@ import {
 import { auth, db } from '../services/firebase';
 import { firebaseService } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import AsyncStoragePackage from '@react-native-async-storage/async-storage';
+let AsyncStorage = AsyncStoragePackage;
+
+// For web compatibility
+if (Platform.OS === 'web') {
+  import('@react-native-async-storage/async-storage').then(module => {
+    AsyncStorage = module.default;
+  }).catch(error => {
+    console.error('Error loading AsyncStorage for web:', error);
+  });
+}
 import { signInWithGoogle } from '../services/googleAuth';
 import { sendPasswordReset } from '../services/passwordResetService';
 
@@ -41,16 +52,37 @@ export const AuthProvider = ({ children }) => {
       try {
         console.log('Auth state changed - firebaseUser:', firebaseUser?.uid);
         if (firebaseUser) {
-          // Get additional user data from Firestore
-          const userData = await firebaseService.users.get(firebaseUser.uid);
-          const userProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            ...userData
-          };
-          setUser(userProfile);
-          await AsyncStorage.setItem('user', JSON.stringify(userProfile));
+          // Only fetch user data if we don't already have it (avoid redundant fetches)
+          if (!user || user.uid !== firebaseUser.uid) {
+            console.log('Fetching user data from Firestore for:', firebaseUser.uid);
+            
+            // Get additional user data from Firestore using doc/getDoc
+            const userDocRef = doc(db, 'users', firebaseUser.uid);
+            const snap = await getDoc(userDocRef);
+            const userData = snap && snap.exists() ? snap.data() : null;
+            
+            if (userData) {
+              const combinedProfile = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                ...userData
+              };
+              
+              console.log('Setting user profile:', combinedProfile);
+              
+              // Keep backward-compatible `user` shape (combined fields)
+              setUser(combinedProfile);
+              // Expose Firestore-only profile separately
+              setUserProfile(userData);
+              await AsyncStorage.setItem('user', JSON.stringify(combinedProfile));
+            } else {
+              console.log('No user data found in Firestore');
+              setUser(null);
+              setUserProfile(null);
+              await AsyncStorage.removeItem('user');
+            }
+          }
         } else {
           console.log('No firebase user - setting user to null');
           setUser(null);
@@ -78,7 +110,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     return unsubscribe;
-  }, [initializing]);
+  }, [initializing, user]);
 
   const login = async (email, password) => {
     try {
@@ -303,14 +335,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAdmin = userProfile?.role === 'admin' || user?.role === 'admin';
+  
   useEffect(() => {
-  console.log('AuthContext role check:', {
-    userProfile,
-    user,
-    isAdmin,
-  });
-}, [userProfile, user]);
-
+    console.log('AuthContext role check:', {
+      userProfile,
+      user,
+      isAdmin,
+    });
+  }, [userProfile, user, isAdmin]);
 
   /**
    * Delete User Account

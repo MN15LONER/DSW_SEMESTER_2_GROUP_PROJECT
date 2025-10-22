@@ -317,23 +317,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-<<<<<<< HEAD
-  debugPanel: {
-    marginTop: 20,
-    padding: 12,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 8,
-  },
-  debugTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  debugText: {
-    fontSize: 12,
-    color: '#333',
-    marginBottom: 4,
-=======
   driverLoginButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,7 +350,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
->>>>>>> origin/Tumi-Email-flow-integration
   },
 });
 

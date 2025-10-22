@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, orderBy, limit, setDoc } from 'firebase/firestore';
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // Static import to avoid Metro dynamic import resolution issues
 import { mockStores, getMockStores, getStoreProducts } from '../data/mockData';
 
@@ -228,7 +229,7 @@ export const firebaseService = {
     create: async (userId, userData) => {
       try {
         const userRef = doc(db, 'users', userId);
-        await addDoc(userRef, {
+        await setDoc(userRef, {
           ...userData,
           createdAt: new Date()
         });
@@ -265,6 +266,17 @@ export const firebaseService = {
         return true;
       } catch (error) {
         console.error('Error updating user:', error);
+        return false;
+      }
+    },
+
+    delete: async (userId) => {
+      try {
+        const userRef = doc(db, 'users', userId);
+        await deleteDoc(userRef);
+        return true;
+      } catch (error) {
+        console.error('Error deleting user:', error);
         return false;
       }
     }
