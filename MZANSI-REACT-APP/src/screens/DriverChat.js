@@ -94,10 +94,17 @@ const DriverChat = ({ route, navigation }) => {
             styles.messageTime,
             isDriver ? styles.driverTime : styles.customerTime
           ]}>
-            {new Date(message.timestamp).toLocaleTimeString([], { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
+            {(() => {
+              try {
+                const date = message.timestamp?.toDate ? message.timestamp.toDate() : new Date(message.timestamp);
+                return date.toLocaleTimeString([], { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                });
+              } catch (error) {
+                return 'Just now';
+              }
+            })()}
           </Text>
         </View>
       </View>

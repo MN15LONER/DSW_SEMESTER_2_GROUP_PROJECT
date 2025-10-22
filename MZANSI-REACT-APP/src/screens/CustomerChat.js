@@ -107,10 +107,17 @@ const CustomerChat = ({ route, navigation }) => {
             styles.messageTime,
             isCustomer ? styles.customerTime : styles.driverTime
           ]}>
-            {new Date(message.timestamp).toLocaleTimeString([], { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
+            {(() => {
+              try {
+                const date = message.timestamp?.toDate ? message.timestamp.toDate() : new Date(message.timestamp);
+                return date.toLocaleTimeString([], { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                });
+              } catch (error) {
+                return 'Just now';
+              }
+            })()}
           </Text>
         </View>
       </View>
