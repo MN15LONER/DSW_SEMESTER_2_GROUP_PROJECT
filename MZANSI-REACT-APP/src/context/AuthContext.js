@@ -39,25 +39,20 @@ export const AuthProvider = ({ children }) => {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
+        console.log('Auth state changed - firebaseUser:', firebaseUser?.uid);
         if (firebaseUser) {
-          // Get additional user data from Firestore using doc/getDoc
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const snap = await getDoc(userDocRef);
-          const userData = snap && snap.exists() ? snap.data() : null;
-
-          const combinedProfile = {
+          // Get additional user data from Firestore
+          const userData = await firebaseService.users.get(firebaseUser.uid);
+          const userProfile = {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             displayName: firebaseUser.displayName,
             ...userData
           };
-
-          // Keep backward-compatible `user` shape (combined fields)
-          setUser(combinedProfile);
-          // Expose Firestore-only profile separately
-          setUserProfile(userData);
-          await AsyncStorage.setItem('user', JSON.stringify(combinedProfile));
+          setUser(userProfile);
+          await AsyncStorage.setItem('user', JSON.stringify(userProfile));
         } else {
+          console.log('No firebase user - setting user to null');
           setUser(null);
           setUserProfile(null);
           await AsyncStorage.removeItem('user');
@@ -87,9 +82,35 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('AuthContext login called with:', email);
       setLoading(true);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return { success: true, user: userCredential.user };
+      
+      console.log('Firebase auth successful, fetching user data...');
+      // Get additional user data from Firestore
+      const userData = await firebaseService.users.get(userCredential.user.uid);
+      console.log('User data from Firestore:', userData);
+      
+      if (!userData) {
+        console.error('No user data found in Firestore for:', userCredential.user.uid);
+        return { success: false, error: 'User profile not found. Please contact support.' };
+      }
+      
+      const userProfile = {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        displayName: userCredential.user.displayName,
+        ...userData
+      };
+      
+      console.log('Complete user profile:', userProfile);
+      console.log('User type:', userProfile.userType);
+      
+      // Set user immediately to prevent navigation issues
+      setUser(userProfile);
+      await AsyncStorage.setItem('user', JSON.stringify(userProfile));
+      
+      return { success: true, user: userProfile };
     } catch (error) {
       console.error('Login error:', error);
       let errorMessage = 'Login failed. Please try again.';
@@ -106,6 +127,9 @@ export const AuthProvider = ({ children }) => {
           break;
         case 'auth/too-many-requests':
           errorMessage = 'Too many failed attempts. Please try again later.';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password. Please check your credentials.';
           break;
         default:
           errorMessage = error.message;
@@ -140,6 +164,7 @@ export const AuthProvider = ({ children }) => {
         address: userData.address || '',
         city: userData.city || '',
         postalCode: userData.postalCode || '',
+        userType: userData.userType || 'customer', // Include userType
         createdAt: new Date().toISOString()
       };
 

@@ -13,13 +13,18 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { firebaseService } from '../../services/firebase';
 
-const RegisterScreen = ({ navigation }) => {
+const DriverRegisterScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
+    licenseNumber: '',
+    vehicleType: '',
+    vehicleModel: '',
+    vehicleRegistration: '',
     password: '',
     confirmPassword: '',
     acceptTerms: false
@@ -60,6 +65,22 @@ const RegisterScreen = ({ navigation }) => {
       newErrors.phone = 'Please enter a valid South African phone number';
     }
 
+    if (!formData.licenseNumber.trim()) {
+      newErrors.licenseNumber = 'Driver license number is required';
+    }
+
+    if (!formData.vehicleType.trim()) {
+      newErrors.vehicleType = 'Vehicle type is required';
+    }
+
+    if (!formData.vehicleModel.trim()) {
+      newErrors.vehicleModel = 'Vehicle model is required';
+    }
+
+    if (!formData.vehicleRegistration.trim()) {
+      newErrors.vehicleRegistration = 'Vehicle registration is required';
+    }
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -72,11 +93,15 @@ const RegisterScreen = ({ navigation }) => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
+    if (!formData.acceptTerms) {
+      newErrors.acceptTerms = 'You must accept the terms and conditions';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = async () => {
+  const handleDriverRegister = async () => {
     if (!validateForm()) return;
 
     const userData = {
@@ -84,16 +109,45 @@ const RegisterScreen = ({ navigation }) => {
       lastName: formData.lastName.trim(),
       displayName: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
       phone: formData.phone.trim(),
+      userType: 'driver',
+      licenseNumber: formData.licenseNumber.trim(),
+      vehicleType: formData.vehicleType.trim(),
+      vehicleModel: formData.vehicleModel.trim(),
+      vehicleRegistration: formData.vehicleRegistration.trim(),
+      isActive: false, // Will be activated by admin
+      isAvailable: false
     };
 
-    const result = await register(
-      formData.email.trim().toLowerCase(), 
-      formData.password, 
-      userData
-    );
-    
-    if (!result.success) {
-      Alert.alert('Registration Failed', result.error);
+    try {
+      const result = await register(
+        formData.email.trim().toLowerCase(), 
+        formData.password, 
+        userData
+      );
+      
+      if (result.success) {
+        // Create driver profile in Firebase
+        await firebaseService.drivers.create(result.user.uid, userData);
+        
+        Alert.alert(
+          'Registration Successful', 
+          'Your driver account has been created and is pending approval. You will receive an email once your account is activated.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Don't navigate manually - let the auth state change handle navigation
+                console.log('Driver registration completed - auth state will handle navigation');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Registration Failed', result.error);
+      }
+    } catch (error) {
+      console.error('Driver registration error:', error);
+      Alert.alert('Error', 'Failed to create driver account. Please try again.');
     }
   };
 
@@ -113,6 +167,8 @@ const RegisterScreen = ({ navigation }) => {
     }
   };
 
+  const vehicleTypes = ['Car', 'Motorcycle', 'Van', 'Truck', 'Bicycle'];
+
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
@@ -120,8 +176,11 @@ const RegisterScreen = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join Mzansi and start shopping</Text>
+          <View style={styles.iconContainer}>
+            <Ionicons name="car-outline" size={40} color="#007AFF" />
+          </View>
+          <Text style={styles.title}>Become a Driver</Text>
+          <Text style={styles.subtitle}>Join our delivery team and start earning</Text>
         </View>
 
         <View style={styles.form}>
@@ -191,6 +250,66 @@ const RegisterScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.inputContainer}>
+            <Text style={styles.label}>Driver License Number</Text>
+            <View style={[styles.inputWrapper, errors.licenseNumber && styles.inputError]}>
+              <Ionicons name="card-outline" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="License number"
+                value={formData.licenseNumber}
+                onChangeText={(text) => updateFormData('licenseNumber', text.toUpperCase())}
+                autoCapitalize="characters"
+              />
+            </View>
+            {errors.licenseNumber && <Text style={styles.errorText}>{errors.licenseNumber}</Text>}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Vehicle Type</Text>
+            <View style={[styles.inputWrapper, errors.vehicleType && styles.inputError]}>
+              <Ionicons name="car-outline" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Car, Motorcycle, Van"
+                value={formData.vehicleType}
+                onChangeText={(text) => updateFormData('vehicleType', text)}
+                autoCapitalize="words"
+              />
+            </View>
+            {errors.vehicleType && <Text style={styles.errorText}>{errors.vehicleType}</Text>}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Vehicle Model</Text>
+            <View style={[styles.inputWrapper, errors.vehicleModel && styles.inputError]}>
+              <Ionicons name="car-sport-outline" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Toyota Corolla, Honda Civic"
+                value={formData.vehicleModel}
+                onChangeText={(text) => updateFormData('vehicleModel', text)}
+                autoCapitalize="words"
+              />
+            </View>
+            {errors.vehicleModel && <Text style={styles.errorText}>{errors.vehicleModel}</Text>}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Vehicle Registration</Text>
+            <View style={[styles.inputWrapper, errors.vehicleRegistration && styles.inputError]}>
+              <Ionicons name="document-outline" size={20} color="#666" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., CA 123-456"
+                value={formData.vehicleRegistration}
+                onChangeText={(text) => updateFormData('vehicleRegistration', text.toUpperCase())}
+                autoCapitalize="characters"
+              />
+            </View>
+            {errors.vehicleRegistration && <Text style={styles.errorText}>{errors.vehicleRegistration}</Text>}
+          </View>
+
+          <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
             <View style={[styles.inputWrapper, errors.password && styles.inputError]}>
               <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
@@ -242,24 +361,52 @@ const RegisterScreen = ({ navigation }) => {
             {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
           </View>
 
+          <View style={styles.termsContainer}>
+            <TouchableOpacity
+              style={styles.checkboxContainer}
+              onPress={() => updateFormData('acceptTerms', !formData.acceptTerms)}
+            >
+              <View style={[styles.checkbox, formData.acceptTerms && styles.checkboxChecked]}>
+                {formData.acceptTerms && (
+                  <Ionicons name="checkmark" size={16} color="#fff" />
+                )}
+              </View>
+              <Text style={styles.termsText}>
+                I agree to the{' '}
+                <Text style={styles.termsLink}>Terms and Conditions</Text>
+                {' '}and{' '}
+                <Text style={styles.termsLink}>Privacy Policy</Text>
+              </Text>
+            </TouchableOpacity>
+            {errors.acceptTerms && <Text style={styles.errorText}>{errors.acceptTerms}</Text>}
+          </View>
+
           <TouchableOpacity 
             style={[styles.registerButton, loading && styles.registerButtonDisabled]} 
-            onPress={handleRegister}
+            onPress={handleDriverRegister}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.registerButtonText}>Create Account</Text>
+              <Text style={styles.registerButtonText}>Apply as Driver</Text>
             )}
           </TouchableOpacity>
 
           <View style={styles.loginContainer}>
-            <Text style={styles.loginText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginText}>Already have a driver account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('DriverLogin')}>
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={20} color="#007AFF" />
+            <Text style={styles.backButtonText}>Back to Customer Sign Up</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -279,6 +426,15 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 32,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f0f8ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
@@ -339,6 +495,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 4,
   },
+  termsContainer: {
+    marginVertical: 16,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    borderRadius: 4,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  checkboxChecked: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  termsLink: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
   registerButton: {
     backgroundColor: '#007AFF',
     paddingVertical: 16,
@@ -359,6 +547,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 16,
   },
   loginText: {
     color: '#666',
@@ -369,6 +558,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  backButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
 });
 
-export default RegisterScreen;
+export default DriverRegisterScreen;

@@ -170,9 +170,21 @@ export default function OrderHistoryScreen({ navigation }) {
                   <Text style={styles.totalAmount}>
                     Total: R{order.total.toFixed(2)}
                   </Text>
-                  <View style={styles.viewMore}>
-                    <Text style={styles.viewMoreText}>View Details</Text>
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+                  <View style={styles.orderActions}>
+                    <TouchableOpacity
+                      style={styles.chatButton}
+                      onPress={() => navigation.navigate('CustomerChat', { 
+                        orderId: order.id, 
+                        driverId: order.driverId || 'placeholder' 
+                      })}
+                    >
+                      <Ionicons name="chatbubble-outline" size={16} color={COLORS.primary} />
+                      <Text style={styles.chatButtonText}>Chat</Text>
+                    </TouchableOpacity>
+                    <View style={styles.viewMore}>
+                      <Text style={styles.viewMoreText}>View Details</Text>
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+                    </View>
                   </View>
                 </View>
               </Card.Content>
@@ -335,6 +347,25 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
     paddingTop: 12,
+  },
+  orderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 12,
+    borderRadius: 16,
+    backgroundColor: COLORS.lightBlue,
+  },
+  chatButtonText: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
   totalAmount: {
     fontSize: 16,

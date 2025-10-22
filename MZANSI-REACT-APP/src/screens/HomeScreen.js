@@ -138,6 +138,25 @@ export default function HomeScreen({ navigation }) {
           </Button>
         </View>
 
+        {/* Quick Actions */}
+        <View style={styles.quickActionsContainer}>
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            onPress={() => navigation.navigate('OrderTracking')}
+          >
+            <Ionicons name="receipt-outline" size={24} color="#007AFF" />
+            <Text style={styles.quickActionText}>Track Orders</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            onPress={() => navigation.navigate('OrderHistory')}
+          >
+            <Ionicons name="time-outline" size={24} color="#007AFF" />
+            <Text style={styles.quickActionText}>Order History</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchRow}>
@@ -273,6 +292,30 @@ const styles = StyleSheet.create({
   welcomeContainer: {
     padding: 20,
     alignItems: 'center',
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  quickActionButton: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    marginHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  quickActionText: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
+    textAlign: 'center',
   },
   welcomeText: {
     fontSize: 20,
