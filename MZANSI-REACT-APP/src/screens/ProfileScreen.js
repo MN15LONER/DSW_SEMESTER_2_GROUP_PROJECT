@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS } from '../styles/colors';
 import { useAuth } from '../context/AuthContext';
+import { firebaseService, auth } from '../services/firebase';
+import { updateProfile } from 'firebase/auth';
 
 export default function ProfileScreen({ navigation }) {
   const { user, logout, updateUserProfile, deleteAccount } = useAuth();
@@ -20,49 +22,102 @@ export default function ProfileScreen({ navigation }) {
 
   // Handle profile picture selection
   const pickImage = async () => {
-    try {
-      // Request permission
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (permissionResult.granted === false) {
-        Alert.alert('Permission Required', 'Permission to access camera roll is required!');
-        return;
-      }
+    // Let the user choose between camera and library
+    Alert.alert(
+      'Profile Picture',
+      'Choose an option',
+      [
+        {
+          text: 'Take Photo',
+          onPress: async () => {
+            try {
+              const camPerm = await ImagePicker.requestCameraPermissionsAsync();
+              if (camPerm.granted === false) {
+                Alert.alert('Permission Required', 'Permission to access the camera is required!');
+                return;
+              }
 
-      // Launch image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
+              const cameraResult = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+              });
 
-      if (!result.canceled && result.assets[0]) {
-        await uploadProfilePicture(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
+              if (!cameraResult.canceled && cameraResult.assets[0]) {
+                await uploadProfilePicture(cameraResult.assets[0].uri);
+              }
+            } catch (error) {
+              console.error('Error taking photo:', error);
+              Alert.alert('Error', 'Failed to take photo. Please try again.');
+            }
+          }
+        },
+        {
+          text: 'Choose from Library',
+          onPress: async () => {
+            try {
+              const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (permissionResult.granted === false) {
+                Alert.alert('Permission Required', 'Permission to access camera roll is required!');
+                return;
+              }
+
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+              });
+
+              if (!result.canceled && result.assets[0]) {
+                await uploadProfilePicture(result.assets[0].uri);
+              }
+            } catch (error) {
+              console.error('Error picking image:', error);
+              Alert.alert('Error', 'Failed to pick image. Please try again.');
+            }
+          }
+        },
+        { text: 'Cancel', style: 'cancel' }
+      ],
+      { cancelable: true }
+    );
   };
 
   // Upload profile picture
   const uploadProfilePicture = async (imageUri) => {
     try {
       setIsUploading(true);
-      
-      // For now, we'll store the image URI directly
-      // In a production app, you'd upload to a cloud storage service like Firebase Storage
-      const result = await updateUserProfile({ photoURL: imageUri });
-      
-      if (result.success) {
+
+      if (!user?.uid) {
+        throw new Error('No logged-in user');
+      }
+
+      // Upload to Firebase Storage and get a public download URL
+      const downloadUrl = await firebaseService.users.uploadProfilePicture(user.uid, imageUri);
+      if (!downloadUrl) {
+        throw new Error('Failed to upload image to storage');
+      }
+
+      // Update Firestore user profile and local context
+      const updateResult = await updateUserProfile({ photoURL: downloadUrl });
+
+      // Also update Firebase Auth user profile photoURL for Auth display
+      try {
+        await updateProfile(auth.currentUser, { photoURL: downloadUrl });
+      } catch (err) {
+        console.warn('Could not update Firebase Auth profile photoURL:', err);
+      }
+
+      if (updateResult.success) {
         Alert.alert('Success', 'Profile picture updated successfully!');
       } else {
-        Alert.alert('Error', result.error || 'Failed to update profile picture.');
+        Alert.alert('Error', updateResult.error || 'Failed to update profile picture in profile.');
       }
     } catch (error) {
       console.error('Error uploading profile picture:', error);
-      Alert.alert('Error', 'Failed to upload profile picture. Please try again.');
+      Alert.alert('Error', error.message || 'Failed to upload profile picture. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -238,6 +293,13 @@ Thank you for your help!`;
           left={(props) => <List.Icon {...props} icon="history" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => navigation.navigate('OrderHistory')}
+        />
+        <List.Item
+          title="Edit Profile"
+          description="Change your name, email, password, and phone"
+          left={(props) => <List.Icon {...props} icon="account-edit" />}
+          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          onPress={() => navigation.navigate('EditProfile')}
         />
         <List.Item
           title="Favorites"
