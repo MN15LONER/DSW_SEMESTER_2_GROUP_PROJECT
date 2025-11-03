@@ -26,7 +26,7 @@ export default function CartScreen({ navigation }) {
         </Text>
         <Button
           mode="contained"
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => navigation.navigate('Main', { screen: 'Home' })}
           style={styles.shopButton}
         >
           Start Shopping
