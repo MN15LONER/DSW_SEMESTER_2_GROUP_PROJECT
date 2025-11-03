@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, orderBy, limit, setDoc, onSnapshot } from 'firebase/firestore';
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import { getStorage } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // Static import to avoid Metro dynamic import resolution issues
 import { mockStores, getMockStores, getStoreProducts } from '../data/mockData';
@@ -226,6 +226,24 @@ export const firebaseService = {
 
   // USERS
   users: {
+    uploadProfilePicture: async (userId, uri) => {
+      try {
+        if (!uri) return null;
+        // Fetch local file and convert to blob
+        const response = await fetch(uri);
+        const blob = await response.blob();
+
+        const fileName = `profile_pictures/${userId}_${Date.now()}.jpg`;
+        const sRef = storageRef(storage, fileName);
+
+        const snapshot = await uploadBytes(sRef, blob);
+        const url = await getDownloadURL(snapshot.ref);
+        return url;
+      } catch (error) {
+        console.error('Error uploading profile picture to storage:', error);
+        return null;
+      }
+    },
     create: async (userId, userData) => {
       try {
         const userRef = doc(db, 'users', userId);

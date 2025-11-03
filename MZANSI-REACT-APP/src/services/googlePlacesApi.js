@@ -1,7 +1,9 @@
 // Google Places API service for enhanced location search and store discovery
 // You'll need to get an API key from https://console.cloud.google.com/
 
-const GOOGLE_PLACES_API_KEY = 'AIzaSyCBhYA1g0dEdw6VfjsVKsDUbrhop84MpfY';
+import Constants from 'expo-constants';
+
+const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey || 'AIzaSyCBhYA1g0dEdw6VfjsVKsDUbrhop84MpfY';
 const GOOGLE_PLACES_BASE_URL = 'https://maps.googleapis.com/maps/api/place';
 
 class GooglePlacesService {
@@ -94,7 +96,8 @@ class GooglePlacesService {
   // Get place details by place ID
   async getPlaceDetails(placeId) {
     try {
-      const fields = 'place_id,name,formatted_address,geometry,rating,formatted_phone_number,opening_hours,website,photos,price_level,types';
+      // Request address components as well so clients can extract street/city/province/postal code
+      const fields = 'place_id,name,formatted_address,geometry,address_components,rating,formatted_phone_number,opening_hours,website,photos,price_level,types';
       const url = `${GOOGLE_PLACES_BASE_URL}/details/json?place_id=${placeId}&fields=${fields}&key=${this.apiKey}`;
       
       const response = await fetch(url);
@@ -114,6 +117,7 @@ class GooglePlacesService {
         id: place.place_id,
         name: place.name,
         address: place.formatted_address,
+        addressComponents: place.address_components || null,
         latitude: place.geometry.location.lat,
         longitude: place.geometry.location.lng,
         rating: place.rating || 0,
@@ -145,36 +149,67 @@ class GooglePlacesService {
   }
 
   // Autocomplete for location search
-  async autocomplete(input, location = null, radius = 50000) {
+  async autocomplete(input, location = null, radius = 50000, preferredTypes = ['address', 'geocode', 'establishment']) {
     try {
-      let url = `${GOOGLE_PLACES_BASE_URL}/autocomplete/json?input=${encodeURIComponent(input)}&key=${this.apiKey}`;
-      
-      if (location) {
-        url += `&location=${location.latitude},${location.longitude}&radius=${radius}`;
+      console.log('Autocomplete called with input:', input);
+
+      // Try preferred types in order (address -> geocode -> establishment). If none return results,
+      // fall back to a text search which can provide broader matches.
+      for (const type of preferredTypes) {
+        let url = `${GOOGLE_PLACES_BASE_URL}/autocomplete/json?input=${encodeURIComponent(input)}&key=${this.apiKey}`;
+
+        if (location) {
+          url += `&location=${location.latitude},${location.longitude}&radius=${radius}`;
+        }
+
+        // Limit to South Africa
+        url += '&components=country:za';
+
+        // Request a type filter to prefer street/locality results when possible
+        if (type) {
+          url += `&types=${encodeURIComponent(type)}`;
+        }
+
+        console.debug('Autocomplete URL (type=', type, '):', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          console.warn(`Autocomplete HTTP status ${response.status} for type ${type}`);
+          continue; // try next type
+        }
+
+        const data = await response.json();
+        console.debug('Autocomplete data (type=', type, '):', data);
+
+        if (data.status === 'OK' && Array.isArray(data.predictions) && data.predictions.length > 0) {
+          return data.predictions.map(prediction => ({
+            id: prediction.place_id,
+            description: prediction.description,
+            mainText: prediction.structured_formatting?.main_text || prediction.description,
+            secondaryText: prediction.structured_formatting?.secondary_text || '',
+            types: prediction.types || []
+          }));
+        }
+
+        // continue to next preferred type if ZERO_RESULTS or other non-OK
+        if (data.status && data.status !== 'ZERO_RESULTS' && data.status !== 'OK') {
+          console.warn(`Places API returned status ${data.status} for autocomplete (type=${type})`);
+        }
       }
 
-      // Focus on South African locations
-      url += '&components=country:za';
-
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        throw new Error(`Places API error: ${data.status}`);
+      // Fallback: use text search which often returns formatted addresses
+      const textResults = await this.searchPlaces(input, location, radius);
+      if (textResults && textResults.length > 0) {
+        return textResults.slice(0, 10).map(place => ({
+          id: place.id,
+          description: place.address || place.name,
+          mainText: place.name || place.address,
+          secondaryText: place.address || '',
+          types: place.types || []
+        }));
       }
 
-      return data.predictions.map(prediction => ({
-        id: prediction.place_id,
-        description: prediction.description,
-        mainText: prediction.structured_formatting.main_text,
-        secondaryText: prediction.structured_formatting.secondary_text,
-        types: prediction.types
-      }));
+      return [];
     } catch (error) {
       console.error('Error in autocomplete:', error);
       return [];
