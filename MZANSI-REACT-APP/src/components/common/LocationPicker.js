@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, FlatList, TextInput, Alert } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocation } from '../../context/LocationContext';
 import { mockLocations } from '../../data/mockData';
@@ -12,6 +12,8 @@ const LocationPicker = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+  const debounceTimer = useRef(null);
 
   const filteredLocations = mockLocations.filter(location =>
     location.toLowerCase().includes(searchQuery.toLowerCase())
@@ -25,8 +27,10 @@ const LocationPicker = () => {
 
     setIsSearching(true);
     try {
-      const results = await googlePlacesService.searchPlaces(query);
-      setSearchResults(results.slice(0, 10)); // Limit to 10 results
+      // Use autocomplete for live Google-style suggestions
+      const predictions = await googlePlacesService.autocomplete(query);
+      // Map predictions to a uniform shape (id, mainText, secondaryText, description)
+      setSearchResults(predictions.slice(0, 10)); // Limit to 10
     } catch (error) {
       console.error('Location search error:', error);
       setSearchResults([]);
@@ -37,12 +41,10 @@ const LocationPicker = () => {
 
   const handleSearchChange = (text) => {
     setSearchQuery(text);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
     if (text.length >= 3) {
-      // Debounce search
-      setTimeout(() => {
-        if (text === searchQuery) {
-          searchLocations(text);
-        }
+      debounceTimer.current = setTimeout(() => {
+        searchLocations(text);
       }, 500);
     } else {
       setSearchResults([]);
@@ -87,18 +89,47 @@ const LocationPicker = () => {
     }
   };
 
-  const handleLocationSelect = (item) => {
-    if (typeof item === 'string') {
-      updateLocation(item);
-      // Clear coordinates when a generic string location is chosen
-      updateUserLocation(null);
-    } else if (item && item.latitude && item.longitude) {
-      // Item from Places search
-      updateLocation(item.address || item.name);
-      updateUserLocation({ latitude: item.latitude, longitude: item.longitude });
+  const handleLocationSelect = async (item) => {
+    try {
+      if (typeof item === 'string') {
+        updateLocation(item);
+        updateUserLocation(null);
+        setModalVisible(false);
+        setSearchQuery('');
+        return;
+      }
+
+      // If item looks like a place prediction (has id), fetch full details
+      if (item && item.id) {
+        setIsFetchingDetails(true);
+        const placeDetails = await googlePlacesService.getPlaceDetails(item.id);
+        if (placeDetails) {
+          updateLocation(placeDetails.address || placeDetails.name);
+          updateUserLocation({ latitude: placeDetails.latitude, longitude: placeDetails.longitude });
+        } else {
+          // Fallback to description
+          updateLocation(item.description || item.mainText || item.name);
+          updateUserLocation(null);
+        }
+        setModalVisible(false);
+        setSearchQuery('');
+        return;
+      }
+
+      // Fallback for other shapes
+      if (item && item.latitude && item.longitude) {
+        updateLocation(item.address || item.name);
+        updateUserLocation({ latitude: item.latitude, longitude: item.longitude });
+        setModalVisible(false);
+        setSearchQuery('');
+        return;
+      }
+    } catch (error) {
+      console.error('Error selecting location:', error);
+      Alert.alert('Error', 'Unable to select location. Please try again.');
+    } finally {
+      setIsFetchingDetails(false);
     }
-    setModalVisible(false);
-    setSearchQuery('');
   };
 
   const handleLocationPress = () => {
@@ -119,12 +150,17 @@ const LocationPicker = () => {
           size={20} 
           color={(selectedLocation === (typeof item === 'string' ? item : (item.address || item.name))) ? '#007AFF' : '#666'} 
         />
-        <Text style={[
-          styles.locationItemText,
-          (selectedLocation === (typeof item === 'string' ? item : (item.address || item.name))) && styles.selectedLocationText
-        ]}>
-          {typeof item === 'string' ? item : (item.address || item.name)}
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[
+            styles.locationItemText,
+            (selectedLocation === (typeof item === 'string' ? item : (item.address || item.name))) && styles.selectedLocationText
+          ]}>
+            {typeof item === 'string' ? item : (item.mainText || item.address || item.name || item.description)}
+          </Text>
+          {typeof item !== 'string' && (item.secondaryText || item.description) ? (
+            <Text style={styles.secondaryText}>{item.secondaryText || item.description}</Text>
+          ) : null}
+        </View>
       </View>
       {(selectedLocation === (typeof item === 'string' ? item : (item.address || item.name))) && (
         <Ionicons name="checkmark" size={20} color="#007AFF" />
@@ -174,8 +210,8 @@ const LocationPicker = () => {
                 returnKeyType="search"
                 onSubmitEditing={handleSearchSubmit}
               />
-              {isSearching && (
-                <Ionicons name="refresh" size={16} color="#666" style={styles.loadingIcon} />
+              {(isSearching || isFetchingDetails) && (
+                <ActivityIndicator size="small" color="#666" style={styles.loadingIcon} />
               )}
             </View>
 
@@ -308,6 +344,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     marginLeft: 12,
+  },
+  secondaryText: {
+    fontSize: 13,
+    color: '#666',
+    marginLeft: 12,
+    marginTop: 4,
   },
   selectedLocationText: {
     color: '#007AFF',

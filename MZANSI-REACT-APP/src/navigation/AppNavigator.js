@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { logInfo } from '../utils/errorLogger';
 import { View, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
@@ -22,6 +23,8 @@ import CategoryProductsScreen from '../screens/CategoryProductsScreen';
 import ProductSearchScreen from '../screens/ProductSearchScreen';
 import DailyDealsScreen from '../screens/DailyDealsScreen';
 import StoreFinderScreen from '../screens/StoreFinderScreen';
+import HomeScreen from '../screens/HomeScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 // New driver and chat screens
 import DriverLoginScreen from '../screens/auth/DriverLoginScreen';
 import DriverDashboard from '../screens/DriverDashboard';
@@ -65,11 +68,10 @@ const DriverStack = () => {
   );
 };
 
-const MainStack = () => {
+const MainStack = React.memo(() => {
   const { user } = useAuth();
   
-  console.log('MainStack render - user:', user);
-  console.log('MainStack render - userType:', user?.userType);
+  logInfo('MainStack', `render - userType: ${user?.userType}`);
   
   return (
     <Stack.Navigator
@@ -87,6 +89,12 @@ const MainStack = () => {
       <Stack.Screen 
         name="Main" 
         component={TabNavigator} 
+        options={{ headerShown: false }}
+      />
+      {/* Compatibility route: allow actions that directly target 'Home' to be handled */}
+      <Stack.Screen
+        name="Home"
+        component={HomeScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen 
@@ -194,6 +202,11 @@ const MainStack = () => {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{ title: 'Edit Profile' }}
+      />
       {/* Driver and Chat Screens */}
       <Stack.Screen 
         name="DriverLogin" 
@@ -246,15 +259,12 @@ const MainStack = () => {
       />
     </Stack.Navigator>
   );
-};
+});
 
 export default function AppNavigator() {
   const { isAuthenticated, initializing, user, isAdmin } = useAuth();
 
-  console.log('AppNavigator render - isAuthenticated:', isAuthenticated, 'initializing:', initializing);
-  console.log('AppNavigator render - user:', user);
-  console.log('AppNavigator render - userType:', user?.userType);
-  console.log('AppNavigator render - isAdmin:', isAdmin);
+  logInfo('AppNavigator', `render - isAuthenticated:${isAuthenticated} initializing:${initializing} userType:${user?.userType} isAdmin:${isAdmin}`);
 
   // Show loading screen while initializing
   if (initializing) {
@@ -271,17 +281,17 @@ export default function AppNavigator() {
   // If authenticated, check user type in priority order
   // Admin takes precedence
   if (isAdmin) {
-    console.log('Rendering AdminStack for admin');
+    logInfo('AppNavigator', 'Rendering AdminStack for admin');
     return <AdminStack />;
   }
 
   // Then check for driver
   if (user?.userType === 'driver') {
-    console.log('Rendering DriverStack for driver');
+    logInfo('AppNavigator', 'Rendering DriverStack for driver');
     return <DriverStack />;
   }
 
   // Default authenticated user (regular user)
-  console.log('Rendering MainStack for regular user');
+  logInfo('AppNavigator', 'Rendering MainStack for regular user');
   return <MainStack />;
 }

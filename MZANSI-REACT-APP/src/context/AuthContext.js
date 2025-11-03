@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -33,13 +33,23 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true);
 
+  // Track latest user in a ref so the auth listener can consult it without creating
+  // a dependency cycle that re-subscribes on every user change.
+  const currentUserRef = useRef(null);
+
   useEffect(() => {
-    // Load user from AsyncStorage first for faster startup
+    currentUserRef.current = user;
+  }, [user]);
+
+  // Load stored user only once on mount (avoids resetting `user` repeatedly)
+  useEffect(() => {
     const loadStoredUser = async () => {
       try {
         const storedUser = await AsyncStorage.getItem('user');
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          const parsed = JSON.parse(storedUser);
+          // Only set if different uid to avoid unnecessary state churn
+          setUser(prev => (prev && prev.uid === parsed.uid ? prev : parsed));
         }
       } catch (error) {
         console.error('Error loading stored user:', error);
@@ -47,20 +57,22 @@ export const AuthProvider = ({ children }) => {
     };
 
     loadStoredUser();
+  }, []);
 
+  // Subscribe to Firebase auth changes once (on mount)
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         console.log('Auth state changed - firebaseUser:', firebaseUser?.uid);
         if (firebaseUser) {
-          // Only fetch user data if we don't already have it (avoid redundant fetches)
-          if (!user || user.uid !== firebaseUser.uid) {
+          // Only fetch user data if we don't already have the same user
+          if (!currentUserRef.current || currentUserRef.current.uid !== firebaseUser.uid) {
             console.log('Fetching user data from Firestore for:', firebaseUser.uid);
-            
-            // Get additional user data from Firestore using doc/getDoc
+
             const userDocRef = doc(db, 'users', firebaseUser.uid);
             const snap = await getDoc(userDocRef);
             const userData = snap && snap.exists() ? snap.data() : null;
-            
+
             if (userData) {
               const combinedProfile = {
                 uid: firebaseUser.uid,
@@ -68,12 +80,10 @@ export const AuthProvider = ({ children }) => {
                 displayName: firebaseUser.displayName,
                 ...userData
               };
-              
+
               console.log('Setting user profile:', combinedProfile);
-              
-              // Keep backward-compatible `user` shape (combined fields)
+
               setUser(combinedProfile);
-              // Expose Firestore-only profile separately
               setUserProfile(userData);
               await AsyncStorage.setItem('user', JSON.stringify(combinedProfile));
             } else {
@@ -95,22 +105,20 @@ export const AuthProvider = ({ children }) => {
         try {
           const storedUser = await AsyncStorage.getItem('user');
           if (storedUser && !firebaseUser) {
-            // Keep stored user if Firebase is offline but we had a user
             setUser(JSON.parse(storedUser));
           }
         } catch (storageError) {
           console.error('Error accessing stored user:', storageError);
         }
       } finally {
-        if (initializing) {
-          setInitializing(false);
-        }
+        // Initialization complete on first event
+        setInitializing(false);
         setLoading(false);
       }
     });
 
     return unsubscribe;
-  }, [initializing, user]);
+  }, []);
 
   const login = async (email, password) => {
     try {
@@ -337,11 +345,11 @@ export const AuthProvider = ({ children }) => {
   const isAdmin = userProfile?.role === 'admin' || user?.role === 'admin';
   
   useEffect(() => {
-    console.log('AuthContext role check:', {
-      userProfile,
-      user,
-      isAdmin,
-    });
+    try {
+      // Use lightweight logging to avoid console spam during renders
+      // eslint-disable-next-line no-console
+      console.log('AuthContext role check:', { userProfile, user, isAdmin });
+    } catch (e) {}
   }, [userProfile, user, isAdmin]);
 
   /**
