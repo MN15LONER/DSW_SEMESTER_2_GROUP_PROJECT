@@ -14,9 +14,11 @@ import LocationPicker from '../components/common/LocationPicker';
 import SearchFilter from '../components/common/SearchFilter';
 import { useLocation } from '../context/LocationContext';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { mockStores, getMockStores } from '../data/mockData';
 import { firebaseService } from '../services/firebase';
 import { COLORS } from '../styles/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,11 +28,13 @@ export default function HomeScreen({ navigation }) {
   const [filters, setFilters] = useState({});
   const { selectedLocation } = useLocation();
   const { cartItems } = useCart();
+  const { user } = useAuth();
+  const [defaultAddress, setDefaultAddress] = useState(null);
 
   const loadStores = useCallback(async () => {
     // ONLY use mock data - show ALL stores (no location filtering)
     const storeData = mockStores;
-    
+
     console.log('✅ Loaded ALL mock stores:', storeData.length);
     console.log('Sample stores:', storeData.slice(0, 5).map(s => `${s.name} (${s.category})`));
     console.log('📊 Category breakdown:', {
@@ -38,13 +42,30 @@ export default function HomeScreen({ navigation }) {
       Clothing: storeData.filter(s => s.category === 'Clothing').length,
       Electronics: storeData.filter(s => s.category === 'Electronics').length
     });
-    
+
     setStores(storeData);
   }, []);
 
   useEffect(() => {
     loadStores();
   }, [loadStores]);
+
+  // Load default address on mount
+  useEffect(() => {
+    const loadDefaultAddress = async () => {
+      if (user?.uid) {
+        try {
+          const cachedAddress = await AsyncStorage.getItem(`default_address_${user.uid}`);
+          if (cachedAddress) {
+            setDefaultAddress(JSON.parse(cachedAddress));
+          }
+        } catch (error) {
+          console.error('Error loading default address:', error);
+        }
+      }
+    };
+    loadDefaultAddress();
+  }, [user]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -124,14 +145,14 @@ export default function HomeScreen({ navigation }) {
         {/* Welcome Section */}
         <View style={styles.welcomeContainer}>
           <Text style={styles.welcomeText}>
-            Discover the best deals in {selectedLocation || 'your area'}
+            Discover the best deals in {defaultAddress?.city || 'your area'}
           </Text>
           <Text style={styles.subText}>
             Browse flyers and shop from local retailers
           </Text>
-          <Button 
-            mode="contained" 
-            style={styles.leafletsBtn} 
+          <Button
+            mode="contained"
+            style={styles.leafletsBtn}
             onPress={() => navigation.navigate('Leaflets')}
           >
             Browse Leaflets

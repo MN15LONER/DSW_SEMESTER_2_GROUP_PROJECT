@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import * as Location from 'expo-location';
 
 const LocationContext = createContext();
 
@@ -7,6 +8,42 @@ export { LocationContext };
 export const LocationProvider = ({ children }) => {
   const [selectedLocation, setSelectedLocation] = useState('Johannesburg, Gauteng');
   const [userLocation, setUserLocation] = useState(null);
+  const mountedRef = useRef(true);
+
+  // Populate userLocation on mount to provide a bias for place search components.
+  useEffect(() => {
+    mountedRef.current = true;
+
+    const initLocation = async () => {
+      try {
+        // Try last known position first (no permission prompt)
+        const last = await Location.getLastKnownPositionAsync();
+        if (last?.coords) {
+          if (mountedRef.current) {
+            setUserLocation({ latitude: last.coords.latitude, longitude: last.coords.longitude });
+          }
+          return;
+        }
+
+        // If no last-known position, request foreground permission and get current position
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
+          if (pos?.coords && mountedRef.current) {
+            setUserLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+          }
+        }
+      } catch (err) {
+        console.warn('LocationProvider init error:', err);
+      }
+    };
+
+    initLocation();
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const updateLocation = (location) => {
     setSelectedLocation(location);

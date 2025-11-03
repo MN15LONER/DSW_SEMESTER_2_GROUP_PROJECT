@@ -135,9 +135,9 @@ export default function OrderHistoryScreen({ navigation }) {
         <Text style={styles.emptySubtitle}>
           Your order history will appear here once you place your first order
         </Text>
-        <TouchableOpacity 
-          style={styles.shopNowButton} 
-          onPress={() => navigation.navigate('Main')}
+        <TouchableOpacity
+          style={styles.shopNowButton}
+          onPress={() => navigation.navigate('Main', { screen: 'Home' })}
         >
           <Text style={styles.shopNowButtonText}>Start Shopping</Text>
         </TouchableOpacity>

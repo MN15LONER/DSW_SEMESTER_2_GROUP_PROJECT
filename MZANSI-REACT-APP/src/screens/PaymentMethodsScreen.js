@@ -24,6 +24,14 @@ export default function PaymentMethodsScreen({ navigation }) {
     loadPaymentMethods();
   }, []);
 
+  // Reload on focus (after returning from add/edit screens)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadPaymentMethods();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const loadPaymentMethods = async () => {
     try {
       setLoading(true);
@@ -73,49 +81,11 @@ export default function PaymentMethodsScreen({ navigation }) {
   };
 
   const handleAddPaymentMethod = () => {
-    navigation.navigate('AddEditPaymentMethod', { 
-      mode: 'add',
-      onSave: async (newMethod) => {
-        try {
-          // Save to Firebase first
-          const firebaseId = await savePaymentMethodToFirebase(newMethod);
-          const methodWithId = { ...newMethod, id: firebaseId || Date.now().toString() };
-          
-          const updatedMethods = [...paymentMethods, methodWithId];
-          setPaymentMethods(updatedMethods);
-          
-          // Save to AsyncStorage as backup
-          await AsyncStorage.setItem(`paymentMethods_${user.uid}`, JSON.stringify(updatedMethods));
-        } catch (error) {
-          console.error('Error adding payment method:', error);
-          Alert.alert('Error', 'Failed to save payment method. Please try again.');
-        }
-      }
-    });
+    navigation.navigate('AddEditPaymentMethod', { mode: 'add' });
   };
 
   const handleEditPaymentMethod = (method) => {
-    navigation.navigate('AddEditPaymentMethod', { 
-      mode: 'edit',
-      paymentMethod: method,
-      onSave: async (updatedMethod) => {
-        try {
-          // Update in Firebase
-          await savePaymentMethodToFirebase(updatedMethod, true, method.id);
-          
-          const updatedMethods = paymentMethods.map(pm => 
-            pm.id === method.id ? { ...updatedMethod, id: method.id } : pm
-          );
-          setPaymentMethods(updatedMethods);
-          
-          // Save to AsyncStorage as backup
-          await AsyncStorage.setItem(`paymentMethods_${user.uid}`, JSON.stringify(updatedMethods));
-        } catch (error) {
-          console.error('Error updating payment method:', error);
-          Alert.alert('Error', 'Failed to update payment method. Please try again.');
-        }
-      }
-    });
+    navigation.navigate('AddEditPaymentMethod', { mode: 'edit', paymentMethod: method });
   };
 
   const handleDeletePaymentMethod = (methodId) => {

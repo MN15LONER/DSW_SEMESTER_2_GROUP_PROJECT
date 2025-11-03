@@ -9,9 +9,12 @@ import {
 import { TextInput, Button, Switch, HelperText, Menu, Divider } from 'react-native-paper';
 import { COLORS } from '../styles/colors';
 import { validators, sanitizers } from '../utils/validation';
+import { firebaseService } from '../services/firebase';
+import { useAuth } from '../context/AuthContext';
 
 export default function AddEditPaymentMethodScreen({ route, navigation }) {
-  const { mode, paymentMethod, onSave } = route.params;
+  const { mode, paymentMethod } = route.params;
+  const { user } = useAuth();
   const isEditMode = mode === 'edit';
 
   const [formData, setFormData] = useState({
@@ -109,7 +112,12 @@ export default function AddEditPaymentMethodScreen({ route, navigation }) {
         isDefault: formData.isDefault,
       };
 
-      onSave(sanitizedData);
+      if (isEditMode && paymentMethod?.id) {
+        await firebaseService.paymentMethods.update(paymentMethod.id, sanitizedData);
+      } else {
+        await firebaseService.paymentMethods.create(user.uid, sanitizedData);
+      }
+
       navigation.goBack();
     } catch (error) {
       console.error('Error saving payment method:', error);

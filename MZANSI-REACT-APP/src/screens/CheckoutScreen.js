@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,12 +14,13 @@ import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebase';
 import { validators, sanitizers, validateForm, sanitizeFormData } from '../utils/validation';
 import { useLocation } from '../context/LocationContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../styles/colors';
 
 export default function CheckoutScreen({ navigation }) {
   const { cartItems, getCartTotal, getStoreGroups, clearCart } = useCart();
   const { user } = useAuth();
-  const { selectedLocation } = useLocation();
+  const { selectedLocation, updateLocation, updateUserLocation } = useLocation();
   
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [contactNumber, setContactNumber] = useState('');
@@ -114,6 +115,50 @@ export default function CheckoutScreen({ navigation }) {
       setIsProcessing(false);
     }
   };
+
+  // Try to prefill delivery address from the user's default address
+  useEffect(() => {
+    let mounted = true;
+    const loadDefault = async () => {
+      try {
+        if (!user?.uid) return;
+
+        // Try AsyncStorage cached default first
+        const cached = await AsyncStorage.getItem(`default_address_${user.uid}`);
+        if (cached) {
+          const addr = JSON.parse(cached);
+          const formatted = addr.formattedAddress || [addr.street, addr.city, addr.province].filter(Boolean).join(', ');
+          if (mounted) {
+            setDeliveryAddress(formatted);
+            if (addr.phone) setContactNumber(addr.phone);
+            // sync LocationContext so Home deliver-to displays the same default
+            if (updateLocation) updateLocation(formatted);
+            if (updateUserLocation && addr.latitude && addr.longitude) updateUserLocation({ latitude: addr.latitude, longitude: addr.longitude });
+          }
+          return;
+        }
+
+        // Fallback to Firestore addresses for the user
+        const addresses = await firebaseService.addresses.getByUser(user.uid);
+        if (addresses && addresses.length > 0) {
+          const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
+          const formatted = defaultAddr.formattedAddress || [defaultAddr.street, defaultAddr.city, defaultAddr.province].filter(Boolean).join(', ');
+          if (mounted) {
+            setDeliveryAddress(formatted);
+            if (defaultAddr.phone) setContactNumber(defaultAddr.phone);
+            // sync LocationContext so Home deliver-to displays the same default
+            if (updateLocation) updateLocation(formatted);
+            if (updateUserLocation && defaultAddr.latitude && defaultAddr.longitude) updateUserLocation({ latitude: defaultAddr.latitude, longitude: defaultAddr.longitude });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading default delivery address:', error);
+      }
+    };
+
+    loadDefault();
+    return () => { mounted = false; };
+  }, [user?.uid]);
 
   return (
     <View style={styles.container}>
