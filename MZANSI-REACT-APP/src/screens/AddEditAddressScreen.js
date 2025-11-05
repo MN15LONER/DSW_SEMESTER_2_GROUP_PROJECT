@@ -156,7 +156,7 @@ export default function AddEditAddressScreen({ route, navigation }) {
     'Western Cape'
   ];
 
-  const scrollStyle = [styles.scrollContainer, { paddingBottom: Math.max(insets.bottom + 120, 120) }];
+  const scrollStyle = [styles.scrollContainer, { paddingBottom: 20 }]; // Reduced padding since buttons are now below
 
   return (
     <SafeAreaView style={styles.container}>
@@ -285,28 +285,26 @@ export default function AddEditAddressScreen({ route, navigation }) {
             color={COLORS.primary}
           />
         </View>
-
-        {/* Buttons are positioned absolute at bottom to avoid system navigation overlap */}
       </ScrollView>
 
-      <View style={[styles.buttonContainer, { position: 'absolute', left: 16, right: 16, bottom: insets.bottom + 12 }]}>
-          <Button
-            mode="outlined"
-            onPress={() => navigation.goBack()}
-            style={styles.cancelButton}
-            disabled={loading}
-          >
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleSave}
-            style={styles.saveButton}
-            loading={loading}
-            disabled={loading}
-          >
-            {isEditMode ? 'Update Address' : 'Save Address'}
-          </Button>
+      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 12, paddingHorizontal: 16 }]}>
+        <Button
+          mode="outlined"
+          onPress={() => navigation.goBack()}
+          style={styles.cancelButton}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button
+          mode="contained"
+          onPress={handleSave}
+          style={styles.saveButton}
+          loading={loading}
+          disabled={loading}
+        >
+          {isEditMode ? 'Update Address' : 'Save Address'}
+        </Button>
       </View>
     </SafeAreaView>
   );
