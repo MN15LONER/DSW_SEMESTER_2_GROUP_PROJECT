@@ -1,4 +1,4 @@
-// Curated per-category image lists to provide deterministic, high-quality mock images
+
 export const CURATED_PRODUCT_IMAGES = {
   Food: [
     'https://images.unsplash.com/photo-1542831371-d531d36971e6?w=600&h=600&fit=crop',
@@ -20,7 +20,6 @@ export const CURATED_PRODUCT_IMAGES = {
   ]
 };
 
-// Deterministic pick based on a hash of the key (product name + category)
 function hashStringToIndex(key, length) {
   let hash = 0;
   for (let i = 0; i < key.length; i++) {

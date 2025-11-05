@@ -9,9 +9,9 @@ export default function AdminDashboard() {
   const navigation = useNavigation();
 
   useEffect(() => {
-    // If not admin (and not loading), redirect to main user stack
+
     if (!loading && !isAdmin) {
-      // replace so user cannot go back to admin
+
       navigation.replace('Main');
     }
   }, [isAdmin, loading]);

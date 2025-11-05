@@ -1,4 +1,4 @@
-// src/components/store/ProductGrid.js
+
 import React from 'react';
 import { FlatList, View, StyleSheet } from 'react-native';
 import ProductCard from './ProductCard';
@@ -46,5 +46,5 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: 'space-between',
   },
-  // intentionally minimal styles here; container styles can be passed in via props
+
 });

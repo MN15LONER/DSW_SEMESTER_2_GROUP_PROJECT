@@ -32,7 +32,7 @@ export default function HomeScreen({ navigation }) {
   const [defaultAddress, setDefaultAddress] = useState(null);
 
   const loadStores = useCallback(async () => {
-    // ONLY use mock data - show ALL stores (no location filtering)
+
     const storeData = mockStores;
 
     console.log('✅ Loaded ALL mock stores:', storeData.length);
@@ -50,7 +50,6 @@ export default function HomeScreen({ navigation }) {
     loadStores();
   }, [loadStores]);
 
-  // Load default address on mount and when user changes
   useEffect(() => {
     const loadDefaultAddress = async () => {
       if (user?.uid) {
@@ -59,7 +58,7 @@ export default function HomeScreen({ navigation }) {
           if (cachedAddress) {
             setDefaultAddress(JSON.parse(cachedAddress));
           } else {
-            // If no cached default address, set to null
+
             setDefaultAddress(null);
           }
         } catch (error) {
@@ -67,14 +66,13 @@ export default function HomeScreen({ navigation }) {
           setDefaultAddress(null);
         }
       } else {
-        // If no user, clear default address
+
         setDefaultAddress(null);
       }
     };
     loadDefaultAddress();
   }, [user]);
 
-  // Listen for default address changes (when user sets/changes default address)
   useEffect(() => {
     const checkForAddressUpdates = async () => {
       if (user?.uid) {
@@ -82,7 +80,7 @@ export default function HomeScreen({ navigation }) {
           const cachedAddress = await AsyncStorage.getItem(`default_address_${user.uid}`);
           if (cachedAddress) {
             const parsedAddress = JSON.parse(cachedAddress);
-            // Only update if the address has actually changed
+
             if (!defaultAddress || defaultAddress.id !== parsedAddress.id) {
               setDefaultAddress(parsedAddress);
             }
@@ -93,7 +91,6 @@ export default function HomeScreen({ navigation }) {
       }
     };
 
-    // Check immediately and then set up an interval to check periodically
     checkForAddressUpdates();
     const interval = setInterval(checkForAddressUpdates, 2000); // Check every 2 seconds
 
@@ -112,10 +109,9 @@ export default function HomeScreen({ navigation }) {
   };
 
   const filteredStores = stores.filter(store => {
-    // Normalize search query
+
     const query = searchQuery.toLowerCase().trim().replace(/\s+/g, ' ');
-    
-    // Build searchable text from all store fields
+
     const searchableText = [
       store.name,
       store.brand,
@@ -130,27 +126,22 @@ export default function HomeScreen({ navigation }) {
       .join(' ') 
       .toLowerCase()
       .replace(/\s+/g, ' ');
-    
-    // Check if query appears anywhere in searchable text
+
     const matchesSearch = !query || searchableText.includes(query);
-    
-    // Category filter - Direct match with your mock data categories
+
     let matchesCategory = true;
     if (filters.category && filters.category !== 'All') {
       matchesCategory = store.category === filters.category;
     }
-    
-    // Open only filter
+
     const matchesOpen = !filters.openOnly || store.isOpen;
-    
-    // Specials only filter
+
     const matchesSpecials = !filters.specialsOnly || 
       (store.promotions && store.promotions.length > 0);
-    
+
     return matchesSearch && matchesCategory && matchesOpen && matchesSpecials;
   });
 
-  // Debug log when filters change
   useEffect(() => {
     if (filters.category) {
       console.log('🔍 Active filter:', filters.category);
@@ -170,12 +161,12 @@ export default function HomeScreen({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Location Header */}
+        {}
         <View style={styles.locationContainer}>
           <LocationPicker />
         </View>
 
-        {/* Welcome Section */}
+        {}
         <View style={styles.welcomeContainer}>
           <Text style={styles.welcomeText}>
             Discover the best deals in {defaultAddress?.city || 'your area'}
@@ -192,7 +183,7 @@ export default function HomeScreen({ navigation }) {
           </Button>
         </View>
 
-        {/* Quick Actions */}
+        {}
         <View style={styles.quickActionsContainer}>
           <TouchableOpacity
             style={styles.quickActionButton}
@@ -201,7 +192,7 @@ export default function HomeScreen({ navigation }) {
             <Ionicons name="receipt-outline" size={24} color="#007AFF" />
             <Text style={styles.quickActionText}>Track Orders</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.quickActionButton}
             onPress={() => navigation.navigate('OrderHistory')}
@@ -211,7 +202,7 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Search Bar */}
+        {}
         <View style={styles.searchContainer}>
           <View style={styles.searchRow}>
             <Searchbar
@@ -230,7 +221,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Quick Stats */}
+        {}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stores.length}</Text>
@@ -246,7 +237,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Categories */}
+        {}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Shop by Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -276,7 +267,7 @@ export default function HomeScreen({ navigation }) {
           </ScrollView>
         </View>
 
-        {/* Featured Stores */}
+        {}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Featured Stores & Deals</Text>
@@ -311,7 +302,7 @@ export default function HomeScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* Floating Cart Button */}
+      {}
       {cartItemCount > 0 && (
         <FAB
           style={styles.fab}
@@ -321,7 +312,7 @@ export default function HomeScreen({ navigation }) {
         />
       )}
 
-      {/* Search Filter Modal */}
+      {}
       <SearchFilter
         visible={showFilters}
         onClose={() => setShowFilters(false)}

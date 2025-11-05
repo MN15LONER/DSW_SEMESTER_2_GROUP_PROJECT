@@ -31,7 +31,7 @@ const RegisterScreen = ({ navigation }) => {
 
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
+
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
@@ -91,7 +91,7 @@ const RegisterScreen = ({ navigation }) => {
       formData.password, 
       userData
     );
-    
+
     if (result.success) {
       Alert.alert(
         'Registration Successful!',
@@ -104,10 +104,9 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   const formatPhoneNumber = (text) => {
-    // Remove all non-digits
+
     const cleaned = text.replace(/\D/g, '');
-    
-    // Format as South African number
+
     if (cleaned.length <= 3) {
       return cleaned;
     } else if (cleaned.length <= 6) {

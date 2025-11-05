@@ -32,7 +32,7 @@ const FavoritesScreen = ({ navigation }) => {
         fallbackIcon="basket-outline"
         fallbackIconSize={25}
       />
-      
+
       <View style={styles.productInfo}>
         <Text style={styles.productName} numberOfLines={2}>
           {item.name}
@@ -48,7 +48,7 @@ const FavoritesScreen = ({ navigation }) => {
         >
           <Ionicons name="add-circle" size={24} color="#007AFF" />
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={styles.removeButton}
           onPress={() => handleRemoveFavorite(item)}

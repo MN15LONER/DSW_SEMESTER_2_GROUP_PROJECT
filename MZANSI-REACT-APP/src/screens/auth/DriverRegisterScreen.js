@@ -36,7 +36,7 @@ const DriverRegisterScreen = ({ navigation }) => {
 
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
+
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
@@ -124,11 +124,11 @@ const DriverRegisterScreen = ({ navigation }) => {
         formData.password, 
         userData
       );
-      
+
       if (result.success) {
-        // Create driver profile in Firebase
+
         await firebaseService.drivers.create(result.user.uid, userData);
-        
+
         Alert.alert(
           'Registration Successful', 
           'Your driver account has been created and is pending approval. You will receive an email once your account is activated.',
@@ -136,7 +136,7 @@ const DriverRegisterScreen = ({ navigation }) => {
             {
               text: 'OK',
               onPress: () => {
-                // Don't navigate manually - let the auth state change handle navigation
+
                 console.log('Driver registration completed - auth state will handle navigation');
               }
             }
@@ -152,10 +152,9 @@ const DriverRegisterScreen = ({ navigation }) => {
   };
 
   const formatPhoneNumber = (text) => {
-    // Remove all non-digits
+
     const cleaned = text.replace(/\D/g, '');
-    
-    // Format as South African number
+
     if (cleaned.length <= 3) {
       return cleaned;
     } else if (cleaned.length <= 6) {

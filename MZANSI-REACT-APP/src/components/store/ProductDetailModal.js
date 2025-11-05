@@ -52,7 +52,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          {/* Header */}
+          {}
           <View style={styles.header}>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Ionicons name="close" size={24} color="#333" />
@@ -67,7 +67,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
           </View>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Product Image */}
+            {}
             <View style={styles.imageContainer}>
               <ImageWithFallback
                 source={{ uri: product.image || getImageForProduct(product) }}
@@ -86,7 +86,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
                       return getOptimizedImageUrl(raw, 900, 600, 90) || raw;
                     }
                   } catch (e) {
-                    // ignore
+
                   }
                   return null;
                 }}
@@ -101,11 +101,11 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
               )}
             </View>
 
-            {/* Product Info */}
+            {}
             <View style={styles.productInfo}>
               <Text style={styles.productName}>{product.name}</Text>
               <Text style={styles.productCategory}>{product.category}</Text>
-              
+
               <View style={styles.priceContainer}>
                 <Text style={styles.currentPrice}>R{(product.price || 0).toFixed(2)}</Text>
                 {product.originalPrice && product.originalPrice > product.price && (
@@ -113,7 +113,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
                 )}
               </View>
 
-              {/* Description */}
+              {}
               <View style={styles.descriptionContainer}>
                 <Text style={styles.sectionTitle}>Description</Text>
                 <Text style={styles.description}>
@@ -121,7 +121,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
                 </Text>
               </View>
 
-              {/* Nutritional Info (if available) */}
+              {}
               {product.nutritionalInfo && (
                 <View style={styles.nutritionContainer}>
                   <Text style={styles.sectionTitle}>Nutritional Information</Text>
@@ -129,7 +129,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
                 </View>
               )}
 
-              {/* Product Details */}
+              {}
               <View style={styles.detailsContainer}>
                 <Text style={styles.sectionTitle}>Product Details</Text>
                 <View style={styles.detailRow}>
@@ -148,7 +148,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
             </View>
           </ScrollView>
 
-          {/* Bottom Action Bar */}
+          {}
           <View style={styles.actionBar}>
             <View style={styles.quantityContainer}>
               <TouchableOpacity 

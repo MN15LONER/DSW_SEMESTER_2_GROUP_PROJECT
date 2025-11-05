@@ -32,7 +32,7 @@ export default function NotificationsScreen({ navigation }) {
       const stored = await AsyncStorage.getItem(`${NOTIFICATIONS_STORAGE_KEY}_${user?.uid}`);
       if (stored) {
         const parsedNotifications = JSON.parse(stored);
-        // Sort by timestamp, most recent first
+
         const sortedNotifications = parsedNotifications.sort((a, b) =>
           new Date(b.timestamp) - new Date(a.timestamp)
         );
@@ -153,7 +153,7 @@ export default function NotificationsScreen({ navigation }) {
           if (isUnread) {
             markAsRead(notification.id);
           }
-          // Handle navigation based on notification type
+
           if (notification.data?.type === 'chat_message' && notification.data?.orderId) {
             navigation.navigate('CustomerChat', {
               orderId: notification.data.orderId,

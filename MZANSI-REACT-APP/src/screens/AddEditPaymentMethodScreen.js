@@ -135,9 +135,9 @@ export default function AddEditPaymentMethodScreen({ route, navigation }) {
   };
 
   const formatCardNumber = (value) => {
-    // Remove all non-digits
+
     const cleaned = value.replace(/\D/g, '');
-    // Add spaces every 4 digits
+
     const formatted = cleaned.replace(/(\d{4})(?=\d)/g, '$1 ');
     return formatted;
   };

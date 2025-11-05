@@ -32,17 +32,15 @@ export default function StoreMapScreen({ navigation, route }) {
     try {
       setLoading(true);
       let storeData = await firebaseService.stores.getAll();
-      
-      // If no stores in Firebase, use mock data with coordinates
+
       if (!storeData || storeData.length === 0) {
         storeData = mockStores;
       }
-      
-      // Ensure all stores have coordinates
+
       const storesWithCoords = storeData.filter(store => 
         store.latitude && store.longitude
       );
-      
+
       setStores(storesWithCoords);
     } catch (error) {
       console.error('Error loading stores:', error);
@@ -64,7 +62,7 @@ export default function StoreMapScreen({ navigation, route }) {
   };
 
   const handleGetDirections = () => {
-    // Request directions to be rendered on the map view
+
     if (!selectedStore) return;
     setShowStoreModal(false);
     setDirectionsToStore(selectedStore);
@@ -115,7 +113,7 @@ export default function StoreMapScreen({ navigation, route }) {
         onClearDirections={() => setDirectionsToStore(null)}
       />
 
-      {/* Store Details Modal */}
+      {}
       <Modal
         visible={showStoreModal}
         animationType="slide"
@@ -162,7 +160,7 @@ export default function StoreMapScreen({ navigation, route }) {
 
                   <Text style={styles.category}>{selectedStore.category}</Text>
                   <Text style={styles.address}>{selectedStore.address}</Text>
-                  
+
                   {selectedStore.phone && (
                     <Text style={styles.phone}>{selectedStore.phone}</Text>
                   )}

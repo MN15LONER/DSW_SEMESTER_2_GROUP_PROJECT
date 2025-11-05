@@ -95,7 +95,7 @@ const OrderTrackingScreen = ({ navigation }) => {
   };
 
   const handleChatWithDriver = (order) => {
-    // Always allow chat - if no driver assigned, it will show a message
+
     navigation.navigate('CustomerChat', { 
       orderId: order.id, 
       driverId: order.driverId || 'placeholder' 
@@ -142,7 +142,7 @@ const OrderTrackingScreen = ({ navigation }) => {
             {order.driverId ? 'Chat with Driver' : 'Chat Support'}
           </Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={styles.detailsButton}
           onPress={() => setSelectedOrder(order)}

@@ -1,13 +1,3 @@
-/**
- * Forgot Password Screen
- * 
- * Allows users to request a password reset email.
- * Features:
- * - Email validation
- * - Rate limiting
- * - Generic success messages (prevents email enumeration)
- * - Clear error handling
- */
 
 import React, { useState } from 'react';
 import {
@@ -31,9 +21,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
 
-  /**
-   * Validate email format
-   */
   const validateEmail = () => {
     if (!email.trim()) {
       setError('Email is required');
@@ -49,9 +36,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
     return true;
   };
 
-  /**
-   * Handle password reset request
-   */
   const handleResetPassword = async () => {
     if (!validateEmail()) return;
 
@@ -86,9 +70,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
     }
   };
 
-  /**
-   * Render success state
-   */
   if (emailSent) {
     return (
       <View style={styles.container}>
@@ -100,15 +81,15 @@ const ForgotPasswordScreen = ({ navigation }) => {
           <Text style={styles.successMessage}>
             If an account exists with this email, you will receive password reset instructions shortly.
           </Text>
-          
-          {/* Spam folder warning - prominent */}
+
+          {}
           <View style={styles.spamWarning}>
             <Ionicons name="warning-outline" size={20} color="#FF9500" />
             <Text style={styles.spamWarningText}>
               Check your spam/junk folder! The email often ends up there.
             </Text>
           </View>
-          
+
           <Text style={styles.successSubtext}>
             If you don't see the email within a few minutes, please check your spam folder first before requesting a new link.
           </Text>
@@ -123,9 +104,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
     );
   }
 
-  /**
-   * Render form
-   */
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -135,7 +113,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {}
         <TouchableOpacity
           style={styles.backIconButton}
           onPress={() => navigation.goBack()}
@@ -153,7 +131,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           </Text>
         </View>
 
-        {/* Form */}
+        {}
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email Address</Text>
@@ -181,7 +159,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
           </View>
 
-          {/* Security Notice */}
+          {}
           <View style={styles.securityNotice}>
             <Ionicons name="shield-checkmark-outline" size={16} color="#666" />
             <Text style={styles.securityText}>
@@ -189,7 +167,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             </Text>
           </View>
 
-          {/* Submit Button */}
+          {}
           <TouchableOpacity
             style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             onPress={handleResetPassword}
@@ -205,7 +183,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             )}
           </TouchableOpacity>
 
-          {/* Back to Login */}
+          {}
           <TouchableOpacity
             style={styles.loginLink}
             onPress={() => navigation.goBack()}
@@ -216,7 +194,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Help Text */}
+        {}
         <View style={styles.helpContainer}>
           <Text style={styles.helpTitle}>Need help?</Text>
           <Text style={styles.helpText}>
@@ -387,7 +365,7 @@ const styles = StyleSheet.create({
     color: '#CC8800',
     fontWeight: '600',
   },
-  // Success state styles
+
   successContainer: {
     flex: 1,
     justifyContent: 'center',

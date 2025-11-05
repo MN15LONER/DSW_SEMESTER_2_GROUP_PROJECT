@@ -36,11 +36,10 @@ export default function ProductSearchScreen({ navigation }) {
   const [sortBy, setSortBy] = useState('relevance');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  
+
   const { selectedLocation, userLocation } = useLocation();
   const { addToCart } = useCart();
 
-  // Get filter options
   const categories = useMemo(() => productSearchService.getCategories(), []);
   const brands = useMemo(() => productSearchService.getBrands(), []);
 
@@ -73,7 +72,7 @@ export default function ProductSearchScreen({ navigation }) {
       storeId: store.storeId,
       storeName: store.storeName
     };
-    
+
     addToCart(cartItem);
     Alert.alert('Added to Cart', `${product.name} from ${store.storeName} added to cart.`);
   };
@@ -152,7 +151,7 @@ export default function ProductSearchScreen({ navigation }) {
                 </Text>
               </View>
             </View>
-            
+
             <View style={styles.storeActions}>
               <TouchableOpacity
                 style={[styles.actionButton, styles.addButton]}
@@ -164,7 +163,7 @@ export default function ProductSearchScreen({ navigation }) {
                   Add
                 </Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[styles.actionButton, styles.contactButton]}
                 onPress={() => setSelectedProduct({ product, store })}
@@ -174,7 +173,7 @@ export default function ProductSearchScreen({ navigation }) {
             </View>
           </View>
         ))}
-        
+
         {product.stores.length > 3 && (
           <TouchableOpacity
             style={styles.viewAllButton}
@@ -191,7 +190,7 @@ export default function ProductSearchScreen({ navigation }) {
     <Portal>
       <Modal visible={showFilters} onDismiss={() => setShowFilters(false)} contentContainerStyle={styles.modalContainer}>
         <Text style={styles.modalTitle}>Filter & Sort</Text>
-        
+
         <View style={styles.filterSection}>
           <Text style={styles.filterLabel}>Category</Text>
           <FlatList
@@ -251,7 +250,7 @@ export default function ProductSearchScreen({ navigation }) {
             />
             <Text style={styles.toggleText}>In Stock Only</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.toggleButton}
             onPress={() => setFilters(prev => ({ ...prev, onPromotionOnly: !prev.onPromotionOnly }))}
@@ -283,7 +282,7 @@ export default function ProductSearchScreen({ navigation }) {
           <>
             <Text style={styles.storeModalTitle}>{selectedProduct.store.storeName}</Text>
             <Text style={styles.storeModalLocation}>{selectedProduct.store.storeLocation}</Text>
-            
+
             <View style={styles.storeModalActions}>
               <Button
                 mode="contained"
@@ -300,7 +299,7 @@ export default function ProductSearchScreen({ navigation }) {
               >
                 Call Store
               </Button>
-              
+
               <Button
                 mode="outlined"
                 icon="map"
@@ -316,7 +315,7 @@ export default function ProductSearchScreen({ navigation }) {
                 Directions
               </Button>
             </View>
-            
+
             <Button mode="text" onPress={() => setSelectedProduct(null)}>
               Close
             </Button>

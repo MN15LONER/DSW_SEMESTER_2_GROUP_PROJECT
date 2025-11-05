@@ -20,7 +20,7 @@ I need assistance with the following:
 Thank you for your help!`;
 
     const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
+
     Linking.canOpenURL(mailtoUrl)
       .then((supported) => {
         if (supported) {
@@ -97,7 +97,7 @@ Thank you for your help!`;
       <Card style={styles.featuresCard}>
         <Card.Content>
           <Text style={styles.sectionTitle}>What We Offer</Text>
-          
+
           <View style={styles.featureItem}>
             <Ionicons name="newspaper" size={24} color={COLORS.primary} />
             <View style={styles.featureText}>

@@ -1,6 +1,4 @@
-// Unified Mock Data for Mzansi React App
-// Gauteng-focused stores with proper structure
-// Brand to domain mapping for Clearbit Logo API
+
 const BRAND_LOGO_URLS = {
   'Pick n Pay': 'https://logo.clearbit.com/pnp.co.za',
   'Shoprite': 'https://logo.clearbit.com/shoprite.co.za',
@@ -32,7 +30,7 @@ const BRAND_LOGO_URLS = {
   'iStore': 'https://logo.clearbit.com/istore.co.za',
   'Computer Mania': 'https://logo.clearbit.com/computermania.co.za',
 };
-// Cities in Gauteng with coordinates
+
 const GAUTENG_CITIES = [
   { city: 'Johannesburg, Gauteng', lat: -26.2041, lng: 28.0473 },
   { city: 'Soweto, Gauteng', lat: -26.2485, lng: 27.8540 },
@@ -49,7 +47,6 @@ const GAUTENG_CITIES = [
 export const SOUTH_AFRICAN_LOCATIONS = GAUTENG_CITIES.map(c => c.city);
 export const mockLocations = SOUTH_AFRICAN_LOCATIONS;
 
-// Brand pools per category (MUST match your logo filenames)
 const FOOD_BRANDS = [
   'Pick n Pay',
   'Shoprite', 
@@ -88,7 +85,6 @@ const ELECTRONICS_BRANDS = [
   'Computer Mania'
 ];
 
-// Helper functions
 const randomBetween = (min, max) => Math.random() * (max - min) + min;
 const pick = (arr, i) => arr[i % arr.length];
 const jitter = (val, delta = 0.02) => val + randomBetween(-delta, delta);
@@ -96,7 +92,6 @@ const jitter = (val, delta = 0.02) => val + randomBetween(-delta, delta);
 let storeAutoId = 1000;
 const nextId = () => String(storeAutoId++);
 
-// Store creator with consistent structure
 const createStore = (category, brand, cityInfo, index) => {
   const id = nextId();
   const cityName = cityInfo.city.split(',')[0];
@@ -107,9 +102,9 @@ const createStore = (category, brand, cityInfo, index) => {
   const reviews = Math.floor(randomBetween(180, 1500));
   const phone = `+27 11 ${Math.floor(100 + Math.random() * 900)} ${Math.floor(1000 + Math.random() * 9000)}`;
   const isOpen = Math.random() > 0.15; // 85% stores are open
-  
+
     const logoUrl = BRAND_LOGO_URLS[brand] || null;
-  // Category-specific delivery times
+
   let deliveryTime;
   if (category === 'Food') {
     deliveryTime = '20-45 min';
@@ -119,7 +114,6 @@ const createStore = (category, brand, cityInfo, index) => {
     deliveryTime = '1-3 days';
   }
 
-  // Category-specific images
   let image, flyerImage;
   if (category === 'Food') {
     image = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
@@ -132,7 +126,6 @@ const createStore = (category, brand, cityInfo, index) => {
     flyerImage = 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=400';
   }
 
-  // Generate promotions (some stores have more than others)
   const promotions = [];
   if (Math.random() > 0.3) {
     promotions.push('Weekly specials available');
@@ -187,7 +180,6 @@ const createStore = (category, brand, cityInfo, index) => {
   };
 };
 
-// Generate stores for each category
 const generateStoresForCategory = (category, brands, count = 10) => {
   const stores = [];
   for (let i = 0; i < count; i++) {
@@ -198,14 +190,12 @@ const generateStoresForCategory = (category, brands, count = 10) => {
   return stores;
 };
 
-// Generate all stores
 export const mockStores = [
   ...generateStoresForCategory('Food', FOOD_BRANDS, 10),
   ...generateStoresForCategory('Clothing', CLOTHING_BRANDS, 10),
   ...generateStoresForCategory('Electronics', ELECTRONICS_BRANDS, 9),
 ];
 
-// Product templates
 const PRODUCT_TEMPLATES = {
   Food: [
     { name: 'Fresh Bananas (1kg)', category: 'Fresh Produce', price: [19.99, 29.99] },
@@ -237,7 +227,6 @@ const PRODUCT_TEMPLATES = {
   ],
 };
 
-// Product generator
 const productImage = (category) => {
   const images = {
     'Fresh Produce': 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300',
@@ -259,13 +248,13 @@ const generatedProductsCache = new Map();
 export const generateProductsForStore = (store, count = 20) => {
   const templates = PRODUCT_TEMPLATES[store.category] || PRODUCT_TEMPLATES.Food;
   const products = [];
-  
+
   for (let i = 0; i < count; i++) {
     const tpl = pick(templates, i);
     const price = Math.round(randomBetween(tpl.price[0], tpl.price[1]) * 100) / 100;
     const isSpecial = i < 5 ? true : Math.random() < 0.3;
     const originalPrice = isSpecial ? Math.round(price * randomBetween(1.1, 1.3) * 100) / 100 : null;
-    
+
     products.push({
       id: `${store.id}-p-${i}`,
       name: tpl.name,
@@ -281,7 +270,7 @@ export const generateProductsForStore = (store, count = 20) => {
       storeName: store.name
     });
   }
-  
+
   return products;
 };
 
@@ -300,16 +289,15 @@ export const getMockStores = (location) => {
 export const getStoreProducts = (storeId) => {
   const cached = generatedProductsCache.get(storeId);
   if (cached) return cached;
-  
+
   const store = mockStores.find(s => s.id === storeId);
   if (!store) return [];
-  
+
   const products = generateProductsForStore(store, 24);
   generatedProductsCache.set(storeId, products);
   return products;
 };
 
-// Firebase structure reference (for future implementation)
 export const firebaseStructure = {
   stores: {
     storeId: {

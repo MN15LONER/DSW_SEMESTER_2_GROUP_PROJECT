@@ -32,7 +32,6 @@ export async function saveLeaflet({ uri, title, notes, docType }) {
   const fileName = `${id}.jpg`;
   const dest = `${LEAFLETS_DIR}/${fileName}`;
 
-  // If the source is a content:// or file:// URI, copy to app sandbox
   await FileSystem.copyAsync({ from: uri, to: dest });
 
   const item = {
@@ -52,7 +51,7 @@ export async function saveLeaflet({ uri, title, notes, docType }) {
 
 export async function listLeaflets() {
   const all = await readAllMetadata();
-  // Optionally validate files still exist
+
   const validated = [];
   for (const it of all) {
     try {
@@ -84,5 +83,3 @@ export async function clearAllLeaflets() {
   }
   await writeAllMetadata([]);
 }
-
-

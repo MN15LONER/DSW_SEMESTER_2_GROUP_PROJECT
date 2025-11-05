@@ -32,7 +32,7 @@ const StockManagementScreen = ({ navigation }) => {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      // Get products for the current user's store
+
       const storeProducts = await firebaseService.products.getByStore(user.storeId || 'default-store');
       setProducts(storeProducts);
     } catch (error) {
@@ -60,8 +60,7 @@ const StockManagementScreen = ({ navigation }) => {
 
     try {
       await firebaseService.stock.updateProductStock(selectedProduct.id, stockQuantity);
-      
-      // Update local state
+
       setProducts(prevProducts =>
         prevProducts.map(product =>
           product.id === selectedProduct.id
@@ -104,7 +103,7 @@ const StockManagementScreen = ({ navigation }) => {
         <Text style={styles.productCategory}>{product.category}</Text>
         <Text style={styles.productPrice}>R{product.price.toFixed(2)}</Text>
       </View>
-      
+
       <View style={styles.stockInfo}>
         <View style={[
           styles.stockBadge,
@@ -114,7 +113,7 @@ const StockManagementScreen = ({ navigation }) => {
             {product.inStock ? `${product.stockQuantity || 0} in stock` : 'Out of stock'}
           </Text>
         </View>
-        
+
         <TouchableOpacity
           style={styles.updateButton}
           onPress={() => openStockModal(product)}
@@ -211,7 +210,7 @@ const StockManagementScreen = ({ navigation }) => {
         }
       />
 
-      {/* Stock Update Modal */}
+      {}
       <Modal
         visible={stockModalVisible}
         transparent

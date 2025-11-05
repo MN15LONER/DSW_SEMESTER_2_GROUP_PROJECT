@@ -12,12 +12,12 @@ const NetworkStatus = () => {
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       const connected = state.isConnected && state.isInternetReachable;
-      
+
       if (connected !== isConnected) {
         setIsConnected(connected);
-        
+
         if (!connected) {
-          // Show offline banner
+
           setShowBanner(true);
           Animated.timing(slideAnim, {
             toValue: 0,
@@ -25,7 +25,7 @@ const NetworkStatus = () => {
             useNativeDriver: true,
           }).start();
         } else {
-          // Hide banner after showing "back online" briefly
+
           setTimeout(() => {
             Animated.timing(slideAnim, {
               toValue: -50,

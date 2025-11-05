@@ -1,21 +1,8 @@
-/**
- * Google Sign-In Button Component
- * 
- * A reusable button component for Google authentication.
- * Styled to match Google's brand guidelines with white background and Google logo.
- */
 
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-/**
- * Google Sign-In Button
- * @param {Function} onPress - Function to call when button is pressed
- * @param {boolean} loading - Whether the button is in loading state
- * @param {boolean} disabled - Whether the button is disabled
- * @param {string} text - Button text (default: "Sign in with Google")
- */
 const GoogleSignInButton = ({ 
   onPress, 
   loading = false, 
@@ -36,12 +23,12 @@ const GoogleSignInButton = ({
         <ActivityIndicator color="#666" size="small" />
       ) : (
         <>
-          {/* Google Logo Icon */}
+          {}
           <View style={styles.iconContainer}>
             <Ionicons name="logo-google" size={20} color="#4285F4" />
           </View>
-          
-          {/* Button Text */}
+
+          {}
           <Text style={styles.buttonText}>{text}</Text>
         </>
       )}

@@ -30,12 +30,10 @@ const DriverDashboard = () => {
     setLoading(true);
     try {
       console.log('Loading real orders from Firebase...');
-      
-      // Get all orders from Firebase
+
       const allOrders = await firebaseService.orders.getAll();
       console.log('Orders loaded from Firebase:', allOrders);
-      
-      // Transform Firebase orders to match our display format
+
       const transformedOrders = allOrders.map(order => ({
         id: order.id,
         customerName: order.customerName || 'Customer',
@@ -50,12 +48,11 @@ const DriverDashboard = () => {
         paymentMethod: order.paymentMethod || 'cash',
         specialInstructions: order.specialInstructions || ''
       }));
-      
+
       setOrders(transformedOrders);
     } catch (error) {
       console.error('Error loading orders from Firebase:', error);
-      
-      // Fallback to mock data if Firebase fails
+
       console.log('Falling back to mock data...');
       const mockOrders = [
         {
@@ -114,12 +111,11 @@ const DriverDashboard = () => {
           onPress: async () => {
             try {
               console.log('Accepting order:', orderId);
-              
-              // Update order status in Firebase
+
               const success = await firebaseService.orders.updateStatus(orderId, 'accepted');
-              
+
               if (success) {
-                // Update order status locally
+
                 setOrders(prevOrders =>
                   prevOrders.map(order =>
                     order.id === orderId
@@ -152,12 +148,11 @@ const DriverDashboard = () => {
           onPress: async () => {
             try {
               console.log('Starting delivery for order:', orderId);
-              
-              // Update order status in Firebase
+
               const success = await firebaseService.orders.updateStatus(orderId, 'in-transit');
-              
+
               if (success) {
-                // Update order status locally
+
                 setOrders(prevOrders =>
                   prevOrders.map(order =>
                     order.id === orderId
@@ -190,12 +185,11 @@ const DriverDashboard = () => {
           onPress: async () => {
             try {
               console.log('Completing delivery for order:', orderId);
-              
-              // Update order status in Firebase
+
               const success = await firebaseService.orders.updateStatus(orderId, 'delivered');
-              
+
               if (success) {
-                // Update order status locally
+
                 setOrders(prevOrders =>
                   prevOrders.map(order =>
                     order.id === orderId
@@ -289,7 +283,7 @@ const DriverDashboard = () => {
 
       <View style={styles.orderFooter}>
         <Text style={styles.totalAmount}>Total: R{item.total.toFixed(2)}</Text>
-        
+
         <View style={styles.actionButtons}>
           {item.status === 'pending' && (
             <TouchableOpacity
@@ -300,7 +294,7 @@ const DriverDashboard = () => {
               <Text style={styles.actionButtonText}>Accept</Text>
             </TouchableOpacity>
           )}
-          
+
           {item.status === 'accepted' && (
             <TouchableOpacity
               style={[styles.actionButton, styles.startButton]}
@@ -310,7 +304,7 @@ const DriverDashboard = () => {
               <Text style={styles.actionButtonText}>Start Delivery</Text>
             </TouchableOpacity>
           )}
-          
+
           {item.status === 'in-transit' && (
             <TouchableOpacity
               style={[styles.actionButton, styles.completeButton]}
@@ -320,7 +314,7 @@ const DriverDashboard = () => {
               <Text style={styles.actionButtonText}>Complete</Text>
             </TouchableOpacity>
           )}
-          
+
           <TouchableOpacity
             style={[styles.actionButton, styles.chatButton]}
             onPress={() => navigation.navigate('DriverChat', { 

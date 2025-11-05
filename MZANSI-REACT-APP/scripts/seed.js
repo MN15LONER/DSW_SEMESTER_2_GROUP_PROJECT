@@ -1,4 +1,4 @@
-// scripts/seed.js
+
 import { seedFirebaseData } from '../src/utils/seedFirebase.js';
 
 (async () => {

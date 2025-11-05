@@ -85,7 +85,7 @@ export default function AdvancedSearchModal({
 
   const handleSearch = async () => {
     setLoading(true);
-    
+
     try {
       const filters = {
         query: searchQuery,
@@ -103,17 +103,16 @@ export default function AdvancedSearchModal({
       let results = [];
 
       if (searchQuery.trim()) {
-        // Search using Google Places API
+
         results = await googlePlacesService.searchPlaces(searchQuery, userLocation, radius * 1000);
       } else if (category !== 'all') {
-        // Search by category
+
         results = await googlePlacesService.findStoresByCategory(category, userLocation, radius * 1000);
       } else {
-        // Find nearby stores
+
         results = await googlePlacesService.findNearbyStores(userLocation, radius * 1000);
       }
 
-      // Apply additional filters
       let filteredResults = results;
 
       if (minRating > 0) {
@@ -125,7 +124,7 @@ export default function AdvancedSearchModal({
       }
 
       if (deliveryOnly) {
-        // Check delivery availability for each store
+
         const deliveryChecks = await Promise.all(
           filteredResults.map(async (store) => {
             try {
@@ -158,7 +157,6 @@ export default function AdvancedSearchModal({
         );
       }
 
-      // Sort results
       filteredResults = sortResults(filteredResults, sortBy, userLocation);
 
       onSearch(filteredResults, filters);
@@ -229,7 +227,7 @@ export default function AdvancedSearchModal({
           </View>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Search Query */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Search Query</Text>
               <TextInput
@@ -238,8 +236,8 @@ export default function AdvancedSearchModal({
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
-              
-              {/* Search Suggestions */}
+
+              {}
               {searchSuggestions.length > 0 && (
                 <View style={styles.suggestions}>
                   {searchSuggestions.map((suggestion) => (
@@ -259,7 +257,7 @@ export default function AdvancedSearchModal({
               )}
             </View>
 
-            {/* Category */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Category</Text>
               <View style={styles.pickerContainer}>
@@ -275,7 +273,7 @@ export default function AdvancedSearchModal({
               </View>
             </View>
 
-            {/* Search Radius */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Search Radius: {radius} km</Text>
               <Slider
@@ -295,7 +293,7 @@ export default function AdvancedSearchModal({
               </View>
             </View>
 
-            {/* Minimum Rating */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Minimum Rating: {minRating.toFixed(1)} ⭐</Text>
               <Slider
@@ -315,10 +313,10 @@ export default function AdvancedSearchModal({
               </View>
             </View>
 
-            {/* Filter Switches */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Filters</Text>
-              
+
               <View style={styles.switchRow}>
                 <Text style={styles.switchLabel}>Open Now Only</Text>
                 <Switch
@@ -350,7 +348,7 @@ export default function AdvancedSearchModal({
               </View>
             </View>
 
-            {/* Sort By */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Sort By</Text>
               <View style={styles.pickerContainer}>
@@ -366,7 +364,7 @@ export default function AdvancedSearchModal({
               </View>
             </View>
 
-            {/* Price Range */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Price Range</Text>
               <View style={styles.pickerContainer}>
@@ -383,7 +381,7 @@ export default function AdvancedSearchModal({
             </View>
           </ScrollView>
 
-          {/* Action Buttons */}
+          {}
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.button, styles.resetButton]}

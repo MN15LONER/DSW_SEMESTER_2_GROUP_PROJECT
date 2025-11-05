@@ -34,7 +34,7 @@ export default function EditProfileScreen({ navigation }) {
     const updates = {};
 
     try {
-      // If we need to re-authenticate for email/password changes
+
       if (requireReauth(user.email, email, newPassword)) {
         if (!currentPassword) {
           throw new Error('Please enter your current password to change email or password');
@@ -44,7 +44,6 @@ export default function EditProfileScreen({ navigation }) {
         await reauthenticateWithCredential(authUser, credential);
       }
 
-      // Update display name in Firebase Auth
       if (displayName !== user.displayName) {
         try {
           await updateProfile(authUser, { displayName });
@@ -55,7 +54,6 @@ export default function EditProfileScreen({ navigation }) {
         }
       }
 
-      // Update email in Firebase Auth
       if (email !== user.email) {
         try {
           await updateEmail(authUser, email);
@@ -66,7 +64,6 @@ export default function EditProfileScreen({ navigation }) {
         }
       }
 
-      // Update password in Firebase Auth
       if (newPassword) {
         try {
           await updatePassword(authUser, newPassword);
@@ -76,19 +73,16 @@ export default function EditProfileScreen({ navigation }) {
         }
       }
 
-      // Update phone (stored in Firestore user doc)
       if (phone !== user.phone) {
         updates.phone = phone;
       }
 
-      // Persist changes to Firestore (and update local AuthContext via updateUserProfile)
       if (Object.keys(updates).length > 0) {
         const success = await firebaseService.users.update(user.uid, updates);
         if (!success) {
           throw new Error('Failed to update user profile in database');
         }
 
-        // Update local context/user storage
         await updateUserProfile(updates);
       }
 
@@ -98,7 +92,6 @@ export default function EditProfileScreen({ navigation }) {
       console.error('EditProfile save error:', error);
       let message = error?.message || 'Failed to update profile. Please try again.';
 
-      // Firebase-specific friendly messages
       if (error?.code === 'auth/requires-recent-login') {
         message = 'For security reasons, please sign in again and then try changing your email or password.';
       } else if (error?.code === 'auth/invalid-email') {

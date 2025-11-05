@@ -24,10 +24,10 @@ export default function StoreDetailScreen({ route, navigation }) {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        // Try Firebase first, then fallback to local generated data
+
         const storeProducts = await firebaseService.products.getByStore(store.id);
         if (!storeProducts || (Array.isArray(storeProducts) && storeProducts.length === 0)) {
-          // If store isn't in mockStores, generate products from the store's category
+
           const generated = generateProductsForStore(store, 24);
           setProducts(generated);
         } else {
@@ -35,12 +35,12 @@ export default function StoreDetailScreen({ route, navigation }) {
         }
       } catch (error) {
         console.error('Error loading products:', error);
-        // Fallback to generated data
+
         const generated = generateProductsForStore(store, 24);
         setProducts(generated);
       }
     };
-    
+
     loadProducts();
   }, [store.id]);
 
@@ -147,13 +147,13 @@ export default function StoreDetailScreen({ route, navigation }) {
         extraData={selectedCategory}
       />
 
-      {/* Contact Store Button */}
+      {}
       <View style={styles.contactContainer}>
         <Button
           mode="outlined"
           icon="message-outline"
           onPress={() => {
-            // In real app, this would open in-app messaging
+
             alert('Contact feature coming soon!');
           }}
           style={styles.contactButton}

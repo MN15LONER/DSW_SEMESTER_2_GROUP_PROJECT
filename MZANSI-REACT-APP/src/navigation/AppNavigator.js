@@ -26,7 +26,7 @@ import DailyDealsScreen from '../screens/DailyDealsScreen';
 import StoreFinderScreen from '../screens/StoreFinderScreen';
 import HomeScreen from '../screens/HomeScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
-// New driver and chat screens
+
 import DriverLoginScreen from '../screens/auth/DriverLoginScreen';
 import DriverDashboard from '../screens/DriverDashboard';
 import DriverChat from '../screens/DriverChat';
@@ -72,9 +72,9 @@ const DriverStack = () => {
 
 const MainStack = React.memo(() => {
   const { user } = useAuth();
-  
+
   logInfo('MainStack', `render - userType: ${user?.userType}`);
-  
+
   return (
     <Stack.Navigator
       initialRouteName="Main"
@@ -93,7 +93,7 @@ const MainStack = React.memo(() => {
         component={TabNavigator} 
         options={{ headerShown: false }}
       />
-      {/* Compatibility route: allow actions that directly target 'Home' to be handled */}
+      {}
       <Stack.Screen
         name="Home"
         component={HomeScreen}
@@ -209,7 +209,7 @@ const MainStack = React.memo(() => {
         component={EditProfileScreen}
         options={{ title: 'Edit Profile' }}
       />
-      {/* Driver and Chat Screens */}
+      {}
       <Stack.Screen 
         name="DriverLogin" 
         component={DriverLoginScreen}
@@ -276,19 +276,15 @@ export default function AppNavigator() {
 
   logInfo('AppNavigator', `render - isAuthenticated:${isAuthenticated} initializing:${initializing} userType:${user?.userType} isAdmin:${isAdmin}`);
 
-  // Reset inactivity timer on navigation state changes
   useEffect(() => {
     if (navigationRef.current && user) {
       const unsubscribe = navigationRef.current.addListener('state', () => {
-        // Reset activity timer on navigation
-        // This will be handled by the AuthContext's resetInactivityTimer function
-        // We can access it through the context if needed
+
       });
       return unsubscribe;
     }
   }, [navigationRef, user]);
 
-  // Show loading screen while initializing
   if (initializing) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
@@ -297,23 +293,18 @@ export default function AppNavigator() {
     );
   }
 
-  // Check authentication first
   if (!isAuthenticated) return <AuthStack />;
 
-  // If authenticated, check user type in priority order
-  // Admin takes precedence
   if (isAdmin) {
     logInfo('AppNavigator', 'Rendering AdminStack for admin');
     return <AdminStack />;
   }
 
-  // Then check for driver
   if (user?.userType === 'driver') {
     logInfo('AppNavigator', 'Rendering DriverStack for driver');
     return <DriverStack />;
   }
 
-  // Default authenticated user (regular user)
   logInfo('AppNavigator', 'Rendering MainStack for regular user');
   return <MainStack />;
 }

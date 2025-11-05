@@ -24,7 +24,6 @@ export default function PaymentMethodsScreen({ navigation }) {
     loadPaymentMethods();
   }, []);
 
-  // Reload on focus (after returning from add/edit screens)
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadPaymentMethods();
@@ -36,14 +35,14 @@ export default function PaymentMethodsScreen({ navigation }) {
     try {
       setLoading(true);
       if (user?.uid) {
-        // Try Firebase first
+
         const firebaseMethods = await firebaseService.paymentMethods.getByUser(user.uid);
         if (firebaseMethods.length > 0) {
           setPaymentMethods(firebaseMethods);
-          // Also save to AsyncStorage as backup
+
           await AsyncStorage.setItem(`paymentMethods_${user.uid}`, JSON.stringify(firebaseMethods));
         } else {
-          // Fallback to AsyncStorage
+
           const savedMethods = await AsyncStorage.getItem(`paymentMethods_${user.uid}`);
           if (savedMethods) {
             setPaymentMethods(JSON.parse(savedMethods));
@@ -52,7 +51,7 @@ export default function PaymentMethodsScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Error loading payment methods:', error);
-      // Fallback to AsyncStorage on Firebase error
+
       try {
         const savedMethods = await AsyncStorage.getItem(`paymentMethods_${user?.uid}`);
         if (savedMethods) {
@@ -76,7 +75,7 @@ export default function PaymentMethodsScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Firebase save error:', error);
-      // Continue with local storage as fallback
+
     }
   };
 
@@ -99,13 +98,12 @@ export default function PaymentMethodsScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Delete from Firebase
+
               await firebaseService.paymentMethods.delete(methodId);
-              
+
               const updatedMethods = paymentMethods.filter(pm => pm.id !== methodId);
               setPaymentMethods(updatedMethods);
-              
-              // Update AsyncStorage
+
               await AsyncStorage.setItem(`paymentMethods_${user.uid}`, JSON.stringify(updatedMethods));
             } catch (error) {
               console.error('Error deleting payment method:', error);
@@ -123,15 +121,13 @@ export default function PaymentMethodsScreen({ navigation }) {
         ...pm,
         isDefault: pm.id === methodId
       }));
-      
-      // Update all payment methods in Firebase
+
       for (const pm of updatedMethods) {
         await savePaymentMethodToFirebase({ isDefault: pm.isDefault }, true, pm.id);
       }
-      
+
       setPaymentMethods(updatedMethods);
-      
-      // Save to AsyncStorage as backup
+
       await AsyncStorage.setItem(`paymentMethods_${user.uid}`, JSON.stringify(updatedMethods));
     } catch (error) {
       console.error('Error setting default payment method:', error);
@@ -243,7 +239,7 @@ export default function PaymentMethodsScreen({ navigation }) {
           {paymentMethods.map(renderPaymentMethodCard)}
         </ScrollView>
       )}
-      
+
       {paymentMethods.length > 0 && (
         <FAB
           style={styles.fab}

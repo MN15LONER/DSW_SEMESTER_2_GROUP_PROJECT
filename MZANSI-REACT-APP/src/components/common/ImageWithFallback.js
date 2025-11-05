@@ -20,26 +20,26 @@ const ImageWithFallback = ({
     let mounted = true;
     setImageError(false);
     setImageLoading(true);
-    // If a loader is provided, call it and update currentSource
+
     if (loader && typeof loader === 'function') {
       (async () => {
         try {
           const loaded = await loader();
           if (!mounted) return;
-          // loader may return a string URL or an object { uri }
+
           if (typeof loaded === 'string') setCurrentSource({ uri: loaded });
           else setCurrentSource(loaded || source);
         } catch (e) {
           if (!mounted) return;
-          // keep existing source
+
         } finally {
           if (mounted) setImageLoading(false);
         }
       })();
     } else {
-      // No loader - use provided source
+
       setCurrentSource(source);
-      // small delay to allow onLoad handlers
+
       const t = setTimeout(() => setImageLoading(false), 250);
       return () => clearTimeout(t);
     }
@@ -56,7 +56,6 @@ const ImageWithFallback = ({
     setImageLoading(false);
   };
 
-  // Determine if currentSource is valid: either a local require (number) or an object with uri
   const isLocalRequire = typeof currentSource === 'number';
   const hasUri = currentSource && typeof currentSource === 'object' && (currentSource.uri || currentSource.url);
 
@@ -72,7 +71,6 @@ const ImageWithFallback = ({
     );
   }
 
-  // Build the actual source prop for Image
   const imageSourceProp = isLocalRequire ? currentSource : (hasUri ? { uri: currentSource.uri || currentSource.url } : undefined);
 
   return (

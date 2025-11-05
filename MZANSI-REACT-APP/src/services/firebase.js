@@ -4,10 +4,9 @@ import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-// Static import to avoid Metro dynamic import resolution issues
+
 import { mockStores, getMockStores, getStoreProducts } from '../data/mockData';
 
-// PRODUCTION CONFIG (BOSS'S FIREBASE)
 const productionConfig = {
   apiKey: "AIzaSyDsxqzXw5XEifHbelAYHqdkMUPoZVvg6ro",
   authDomain: "mzansi-react.firebaseapp.com",
@@ -17,7 +16,6 @@ const productionConfig = {
   appId: "1:239626456292:web:7bdfeebb778f7cededf0f1"
 };
 
-// TEST CONFIG (YOUR FIREBASE) - Your new test project
 const testConfig = {
   apiKey: "AIzaSyC0BGeREyZQNvLDAT4CW4avAqFSkUK6Pys",
   authDomain: "project-9944b.firebaseapp.com",
@@ -27,9 +25,7 @@ const testConfig = {
   appId: "1:23598729763:web:0e0ff5f511fe35535d3f96"
 };
 
-// Switch between configs easily
 const firebaseConfig = testConfig; // ✅ Currently using TEST database (project-9944b)
-// const firebaseConfig = productionConfig; // Switch to this for production (mzansi-react)
 
 const app = initializeApp(firebaseConfig);
 
@@ -39,12 +35,10 @@ export const auth = initializeAuth(app, {
 });
 export const storage = getStorage(app);
 
-// Track whether we've already warned about Firestore permission issues to avoid log spam
 let _warnedFirestorePermissions = false;
 
-// Firebase Services
 export const firebaseService = {
-  // STORES
+
   stores: {
     getAll: async () => {
       try {
@@ -52,14 +46,14 @@ export const firebaseService = {
         const snapshot = await getDocs(storesRef);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        // If permission error, warn once and fallback to mock data to keep the app usable in dev
+
         if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
           console.warn('Firestore permission error detected. Falling back to mock stores.');
           _warnedFirestorePermissions = true;
         } else if (!/permission/i.test(error.message)) {
           console.error('Error fetching stores:', error);
         }
-        // Fallback to mock data
+
         return mockStores;
       }
     },
@@ -77,7 +71,7 @@ export const firebaseService = {
         } else if (!/permission/i.test(error.message)) {
           console.error('Error fetching stores by location:', error);
         }
-        // Fallback to mock data filtered by location
+
         return getMockStores(location);
       }
     },
@@ -89,7 +83,7 @@ export const firebaseService = {
         return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
       } catch (error) {
         console.error('Error fetching store:', error);
-        // Fallback to mock data
+
         return mockStores.find(s => s.id === storeId) || null;
       }
     },
@@ -110,7 +104,6 @@ export const firebaseService = {
     }
   },
 
-  // PRODUCTS
   products: {
     getByStore: async (storeId) => {
       try {
@@ -125,7 +118,7 @@ export const firebaseService = {
         } else if (!/permission/i.test(error.message)) {
           console.error('Error fetching products:', error);
         }
-        // Fallback to mock data
+
         return getStoreProducts(storeId);
       }
     },
@@ -156,13 +149,11 @@ export const firebaseService = {
     }
   },
 
-  // USERS
   users: {
     uploadProfilePicture: async (userId, uri) => {
       try {
         if (!uri) return null;
 
-        // For React Native, use Expo FileSystem to read the file as base64
         const fileInfo = await FileSystem.getInfoAsync(uri);
         if (!fileInfo.exists) {
           throw new Error('File does not exist');
@@ -172,7 +163,6 @@ export const firebaseService = {
           encoding: FileSystem.EncodingType.Base64,
         });
 
-        // Convert base64 to Uint8Array
         const binaryString = atob(base64);
         const uint8Array = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
@@ -248,7 +238,6 @@ export const firebaseService = {
     }
   },
 
-  // ADDRESSES
   addresses: {
     getByUser: async (userId) => {
       try {
@@ -309,7 +298,6 @@ export const firebaseService = {
     }
   },
 
-  // PAYMENT METHODS
   paymentMethods: {
     getByUser: async (userId) => {
       try {
@@ -331,7 +319,7 @@ export const firebaseService = {
     create: async (userId, paymentMethodData) => {
       try {
         const paymentMethodsRef = collection(db, 'paymentMethods');
-        // Don't store sensitive data like CVV in production
+
         const { cvv, ...safeData } = paymentMethodData;
         const docRef = await addDoc(paymentMethodsRef, {
           ...safeData,
@@ -349,7 +337,7 @@ export const firebaseService = {
     update: async (paymentMethodId, paymentMethodData) => {
       try {
         const paymentMethodRef = doc(db, 'paymentMethods', paymentMethodId);
-        // Don't store sensitive data like CVV in production
+
         const { cvv, ...safeData } = paymentMethodData;
         await updateDoc(paymentMethodRef, {
           ...safeData,
@@ -374,7 +362,6 @@ export const firebaseService = {
     }
   },
 
-  // CHAT SYSTEM
   chat: {
     sendMessage: async (messageData) => {
       try {
@@ -400,8 +387,7 @@ export const firebaseService = {
         );
         const snapshot = await getDocs(q);
         const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Sort messages by timestamp on the client side
+
         return messages.sort((a, b) => {
           const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
           const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
@@ -419,17 +405,16 @@ export const firebaseService = {
         messagesRef,
         where('orderId', '==', orderId)
       );
-      
+
       return onSnapshot(q, (snapshot) => {
         const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Sort messages by timestamp on the client side
+
         const sortedMessages = messages.sort((a, b) => {
           const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
           const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
           return timeA - timeB;
         });
-        
+
         callback(sortedMessages);
       });
     },
@@ -446,7 +431,6 @@ export const firebaseService = {
     }
   },
 
-  // DRIVER SERVICES
   drivers: {
     create: async (driverId, driverData) => {
       try {
@@ -520,7 +504,6 @@ export const firebaseService = {
     }
   },
 
-  // ENHANCED ORDERS SERVICE
   orders: {
     create: async (orderData) => {
       try {
@@ -534,7 +517,7 @@ export const firebaseService = {
         return docRef.id;
       } catch (error) {
         console.error('Error creating order:', error);
-        // For prototype, return mock order ID
+
         return 'order_' + Date.now();
       }
     },
@@ -559,8 +542,7 @@ export const firebaseService = {
         );
         const snapshot = await getDocs(q);
         const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Sort orders by creation date on the client side
+
         return orders.sort((a, b) => {
           const timeA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.orderDate);
           const timeB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.orderDate);
@@ -628,7 +610,6 @@ export const firebaseService = {
           updatedAt: new Date()
         };
 
-        // Add specific timestamps based on status
         switch (status) {
           case 'accepted':
             updateData.acceptedAt = new Date();
@@ -646,9 +627,8 @@ export const firebaseService = {
 
         await updateDoc(orderRef, updateData);
 
-        // Send notification for status update
         if (status !== 'pending') {
-          // Import notification service dynamically to avoid circular dependency
+
           import('../services/notificationService').then(({ notificationService }) => {
             notificationService.sendOrderStatusNotification(orderId, status, driverName);
           });
@@ -662,7 +642,6 @@ export const firebaseService = {
     }
   },
 
-  // STOCK MANAGEMENT
   stock: {
     updateProductStock: async (productId, newStock) => {
       try {

@@ -20,7 +20,6 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const { login, loading, loginWithGoogle } = useAuth();
-  
 
   const validateForm = () => {
     const newErrors = {};
@@ -45,7 +44,7 @@ const LoginScreen = ({ navigation }) => {
     if (!validateForm()) return;
 
     const result = await login(email.trim().toLowerCase(), password);
-    
+
     if (!result.success) {
       Alert.alert('Login Failed', result.error);
     }
@@ -53,30 +52,16 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const handleForgotPassword = () => {
-    // Navigate to ForgotPassword screen
+
     navigation.navigate('ForgotPassword');
   };
 
-  /**
-   * Handle Google Sign-In Response
-   * This effect listens for the Google authentication response
-   */
-  // Google flow removed — no-op
-
-  /**
-   * Handle Google Sign-In
-   * Processes the Google authentication and handles errors
-   */
   const handleGoogleSignIn = async () => {
-    // Google sign-in removed — keep function stub in case we re-add later
+
   };
 
-  /**
-   * Initiate Google Sign-In Flow
-   * Starts the Google authentication process
-   */
   const initiateGoogleSignIn = async () => {
-    // Google sign-in removed — no-op
+
   };
 
   return (
@@ -166,7 +151,7 @@ const LoginScreen = ({ navigation }) => {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Google Sign-In removed per request */}
+          {}
 
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>Don't have an account? </Text>

@@ -48,7 +48,7 @@ export default function CategoryProductsScreen({ navigation, route }) {
       storeId: 'category_store', // Generic store for category browsing
       storeName: `${category} Store`
     };
-    
+
     addToCart(cartItem);
     Alert.alert('Added to Cart', `${product.name} has been added to your cart.`);
   };
@@ -71,24 +71,24 @@ export default function CategoryProductsScreen({ navigation, route }) {
           </View>
         )}
       </View>
-      
+
       <View style={styles.productInfo}>
         <Text style={styles.productBrand}>{item.brand}</Text>
         <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
         <Text style={styles.productUnit}>{item.unit}</Text>
-        
+
         <View style={styles.storeInfo}>
           <Ionicons name="storefront-outline" size={12} color={COLORS.primary} />
           <Text style={styles.storeName} numberOfLines={1}>{item.storeName}</Text>
           <Text style={styles.storeDistance}>• {item.storeDistance}</Text>
         </View>
-        
+
         <View style={styles.ratingContainer}>
           <Ionicons name="star" size={14} color="#FFD700" />
           <Text style={styles.rating}>{item.rating}</Text>
           <Text style={styles.reviews}>({item.reviews})</Text>
         </View>
-        
+
         <View style={styles.priceContainer}>
           {item.hasPromotion ? (
             <>
@@ -100,7 +100,7 @@ export default function CategoryProductsScreen({ navigation, route }) {
             <Text style={styles.price}>{formatPrice(item.price)}</Text>
           )}
         </View>
-        
+
         <TouchableOpacity
           style={[
             styles.addButton,

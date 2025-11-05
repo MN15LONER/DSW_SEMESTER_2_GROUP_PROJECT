@@ -61,7 +61,7 @@ export default function CartScreen({ navigation }) {
         ))}
       </ScrollView>
 
-      {/* Checkout Section */}
+      {}
       <View style={styles.checkoutContainer}>
         <View style={styles.totalContainer}>
           <Text style={styles.totalLabel}>Total</Text>

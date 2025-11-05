@@ -1,4 +1,4 @@
-// Simple deduplicating logger for development to avoid infinite/repeated console spam
+
 const MAX_LOGS_PER_MESSAGE = 5;
 const LOG_TTL_MS = 60 * 1000; // reset counts after 60s
 
@@ -19,7 +19,7 @@ function _shouldLog(key) {
 }
 
 export function logError(tag, error) {
-  // Only noisy in development
+
   if (typeof __DEV__ !== 'undefined' && !__DEV__) return;
 
   const key = `${tag}:${(error && error.message) || String(error)}`;
@@ -31,7 +31,7 @@ export function logError(tag, error) {
         console.error(`${tag} — further identical messages will be suppressed for ${LOG_TTL_MS / 1000}s`);
       }
     } catch (e) {
-      // swallow
+
     }
   }
 }

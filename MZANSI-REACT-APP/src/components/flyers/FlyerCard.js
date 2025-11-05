@@ -11,9 +11,8 @@ import { COLORS } from '../../styles/colors';
 import ImageWithFallback from '../common/ImageWithFallback';
 import { getImageForProduct } from '../../utils/imageHelper';
 
-// Local logo assets for featured brands (static requires only)
 const localLogos = {
-   // Food
+
   'pick n pay': require('../../../assets/images/Store_Logos/Pick_N_Pay.jpg'),
   'shoprite': require('../../../assets/images/Store_Logos/Shoprite.png'),
   'checkers': require('../../../assets/images/Store_Logos/checkers.png'),
@@ -25,7 +24,6 @@ const localLogos = {
   'ok foods': require('../../../assets/images/Store_Logos/ok-foods.jpg'),
   'cambridge foods': require('../../../assets/images/Store_Logos/Cambridge-food.jpg'),
 
-  // Clothing
   'mr price': require('../../../assets/images/Store_Logos/mr-price.jpg'),
   'mr price (legacy)': require('../../../assets/images/Store_Logos/Mr-Price-logo.jpg'),
   'truworths': require('../../../assets/images/Store_Logos/truworths.jpeg'),
@@ -38,7 +36,6 @@ const localLogos = {
   'cotton on': require('../../../assets/images/Store_Logos/Cotton-On.jpg'),
   'h&m': require('../../../assets/images/Store_Logos/h-and-m.png'),
 
-  // Electronics
   'incredible connection': require('../../../assets/images/Store_Logos/Incredible_connections.png'),
   'game electronics': require('../../../assets/images/Store_Logos/game-electronics.jpg'),
   'makro tech': require('../../../assets/images/Store_Logos/makro-tech.jpg'),
@@ -57,32 +54,30 @@ const getLocalLogoForStore = (store) => {
   const brand = normalizeBrand(store.brand || '');
   const name = normalizeBrand(store.name || '');
 
-  // Direct brand mapping
   if (brand && localLogos[brand]) return localLogos[brand];
 
-  // Fallback: detect by name substrings
   const candidates = Object.keys(localLogos);
   for (const key of candidates) {
     if (brand.includes(key) || name.includes(key)) {
       return localLogos[key];
     }
   }
-  
+
   return null;
 };
 
 const { width } = Dimensions.get('window');
 
 export default function FlyerCard({ store, onPress }) {
-  // Prioritize logoUrl from API, then local logos, then fallback images
+
   const localLogo = getLocalLogoForStore(store);
   const logoSource = store.logoUrl 
     ? { uri: store.logoUrl } 
     : (localLogo || { uri: store.image });
-  
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      {/* Store Image/Flyer - Hero Section */}
+      {}
       <View style={styles.heroContainer}>
         <ImageWithFallback
           source={logoSource}
@@ -90,15 +85,15 @@ export default function FlyerCard({ store, onPress }) {
           resizeMode="contain"
         />
       </View>
-      
-      {/* Special Badge */}
+
+      {}
       {store.promotions && store.promotions.length > 0 && (
         <View style={styles.specialBadge}>
           <Text style={styles.specialText}>SPECIAL</Text>
         </View>
       )}
 
-      {/* Store Info */}
+      {}
       <View style={styles.storeInfo}>
         <View style={styles.storeHeader}>
           <View style={styles.logoContainer}>
@@ -111,14 +106,14 @@ export default function FlyerCard({ store, onPress }) {
           <View style={styles.storeDetails}>
             <Text style={styles.storeName}>{store.name}</Text>
             <Text style={styles.storeCategory}>{store.category}</Text>
-            
+
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={14} color={COLORS.warning} />
               <Text style={styles.rating}>{store.rating}</Text>
               <Text style={styles.reviewCount}>({store.reviews} reviews)</Text>
             </View>
           </View>
-          
+
           <View style={styles.statusContainer}>
             <View style={[
               styles.statusIndicator, 
@@ -130,7 +125,7 @@ export default function FlyerCard({ store, onPress }) {
           </View>
         </View>
 
-        {/* Delivery Info */}
+        {}
         <View style={styles.deliveryInfo}>
           <Ionicons name="time-outline" size={16} color={COLORS.gray} />
           <Text style={styles.deliveryText}>
@@ -138,7 +133,7 @@ export default function FlyerCard({ store, onPress }) {
           </Text>
         </View>
 
-        {/* Top Promotion Preview */}
+        {}
         {store.promotions && store.promotions[0] && (
           <View style={styles.promotionPreview}>
             <Ionicons name="pricetag" size={14} color={COLORS.success} />
@@ -148,7 +143,7 @@ export default function FlyerCard({ store, onPress }) {
           </View>
         )}
 
-        {/* Action Button */}
+        {}
         <View style={styles.actionButton}>
           <Text style={styles.actionButtonText}>View Store & Deals</Text>
           <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />

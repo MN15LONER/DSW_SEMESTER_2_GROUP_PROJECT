@@ -28,19 +28,16 @@ const CustomerChat = ({ route, navigation }) => {
     loadMessages();
     loadDriverInfo();
 
-    // Initialize notifications
     notificationService.initialize();
 
-    // Set up real-time listener for new messages
     const unsubscribe = firebaseService.chat.listenToMessages(orderId, (newMessages) => {
       setMessages(newMessages);
 
-      // Check for new driver messages and send notifications
       const previousMessageCount = messages.length;
       if (newMessages.length > previousMessageCount) {
         const latestMessage = newMessages[newMessages.length - 1];
         if (latestMessage.senderType === 'driver' && latestMessage.senderId !== user.uid) {
-          // Send notification for new driver message
+
           notificationService.sendChatNotification(
             orderId,
             latestMessage.senderName,
@@ -94,8 +91,7 @@ const CustomerChat = ({ route, navigation }) => {
 
       await firebaseService.chat.sendMessage(messageData);
       setNewMessage('');
-      
-      // Scroll to bottom after sending
+
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
@@ -107,7 +103,7 @@ const CustomerChat = ({ route, navigation }) => {
 
   const renderMessage = ({ item: message }) => {
     const isCustomer = message.senderType === 'customer';
-    
+
     return (
       <View style={[
         styles.messageContainer,

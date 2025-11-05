@@ -8,7 +8,7 @@ import { COLORS } from '../../styles/colors';
 const { width } = Dimensions.get('window');
 
 export default function StoreHeader({ store }) {
-  // Local logos for featured brands (match FlyerCard logic)
+
   let localLogo = null;
   if (store && store.name) {
     const name = store.name.toLowerCase();

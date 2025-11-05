@@ -4,41 +4,14 @@ import * as WebBrowser from 'expo-web-browser';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from './firebase';
 
-// This is required for the browser to close properly after authentication
 WebBrowser.maybeCompleteAuthSession();
 
-/**
- * Google Sign-In Configuration
- * Using Web Client ID with Expo AuthSession proxy for universal compatibility
- */
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 
-/**
- * Redirect URI Configuration
- * Uses Expo's AuthSession proxy to ensure compatibility across:
- * - Expo Go (development)
- * - Standalone builds (production)
- * 
- * The proxy redirect URI resolves to: https://auth.expo.io/@mn15loner/mzansi-react
- * This must be added to Firebase Console > Authentication > Google provider > Authorized redirect URIs
- */
-// Force the Expo AuthSession proxy redirect URI so Google sees a compliant https:// URL
-// Replace owner/slug if your Expo account or project are different
 const redirectUri = 'https://auth.expo.io/@mn15loner/mzansi-react';
 
-/**
- * Hook to manage Google authentication flow
- * 
- * Configuration:
- * - Uses only Web Client ID (no platform-specific client IDs)
- * - Always uses Expo AuthSession proxy for redirect handling
- * - Forces account selection prompt on every sign-in
- * - Redirect URI: https://auth.expo.io/@mn15loner/mzansi-react
- * 
- * @returns {Object} Authentication request, response, and prompt function
- */
 export const useGoogleAuth = () => {
-  // Request an ID token explicitly and standard OIDC scopes
+
   const [request, response, promptAsync] = Google.useAuthRequest(
     {
       clientId: GOOGLE_WEB_CLIENT_ID,
@@ -55,31 +28,17 @@ export const useGoogleAuth = () => {
   return { request, response, promptAsync };
 };
 
-/**
- * Sign in with Google using Firebase Authentication
- * 
- * This function:
- * 1. Prompts the user to sign in with Google
- * 2. Exchanges the Google token for Firebase credentials
- * 3. Signs the user into Firebase
- * 4. Returns the Firebase user object
- * 
- * @param {Function} promptAsync - The prompt function from useGoogleAuth hook
- * @returns {Promise<Object>} Result object with success status and user/error
- */
 export const signInWithGoogle = async (promptAsync) => {
   try {
-    // Check if Web Client ID is configured
+
     if (!GOOGLE_WEB_CLIENT_ID) {
       throw new Error(
         'Google Web Client ID is not configured. Please add EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID to your .env file.'
       );
     }
 
-    // Prompt user to sign in with Google
     const result = await promptAsync();
 
-    // Handle different response types
     if (result.type === 'cancel') {
       return {
         success: false,
@@ -95,7 +54,6 @@ export const signInWithGoogle = async (promptAsync) => {
       };
     }
 
-    // Extract ID token - different SDK versions may place it on result.params or result.authentication
     const idToken = result.params?.id_token || result.authentication?.idToken || result.authentication?.id_token;
 
     if (!idToken) {
@@ -103,12 +61,10 @@ export const signInWithGoogle = async (promptAsync) => {
       throw new Error('No ID token received from Google. Make sure responseType: "id_token" is set and the Web Client ID is correct.');
     }
 
-    // Create Firebase credential with Google ID token and sign in
     const credential = GoogleAuthProvider.credential(idToken);
     const userCredential = await signInWithCredential(auth, credential);
     const firebaseUser = userCredential.user;
 
-    // Return success with user data
     return {
       success: true,
       user: firebaseUser,
@@ -118,7 +74,6 @@ export const signInWithGoogle = async (promptAsync) => {
   } catch (error) {
     console.error('Google Sign-In Error:', error);
 
-    // Handle specific error cases
     let errorMessage = 'Failed to sign in with Google. Please try again.';
 
     if (error.code === 'auth/account-exists-with-different-credential') {
@@ -140,23 +95,13 @@ export const signInWithGoogle = async (promptAsync) => {
   }
 };
 
-/**
- * Validate Google authentication configuration
- * @returns {boolean} True if configuration is valid
- */
 export const isGoogleAuthConfigured = () => {
   return !!GOOGLE_WEB_CLIENT_ID && GOOGLE_WEB_CLIENT_ID !== 'your_google_web_client_id_here';
 };
 
-/**
- * Get the redirect URI being used for Google authentication
- * Useful for debugging and verifying the correct URI is configured in Firebase
- * @returns {string} The redirect URI
- */
 export const getRedirectUri = () => {
   return redirectUri;
 };
 
-// Log the redirect URI on module load for debugging
 console.log('🔗 Google Auth Redirect URI:', redirectUri);
 console.log('📝 Add this URI to Firebase Console > Authentication > Google > Authorized redirect URIs');

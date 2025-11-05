@@ -6,10 +6,9 @@ module.exports = () => ({
     orientation: 'portrait',
     icon: './assets/icons/icon.png',
     userInterfaceStyle: 'light',
-  // Authentication scheme for OAuth redirects (required for Google Sign-In)
-  // Keep the scheme consistent with the slug when possible
+
   scheme: 'mzansi-react',
-  // The Expo account owner - required so the AuthSession proxy URI resolves correctly
+
   owner: 'mn15loner',
     splash: {
       image: './assets/images/splash-icon.jpg',
@@ -45,5 +44,3 @@ module.exports = () => ({
     },
   },
 });
-
-

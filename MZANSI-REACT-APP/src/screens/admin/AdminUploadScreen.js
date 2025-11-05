@@ -13,7 +13,7 @@ export default function AdminUploadScreen() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    // Request permissions on mount
+
     (async () => {
       if (Platform.OS !== 'web') {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -26,8 +26,7 @@ export default function AdminUploadScreen() {
 
   const pickImage = async () => {
     try {
-      // Backwards-compatible mediaTypes selection. Newer versions expose ImagePicker.MediaType
-      // older versions use ImagePicker.MediaTypeOptions. If neither exists we omit the option.
+
       const mediaTypesOption =
         ImagePicker && ImagePicker.MediaType && ImagePicker.MediaType.IMAGE
           ? [ImagePicker.MediaType.IMAGE]
@@ -58,7 +57,7 @@ export default function AdminUploadScreen() {
         Alert.alert('Permissions required', 'Permission to access camera is required.');
         return;
       }
-      // Reuse same backwards-compatible mediaTypes logic as picker
+
       const mediaTypesOption =
         ImagePicker && ImagePicker.MediaType && ImagePicker.MediaType.IMAGE
           ? [ImagePicker.MediaType.IMAGE]
@@ -92,7 +91,7 @@ export default function AdminUploadScreen() {
     try {
       const saved = await saveLeaflet({ uri: imageUri, title, notes, docType });
       Alert.alert('Success', 'Leaflet has been posted successfully!');
-      // clear form
+
       setTitle('');
       setDocType('photo');
       setNotes('');

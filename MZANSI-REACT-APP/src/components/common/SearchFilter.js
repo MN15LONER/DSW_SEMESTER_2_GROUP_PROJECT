@@ -77,7 +77,7 @@ export default function SearchFilter({
       onRequestClose={onClose}
     >
       <View style={styles.container}>
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={COLORS.gray} />
@@ -89,7 +89,7 @@ export default function SearchFilter({
         </View>
 
         <ScrollView style={styles.content}>
-          {/* Category Filter */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Category</Text>
             <View style={styles.chipContainer}>
@@ -114,7 +114,7 @@ export default function SearchFilter({
 
           <Divider style={styles.divider} />
 
-          {/* Price Range */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Price Range</Text>
             <View style={styles.chipContainer}>
@@ -139,7 +139,7 @@ export default function SearchFilter({
 
           <Divider style={styles.divider} />
 
-          {/* Sort Options */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Sort By</Text>
             {SORT_OPTIONS.map((option) => (
@@ -160,10 +160,10 @@ export default function SearchFilter({
 
           <Divider style={styles.divider} />
 
-          {/* Additional Filters */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Additional Filters</Text>
-            
+
             <TouchableOpacity
               style={styles.toggleOption}
               onPress={() => setShowSpecialsOnly(!showSpecialsOnly)}
@@ -190,7 +190,7 @@ export default function SearchFilter({
           </View>
         </ScrollView>
 
-        {/* Apply Button */}
+        {}
         <View style={styles.footer}>
           <Button
             mode="contained"

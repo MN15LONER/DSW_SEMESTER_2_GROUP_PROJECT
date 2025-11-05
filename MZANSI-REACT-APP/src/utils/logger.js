@@ -1,4 +1,4 @@
-// Production-safe logging utility
+
 const isDevelopment = __DEV__;
 
 class Logger {
@@ -15,7 +15,7 @@ class Logger {
   }
 
   static error(...args) {
-    // Always log errors, even in production
+
     console.error(...args);
   }
 

@@ -104,14 +104,12 @@ export default function AddEditAddressScreen({ route, navigation }) {
         formattedAddress: formData.formattedAddress,
       };
 
-      // Save directly to backend (Firebase) — DeliveryAddressScreen reloads on focus
       if (isEditMode && address?.id) {
         await firebaseService.addresses.update(address.id, sanitizedData);
       } else {
         await firebaseService.addresses.create(user.uid, sanitizedData);
       }
 
-      // If this address was marked as default, cache it and notify LocationContext so Home/Checkout update quickly.
       if (sanitizedData.isDefault) {
         const defaultToCache = {
           ...sanitizedData,
@@ -243,7 +241,7 @@ export default function AddEditAddressScreen({ route, navigation }) {
           {errors.phone}
         </HelperText>
 
-        {/* Address Location Picker */}
+        {}
         <AddressLocationPicker
           onAddressSelect={(addressData) => {
             setFormData(prev => ({
@@ -262,17 +260,17 @@ export default function AddEditAddressScreen({ route, navigation }) {
           pickerSignal={pickerSignal}
         />
 
-        {/* Map Preview */}
+        {}
         <AddressMapPreview
           address={formData}
           onEdit={() => {
-            // Trigger the address location picker via ref (primary) and signal (fallback)
+
             if (addressPickerRef.current && addressPickerRef.current.open) {
               addressPickerRef.current.open();
             } else {
               setPickerSignal(s => s + 1);
             }
-            // also always increment the signal to be safe
+
             setPickerSignal(s => s + 1);
           }}
         />

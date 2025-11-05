@@ -1,4 +1,4 @@
-// Real-time store availability and inventory management service
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class StoreAvailabilityService {
@@ -9,7 +9,6 @@ class StoreAvailabilityService {
     this.updateInterval = 5 * 60 * 1000; // 5 minutes
   }
 
-  // Check if store is currently open based on operating hours
   isStoreOpen(store) {
     if (!store.openingHours) return store.isOpen || false;
 
@@ -37,26 +36,22 @@ class StoreAvailabilityService {
     return hours * 60 + minutes;
   }
 
-  // Get real-time store availability
   async getStoreAvailability(storeId) {
     const cacheKey = `availability_${storeId}`;
     const lastUpdateTime = this.lastUpdate.get(cacheKey);
     const now = Date.now();
 
-    // Check if we have recent data
     if (lastUpdateTime && (now - lastUpdateTime) < this.updateInterval) {
       return this.availabilityCache.get(cacheKey);
     }
 
     try {
-      // Simulate real-time availability check
+
       const availability = await this.fetchStoreAvailability(storeId);
-      
-      // Cache the result
+
       this.availabilityCache.set(cacheKey, availability);
       this.lastUpdate.set(cacheKey, now);
 
-      // Persist to AsyncStorage
       await AsyncStorage.setItem(cacheKey, JSON.stringify({
         data: availability,
         timestamp: now
@@ -65,13 +60,12 @@ class StoreAvailabilityService {
       return availability;
     } catch (error) {
       console.error('Error fetching store availability:', error);
-      
-      // Try to get cached data from AsyncStorage
+
       try {
         const cached = await AsyncStorage.getItem(cacheKey);
         if (cached) {
           const { data, timestamp } = JSON.parse(cached);
-          // Use cached data if it's not too old (1 hour)
+
           if (now - timestamp < 60 * 60 * 1000) {
             return data;
           }
@@ -80,16 +74,12 @@ class StoreAvailabilityService {
         console.error('Error reading cached availability:', cacheError);
       }
 
-      // Return default availability
       return this.getDefaultAvailability(storeId);
     }
   }
 
-  // Simulate fetching real-time availability data
   async fetchStoreAvailability(storeId) {
-    // In a real app, this would make an API call to your backend
-    // For now, we'll simulate realistic availability data
-    
+
     const baseAvailability = {
       storeId,
       isOpen: Math.random() > 0.2, // 80% chance store is open
@@ -101,9 +91,8 @@ class StoreAvailabilityService {
       lastUpdated: new Date().toISOString()
     };
 
-    // Add some realistic variations based on time of day
     const hour = new Date().getHours();
-    
+
     if (hour < 8 || hour > 21) {
       baseAvailability.isOpen = Math.random() > 0.7; // Less likely to be open
       baseAvailability.deliveryAvailable = Math.random() > 0.5;
@@ -134,7 +123,7 @@ class StoreAvailabilityService {
 
     const numOffers = Math.floor(Math.random() * 3); // 0-2 offers
     const selectedOffers = [];
-    
+
     for (let i = 0; i < numOffers; i++) {
       const randomOffer = offers[Math.floor(Math.random() * offers.length)];
       if (!selectedOffers.includes(randomOffer)) {
@@ -158,7 +147,6 @@ class StoreAvailabilityService {
     };
   }
 
-  // Get product availability in specific store
   async getProductAvailability(storeId, productId) {
     const cacheKey = `inventory_${storeId}_${productId}`;
     const lastUpdateTime = this.lastUpdate.get(cacheKey);
@@ -170,7 +158,7 @@ class StoreAvailabilityService {
 
     try {
       const availability = await this.fetchProductAvailability(storeId, productId);
-      
+
       this.inventoryCache.set(cacheKey, availability);
       this.lastUpdate.set(cacheKey, now);
 
@@ -188,7 +176,7 @@ class StoreAvailabilityService {
   }
 
   async fetchProductAvailability(storeId, productId) {
-    // Simulate product availability check
+
     return {
       productId,
       storeId,
@@ -200,11 +188,10 @@ class StoreAvailabilityService {
     };
   }
 
-  // Get multiple stores availability at once
   async getBulkStoreAvailability(storeIds) {
     const promises = storeIds.map(storeId => this.getStoreAvailability(storeId));
     const results = await Promise.allSettled(promises);
-    
+
     return results.map((result, index) => ({
       storeId: storeIds[index],
       availability: result.status === 'fulfilled' ? result.value : this.getDefaultAvailability(storeIds[index]),
@@ -212,9 +199,8 @@ class StoreAvailabilityService {
     }));
   }
 
-  // Subscribe to real-time updates (WebSocket simulation)
   subscribeToStoreUpdates(storeId, callback) {
-    // In a real app, this would establish a WebSocket connection
+
     const interval = setInterval(async () => {
       try {
         const availability = await this.getStoreAvailability(storeId);
@@ -227,17 +213,15 @@ class StoreAvailabilityService {
     return () => clearInterval(interval); // Return unsubscribe function
   }
 
-  // Clear cache
   clearCache() {
     this.availabilityCache.clear();
     this.inventoryCache.clear();
     this.lastUpdate.clear();
   }
 
-  // Get store status summary
   async getStoreStatusSummary(storeId) {
     const availability = await this.getStoreAvailability(storeId);
-    
+
     let status = 'closed';
     let statusColor = '#F44336';
     let statusMessage = 'Store is currently closed';
@@ -269,10 +253,9 @@ class StoreAvailabilityService {
     };
   }
 
-  // Check if delivery is available to specific location
   async checkDeliveryAvailability(storeId, deliveryLocation) {
     const storeAvailability = await this.getStoreAvailability(storeId);
-    
+
     if (!storeAvailability.deliveryAvailable) {
       return {
         available: false,
@@ -281,9 +264,8 @@ class StoreAvailabilityService {
       };
     }
 
-    // Simulate delivery zone check
     const isInDeliveryZone = Math.random() > 0.1; // 90% chance location is in delivery zone
-    
+
     if (!isInDeliveryZone) {
       return {
         available: false,
@@ -301,7 +283,7 @@ class StoreAvailabilityService {
   }
 
   calculateDeliveryFee(deliveryLocation) {
-    // Simulate delivery fee calculation based on distance
+
     const baseFee = 25; // R25 base fee
     const distanceFee = Math.floor(Math.random() * 20); // R0-20 distance fee
     return baseFee + distanceFee;
@@ -310,7 +292,6 @@ class StoreAvailabilityService {
 
 export const storeAvailabilityService = new StoreAvailabilityService();
 
-// Helper hooks for React components
 export const useStoreAvailability = (storeId) => {
   const [availability, setAvailability] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
@@ -326,7 +307,6 @@ export const useStoreAvailability = (storeId) => {
         setAvailability(data);
         setError(null);
 
-        // Subscribe to updates
         unsubscribe = storeAvailabilityService.subscribeToStoreUpdates(storeId, (newData) => {
           setAvailability(newData);
         });

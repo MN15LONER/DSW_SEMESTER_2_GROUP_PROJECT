@@ -24,15 +24,14 @@ export default function ApiTestComponent() {
     setLoading(true);
     try {
       console.log('Testing Google Places API...');
-      
-      // Test with a simple search for supermarkets in Johannesburg
+
       const testLocation = {
         latitude: -26.2041,
         longitude: 28.0473
       };
-      
+
       const places = await googlePlacesService.findNearbyStores(testLocation, 5000, 'supermarket');
-      
+
       setResults(prev => ({
         ...prev,
         googlePlaces: {
@@ -41,7 +40,7 @@ export default function ApiTestComponent() {
           data: places.slice(0, 3) // Show first 3 results
         }
       }));
-      
+
       Alert.alert('Success', `Google Places API working! Found ${places.length} stores.`);
     } catch (error) {
       console.error('Google Places API Error:', error);
@@ -54,7 +53,7 @@ export default function ApiTestComponent() {
         },
         errors: [...prev.errors, `Google Places: ${error.message}`]
       }));
-      
+
       Alert.alert('Google Places Error', error.message);
     } finally {
       setLoading(false);
@@ -65,9 +64,9 @@ export default function ApiTestComponent() {
     setLoading(true);
     try {
       console.log('Testing Unsplash API...');
-      
+
       const images = await unsplashService.searchPhotos('grocery store', 3);
-      
+
       setResults(prev => ({
         ...prev,
         unsplash: {
@@ -76,7 +75,7 @@ export default function ApiTestComponent() {
           data: images
         }
       }));
-      
+
       Alert.alert('Success', `Unsplash API working! Found ${images.length} images.`);
     } catch (error) {
       console.error('Unsplash API Error:', error);
@@ -89,7 +88,7 @@ export default function ApiTestComponent() {
         },
         errors: [...prev.errors, `Unsplash: ${error.message}`]
       }));
-      
+
       Alert.alert('Unsplash Error', error.message);
     } finally {
       setLoading(false);
@@ -99,7 +98,7 @@ export default function ApiTestComponent() {
   const testBothApis = async () => {
     setLoading(true);
     setResults({ googlePlaces: null, unsplash: null, errors: [] });
-    
+
     try {
       await Promise.all([
         testGooglePlacesApi(),
@@ -162,7 +161,7 @@ export default function ApiTestComponent() {
         </View>
       )}
 
-      {/* Results Display */}
+      {}
       {(results.googlePlaces || results.unsplash) && (
         <View style={styles.resultsContainer}>
           <Text style={styles.resultsTitle}>Test Results</Text>
@@ -179,7 +178,7 @@ export default function ApiTestComponent() {
                 </Text>
               </View>
               <Text style={styles.resultMessage}>{results.googlePlaces.message}</Text>
-              
+
               {results.googlePlaces.success && results.googlePlaces.data && (
                 <View style={styles.dataContainer}>
                   <Text style={styles.dataTitle}>Sample Results:</Text>
@@ -205,7 +204,7 @@ export default function ApiTestComponent() {
                 </Text>
               </View>
               <Text style={styles.resultMessage}>{results.unsplash.message}</Text>
-              
+
               {results.unsplash.success && results.unsplash.data && (
                 <View style={styles.dataContainer}>
                   <Text style={styles.dataTitle}>Sample Images:</Text>

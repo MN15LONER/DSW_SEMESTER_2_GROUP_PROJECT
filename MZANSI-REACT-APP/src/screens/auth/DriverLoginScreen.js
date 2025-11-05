@@ -44,7 +44,7 @@ const DriverLoginScreen = ({ navigation }) => {
     console.log('Driver login button pressed');
     console.log('Email:', email);
     console.log('Password length:', password.length);
-    
+
     if (!validateForm()) {
       console.log('Form validation failed');
       return;
@@ -52,11 +52,11 @@ const DriverLoginScreen = ({ navigation }) => {
 
     console.log('Starting login process...');
     const result = await login(email.trim().toLowerCase(), password);
-    
+
     console.log('Login result:', result);
-    
+
     if (!result.success) {
-      // Provide more helpful error messages
+
       let errorMessage = result.error;
       if (result.error.includes('invalid-credential')) {
         errorMessage = 'Invalid email or password. Please check your credentials or register as a new driver.';
@@ -64,19 +64,17 @@ const DriverLoginScreen = ({ navigation }) => {
       console.log('Login failed:', errorMessage);
       Alert.alert('Login Failed', errorMessage);
     } else {
-      // Debug: Log user data to help troubleshoot
+
       console.log('Login successful. User data:', result.user);
       console.log('User type:', result.user?.userType);
-      
-      // Check if user is a driver
+
       if (result.user && result.user.userType === 'driver') {
         console.log('Driver login successful - user will be redirected to driver dashboard');
-        // The authentication state change should automatically navigate to DriverStack
-        // No manual navigation needed - the AppNavigator will handle this
+
       } else {
         console.log('Access denied - user type:', result.user?.userType);
         Alert.alert('Access Denied', `This account is not authorized for driver access. User type: ${result.user?.userType || 'undefined'}`);
-        // Sign out the user
+
         await logout();
       }
     }

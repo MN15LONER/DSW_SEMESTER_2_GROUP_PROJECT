@@ -88,10 +88,8 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
     }
   };
 
-  // Directions polyline coordinates
   const [routeCoords, setRouteCoords] = useState(null);
 
-  // Decode polyline (Google encoded polyline algorithm)
   const decodePolyline = (encoded) => {
     if (!encoded) return [];
     const coords = [];
@@ -123,7 +121,6 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
     return coords;
   };
 
-  // Fetch directions from Google Directions API and decode polyline
   useEffect(() => {
     const fetchDirections = async () => {
       if (!directionsToStore || !userLocation) return;
@@ -145,7 +142,6 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
           const coords = decodePolyline(encoded);
           setRouteCoords(coords);
 
-          // Fit map to route and user/store markers
           const markers = [userLocation, { latitude: directionsToStore.latitude, longitude: directionsToStore.longitude }];
           if (coords && coords.length > 0) {
             const latitudes = coords.map(c => c.latitude).concat(markers.map(m => m.latitude));
@@ -205,7 +201,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
         showsCompass={true}
         showsScale={true}
       >
-        {/* User Location Marker */}
+        {}
         {userLocation && (
           <Marker
             coordinate={userLocation}
@@ -215,7 +211,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
           />
         )}
 
-        {/* Store Markers */}
+        {}
         {stores.map((store) => (
           <Marker
             key={store.id}
@@ -240,7 +236,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
             </View>
           </Marker>
         ))}
-          {/* Route Polyline */}
+          {}
           {routeCoords && routeCoords.length > 0 && (
             <Polyline
               coordinates={routeCoords}
@@ -250,7 +246,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
           )}
       </MapView>
 
-      {/* Control Buttons */}
+      {}
       <View style={styles.controls}>
         <TouchableOpacity
           style={styles.controlButton}
@@ -271,7 +267,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
         )}
       </View>
 
-      {/* Legend */}
+      {}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />

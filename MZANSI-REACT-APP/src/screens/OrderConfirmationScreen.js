@@ -21,15 +21,13 @@ export default function OrderConfirmationScreen({ route, navigation }) {
   };
 
   const handleChatWithDriver = () => {
-    // For now, we'll navigate to a placeholder since we don't have driverId yet
-    // In a real app, you'd get the driverId from the order data
+
     navigation.navigate('CustomerChat', { 
       orderId: orderId,
       driverId: 'placeholder' // This would be the actual driver ID
     });
   };
 
-  // Handle undefined values
   const safeTotal = total || 0;
   const safeDeliveryAddress = deliveryAddress || 'Address not provided';
   const safeStoreGroups = storeGroups || {};
@@ -37,7 +35,7 @@ export default function OrderConfirmationScreen({ route, navigation }) {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollContainer}>
-        {/* Success Header */}
+        {}
         <View style={styles.successHeader}>
           <View style={styles.successIcon}>
             <Ionicons name="checkmark-circle" size={80} color={COLORS.success} />
@@ -48,7 +46,7 @@ export default function OrderConfirmationScreen({ route, navigation }) {
           </Text>
         </View>
 
-        {/* Order Details */}
+        {}
         <Card style={styles.section}>
           <Card.Title title="Order Details" />
           <Card.Content>
@@ -71,7 +69,7 @@ export default function OrderConfirmationScreen({ route, navigation }) {
           </Card.Content>
         </Card>
 
-        {/* Order Items */}
+        {}
         <Card style={styles.section}>
           <Card.Title title="Order Items" />
           <Card.Content>
@@ -94,7 +92,7 @@ export default function OrderConfirmationScreen({ route, navigation }) {
           </Card.Content>
         </Card>
 
-        {/* Next Steps */}
+        {}
         <Card style={styles.section}>
           <Card.Title title="What's Next?" />
           <Card.Content>
@@ -120,7 +118,7 @@ export default function OrderConfirmationScreen({ route, navigation }) {
         </Card>
       </ScrollView>
 
-      {/* Action Buttons */}
+      {}
       <View style={styles.actionContainer}>
         <Button
           mode="outlined"

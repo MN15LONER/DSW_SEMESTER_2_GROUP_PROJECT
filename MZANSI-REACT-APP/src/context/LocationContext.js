@@ -13,7 +13,6 @@ export const LocationProvider = ({ children }) => {
   const mountedRef = useRef(true);
   const { user } = useAuth();
 
-  // Load default address and set as selected location on user login
   useEffect(() => {
     const loadDefaultAddressForLocation = async () => {
       if (user?.uid) {
@@ -21,11 +20,10 @@ export const LocationProvider = ({ children }) => {
           const cachedAddress = await AsyncStorage.getItem(`default_address_${user.uid}`);
           if (cachedAddress) {
             const address = JSON.parse(cachedAddress);
-            // Format the address for display in LocationPicker
+
             const formattedAddress = [address.street, address.city, address.province].filter(Boolean).join(', ');
             setSelectedLocation(formattedAddress);
 
-            // Also set userLocation if coordinates are available
             if (address.latitude && address.longitude) {
               setUserLocation({ latitude: address.latitude, longitude: address.longitude });
             }
@@ -34,7 +32,7 @@ export const LocationProvider = ({ children }) => {
           console.error('Error loading default address for location:', error);
         }
       } else {
-        // Reset to default when user logs out
+
         setSelectedLocation('Johannesburg, Gauteng');
       }
     };
@@ -42,13 +40,12 @@ export const LocationProvider = ({ children }) => {
     loadDefaultAddressForLocation();
   }, [user]);
 
-  // Populate userLocation on mount to provide a bias for place search components.
   useEffect(() => {
     mountedRef.current = true;
 
     const initLocation = async () => {
       try {
-        // Try last known position first (no permission prompt)
+
         const last = await Location.getLastKnownPositionAsync();
         if (last?.coords) {
           if (mountedRef.current) {
@@ -57,7 +54,6 @@ export const LocationProvider = ({ children }) => {
           return;
         }
 
-        // If no last-known position, request foreground permission and get current position
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
           const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });

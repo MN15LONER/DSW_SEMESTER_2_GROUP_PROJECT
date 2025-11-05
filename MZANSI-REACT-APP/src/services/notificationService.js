@@ -4,7 +4,6 @@ import { Platform } from 'react-native';
 
 const NOTIFICATIONS_STORAGE_KEY = 'user_notifications';
 
-// Configure notification behavior
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -26,7 +25,6 @@ class NotificationService {
     try {
       this.currentUserId = userId;
 
-      // Request permissions
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
@@ -40,7 +38,6 @@ class NotificationService {
         return false;
       }
 
-      // Set up notification channel for Android
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'Default',
@@ -63,7 +60,6 @@ class NotificationService {
     try {
       const notificationId = Date.now().toString();
 
-      // Schedule the notification
       const notificationIdFromExpo = await Notifications.scheduleNotificationAsync({
         content: {
           title,
@@ -74,7 +70,6 @@ class NotificationService {
         trigger: null, // Send immediately
       });
 
-      // Store notification in AsyncStorage for the notifications screen
       if (this.currentUserId) {
         const storedNotifications = await this.getStoredNotifications();
         const newNotification = {
@@ -194,7 +189,6 @@ class NotificationService {
     });
   }
 
-  // Listen for incoming notifications
   setNotificationListener(callback) {
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       callback(notification);
@@ -203,7 +197,6 @@ class NotificationService {
     return subscription;
   }
 
-  // Listen for notification responses (when user taps notification)
   setNotificationResponseListener(callback) {
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
       callback(response);
@@ -212,7 +205,6 @@ class NotificationService {
     return subscription;
   }
 
-  // Get the current notification token (for push notifications)
   async getExpoPushToken() {
     try {
       const token = await Notifications.getExpoPushTokenAsync();
@@ -223,7 +215,6 @@ class NotificationService {
     }
   }
 
-  // Cancel all scheduled notifications
   async cancelAllNotifications() {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();

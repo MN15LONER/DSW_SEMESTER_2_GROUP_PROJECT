@@ -39,7 +39,7 @@ const ProductCard = ({ product }) => {
                 return getOptimizedImageUrl(raw, 600, 600, 85) || raw;
               }
             } catch (e) {
-              // ignore
+
             }
             return null;
           }}
@@ -48,7 +48,7 @@ const ProductCard = ({ product }) => {
           fallbackIcon="basket-outline"
           fallbackIconSize={30}
         />
-        
+
         {product.isSpecial && (
           <View style={styles.specialBadge}>
             <Text style={styles.specialText}>SPECIAL</Text>
@@ -59,7 +59,7 @@ const ProductCard = ({ product }) => {
           <Text style={styles.productName} numberOfLines={2}>
             {product.name}
           </Text>
-          
+
           <View style={styles.priceContainer}>
             <Text style={styles.currentPrice}>
               R{product.price.toFixed(2)}
@@ -70,7 +70,7 @@ const ProductCard = ({ product }) => {
               </Text>
             )}
           </View>
-          
+
           <TouchableOpacity 
             style={styles.addButton} 
             onPress={(e) => {

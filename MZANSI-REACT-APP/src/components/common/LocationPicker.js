@@ -27,9 +27,9 @@ const LocationPicker = () => {
 
     setIsSearching(true);
     try {
-      // Use autocomplete for live Google-style suggestions
+
       const predictions = await googlePlacesService.autocomplete(query);
-      // Map predictions to a uniform shape (id, mainText, secondaryText, description)
+
       setSearchResults(predictions.slice(0, 10)); // Limit to 10
     } catch (error) {
       console.error('Location search error:', error);
@@ -99,7 +99,6 @@ const LocationPicker = () => {
         return;
       }
 
-      // If item looks like a place prediction (has id), fetch full details
       if (item && item.id) {
         setIsFetchingDetails(true);
         const placeDetails = await googlePlacesService.getPlaceDetails(item.id);
@@ -107,7 +106,7 @@ const LocationPicker = () => {
           updateLocation(placeDetails.address || placeDetails.name);
           updateUserLocation({ latitude: placeDetails.latitude, longitude: placeDetails.longitude });
         } else {
-          // Fallback to description
+
           updateLocation(item.description || item.mainText || item.name);
           updateUserLocation(null);
         }
@@ -116,7 +115,6 @@ const LocationPicker = () => {
         return;
       }
 
-      // Fallback for other shapes
       if (item && item.latitude && item.longitude) {
         updateLocation(item.address || item.name);
         updateUserLocation({ latitude: item.latitude, longitude: item.longitude });

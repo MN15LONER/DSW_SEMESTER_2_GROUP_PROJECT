@@ -25,10 +25,10 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
     setIsSearching(true);
     try {
       console.log('Searching for addresses with query:', query);
-      // Use LocationContext bias if available, otherwise try to obtain a quick device position once
+
       let bias = locationBias;
       if (!bias) {
-        // attempt to get last known position (don't prompt if possible)
+
         try {
           const last = await Location.getLastKnownPositionAsync();
           if (last && last.coords) {
@@ -36,7 +36,7 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
             setLocationBias(bias);
           }
         } catch (e) {
-          // ignore; we'll fall back to no bias
+
         }
       }
 
@@ -75,7 +75,7 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
   };
 
   const parseAddress = (formattedAddress) => {
-    // Try to extract postal code using regex first
+
     const postalMatch = formattedAddress.match(/\b(\d{4,6})\b/);
     let postalCode = postalMatch ? postalMatch[1] : '';
 
@@ -84,27 +84,24 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
     let city = '';
     let province = '';
 
-    // Known South African provinces (basic matching)
     const provinces = ['Eastern Cape','Free State','Gauteng','KwaZulu-Natal','Limpopo','Mpumalanga','Northern Cape','North West','Western Cape'];
 
-    // Try to find province from parts
     for (let i = parts.length - 1; i >= 0; i--) {
       const p = parts[i];
       if (provinces.some(pr => pr.toLowerCase() === p.toLowerCase())) {
         province = p;
-        // remove province part
+
         parts.splice(i, 1);
         break;
       }
     }
 
-    // If postalCode not found yet, try to parse from last part
     if (!postalCode && parts.length > 0) {
       const last = parts[parts.length - 1];
       const pc = last.match(/\b(\d{4,6})\b/);
       if (pc) {
         postalCode = pc[1];
-        // remove postal from last part
+
         parts[parts.length - 1] = last.replace(pc[0], '').trim();
       }
     }
@@ -152,7 +149,7 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
   const handleAddressSelect = async (item) => {
     try {
       setIsFetchingDetails(true);
-      // Get full place details
+
       const placeDetails = await googlePlacesService.getPlaceDetails(item.id);
       if (placeDetails) {
         let parsedAddress = null;
@@ -176,7 +173,7 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
         };
         onAddressSelect(addressData);
         setModalVisible(false);
-        // keep the query showing the selected address so user sees the full description/address
+
         setSearchQuery(placeDetails.address || placeDetails.name);
       }
     } catch (error) {
@@ -228,14 +225,14 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
   };
 
   const ensureLocationBiasAndOpen = async () => {
-    // If we already have a bias (from LocationContext or previous successful fetch), just open
+
     if (locationBias) {
       setModalVisible(true);
       return;
     }
 
     try {
-      // Request permission once and get a fresh position if granted
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
@@ -245,20 +242,18 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
         }
       }
     } catch (e) {
-      // ignore errors — we will open without bias
+
       console.warn('Error obtaining location bias for picker:', e);
     } finally {
       setModalVisible(true);
     }
   };
 
-  // Expose imperative methods to parent via ref
   useImperativeHandle(ref, () => ({
     open: () => setModalVisible(true),
     close: () => setModalVisible(false),
   }), []);
 
-  // Fallback: open modal when parent increments pickerSignal
   React.useEffect(() => {
     if (typeof pickerSignal !== 'undefined' && pickerSignal !== null) {
       ensureLocationBiasAndOpen();
@@ -270,7 +265,7 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
       <TouchableOpacity
         style={styles.addressItem}
         onPress={() => {
-          // show the tapped suggestion in the search bar immediately
+
           const displayName = item.description || (item.mainText + (secondary ? `, ${secondary}` : ''));
           setSearchQuery(displayName);
           handleAddressSelect(item);
@@ -290,8 +285,7 @@ const AddressLocationPicker = forwardRef(({ onAddressSelect, currentAddress, pic
       </TouchableOpacity>
     );
   };
-  
-    // Main render: a touchable that opens the modal plus the modal itself
+
   return (
     <View>
       <TouchableOpacity style={styles.container} onPress={handleAddressPress}>
@@ -509,7 +503,5 @@ const styles = StyleSheet.create({
     color: '#999',
   },
 });
-
-
 
 export default AddressLocationPicker;

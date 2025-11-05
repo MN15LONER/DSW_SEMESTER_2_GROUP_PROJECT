@@ -22,10 +22,8 @@ export default function App() {
     }
   }, []);
 
-  // Global touch handler to reset inactivity timer
   const handleGlobalTouch = () => {
-    // This will be handled by the AuthContext's resetInactivityTimer function
-    // We can access it through the context if needed
+
   };
 
   return (

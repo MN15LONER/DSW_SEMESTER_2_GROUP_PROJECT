@@ -11,7 +11,7 @@ const cartReducer = (state, action) => {
       const existingItem = state.cartItems.find(
         item => item.id === action.payload.id && item.storeId === action.payload.storeId
       );
-      
+
       if (existingItem) {
         return {
           ...state,
@@ -27,7 +27,7 @@ const cartReducer = (state, action) => {
           cartItems: [...state.cartItems, { ...action.payload, quantity: 1 }],
         };
       }
-    
+
     case 'REMOVE_FROM_CART':
       return {
         ...state,
@@ -35,7 +35,7 @@ const cartReducer = (state, action) => {
           item => !(item.id === action.payload.id && item.storeId === action.payload.storeId)
         ),
       };
-    
+
     case 'UPDATE_QUANTITY':
       if (action.payload.quantity <= 0) {
         return {
@@ -53,19 +53,19 @@ const cartReducer = (state, action) => {
             : item
         ),
       };
-    
+
     case 'CLEAR_CART':
       return {
         ...state,
         cartItems: [],
       };
-    
+
     case 'LOAD_CART':
       return {
         ...state,
         cartItems: action.payload || [],
       };
-    
+
     default:
       return state;
   }
@@ -80,12 +80,10 @@ const CART_STORAGE_KEY = '@mzansi_cart';
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
 
-  // Load cart from storage on app start
   useEffect(() => {
     loadCartFromStorage();
   }, []);
 
-  // Save cart to storage whenever cart changes
   useEffect(() => {
     saveCartToStorage();
   }, [state.cartItems]);
@@ -111,7 +109,7 @@ export const CartProvider = ({ children }) => {
   };
 
   const addToCart = (item) => {
-    // ensure a stable image URL is attached to cart item
+
     let image = item.image;
     try {
       if (!image) {
@@ -123,7 +121,7 @@ export const CartProvider = ({ children }) => {
         }
       }
     } catch (e) {
-      // ignore cache errors
+
     }
 
     if (!image) {

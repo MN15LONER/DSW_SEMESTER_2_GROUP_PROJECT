@@ -1,6 +1,6 @@
-// Form validation utilities
+
 export const validators = {
-  // Email validation
+
   email: (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) return 'Email is required';
@@ -8,7 +8,6 @@ export const validators = {
     return null;
   },
 
-  // Phone number validation (South African format)
   phone: (phone) => {
     const phoneRegex = /^(\+27|0)[6-8][0-9]{8}$/;
     if (!phone) return 'Phone number is required';
@@ -17,7 +16,6 @@ export const validators = {
     return null;
   },
 
-  // Required field validation
   required: (value, fieldName = 'This field') => {
     if (!value || value.toString().trim() === '') {
       return `${fieldName} is required`;
@@ -25,7 +23,6 @@ export const validators = {
     return null;
   },
 
-  // Minimum length validation
   minLength: (value, minLength, fieldName = 'This field') => {
     if (!value) return null; // Let required validator handle empty values
     if (value.toString().length < minLength) {
@@ -34,7 +31,6 @@ export const validators = {
     return null;
   },
 
-  // Maximum length validation
   maxLength: (value, maxLength, fieldName = 'This field') => {
     if (!value) return null;
     if (value.toString().length > maxLength) {
@@ -43,7 +39,6 @@ export const validators = {
     return null;
   },
 
-  // Address validation
   address: (address) => {
     if (!address) return 'Address is required';
     if (address.trim().length < 10) return 'Please enter a complete address';
@@ -51,7 +46,6 @@ export const validators = {
     return null;
   },
 
-  // Name validation
   name: (name) => {
     const nameRegex = /^[a-zA-Z\s'-]+$/;
     if (!name) return 'Name is required';
@@ -60,7 +54,6 @@ export const validators = {
     return null;
   },
 
-  // Postal code validation (South African format)
   postalCode: (code) => {
     const postalRegex = /^[0-9]{4}$/;
     if (!code) return 'Postal code is required';
@@ -68,7 +61,6 @@ export const validators = {
     return null;
   },
 
-  // Special instructions validation
   specialInstructions: (instructions) => {
     if (!instructions) return null; // Optional field
     if (instructions.length > 500) return 'Special instructions must be less than 500 characters';
@@ -76,9 +68,8 @@ export const validators = {
   }
 };
 
-// Input sanitization utilities
 export const sanitizers = {
-  // Remove HTML tags and dangerous characters
+
   text: (input) => {
     if (!input) return '';
     return input
@@ -88,19 +79,16 @@ export const sanitizers = {
       .trim();
   },
 
-  // Sanitize email
   email: (email) => {
     if (!email) return '';
     return email.toString().toLowerCase().trim();
   },
 
-  // Sanitize phone number
   phone: (phone) => {
     if (!phone) return '';
     return phone.toString().replace(/[^\d+]/g, '');
   },
 
-  // Sanitize name (capitalize first letters)
   name: (name) => {
     if (!name) return '';
     return name
@@ -112,7 +100,6 @@ export const sanitizers = {
       .join(' ');
   },
 
-  // Sanitize address
   address: (address) => {
     if (!address) return '';
     return address
@@ -122,14 +109,12 @@ export const sanitizers = {
       .replace(/\s+/g, ' '); // Replace multiple spaces with single space
   },
 
-  // Sanitize postal code
   postalCode: (code) => {
     if (!code) return '';
     return code.toString().replace(/\D/g, ''); // Keep only digits
   }
 };
 
-// Form validation helper
 export const validateForm = (formData, validationRules) => {
   const errors = {};
   let isValid = true;
@@ -137,7 +122,7 @@ export const validateForm = (formData, validationRules) => {
   Object.keys(validationRules).forEach(field => {
     const rules = validationRules[field];
     const value = formData[field];
-    
+
     for (const rule of rules) {
       const error = rule(value);
       if (error) {
@@ -151,7 +136,6 @@ export const validateForm = (formData, validationRules) => {
   return { isValid, errors };
 };
 
-// Sanitize form data
 export const sanitizeFormData = (formData, sanitizationRules) => {
   const sanitizedData = { ...formData };
 

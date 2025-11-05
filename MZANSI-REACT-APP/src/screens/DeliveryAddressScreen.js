@@ -26,7 +26,6 @@ export default function DeliveryAddressScreen({ navigation }) {
     loadAddresses();
   }, []);
 
-  // Reload addresses when this screen regains focus (e.g., after adding/editing)
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadAddresses();
@@ -38,14 +37,14 @@ export default function DeliveryAddressScreen({ navigation }) {
     try {
       setLoading(true);
       if (user?.uid) {
-        // Try Firebase first
+
         const firebaseAddresses = await firebaseService.addresses.getByUser(user.uid);
         if (firebaseAddresses.length > 0) {
           setAddresses(firebaseAddresses);
-          // Also save to AsyncStorage as backup
+
           await AsyncStorage.setItem(`addresses_${user.uid}`, JSON.stringify(firebaseAddresses));
         } else {
-          // Fallback to AsyncStorage
+
           const savedAddresses = await AsyncStorage.getItem(`addresses_${user.uid}`);
           if (savedAddresses) {
             setAddresses(JSON.parse(savedAddresses));
@@ -54,7 +53,7 @@ export default function DeliveryAddressScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Error loading addresses:', error);
-      // Fallback to AsyncStorage on Firebase error
+
       try {
         const savedAddresses = await AsyncStorage.getItem(`addresses_${user?.uid}`);
         if (savedAddresses) {
@@ -78,7 +77,7 @@ export default function DeliveryAddressScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Firebase save error:', error);
-      // Continue with local storage as fallback
+
     }
   };
 
@@ -101,13 +100,12 @@ export default function DeliveryAddressScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Delete from Firebase
+
               await firebaseService.addresses.delete(addressId);
-              
+
               const updatedAddresses = addresses.filter(addr => addr.id !== addressId);
               setAddresses(updatedAddresses);
-              
-              // Update AsyncStorage
+
               await AsyncStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedAddresses));
             } catch (error) {
               console.error('Error deleting address:', error);
@@ -125,18 +123,15 @@ export default function DeliveryAddressScreen({ navigation }) {
         ...addr,
         isDefault: addr.id === addressId
       }));
-      
-      // Update all addresses in Firebase
+
       for (const addr of updatedAddresses) {
         await saveAddressToFirebase({ isDefault: addr.isDefault }, true, addr.id);
       }
-      
+
       setAddresses(updatedAddresses);
-      
-      // Save to AsyncStorage as backup
+
       await AsyncStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedAddresses));
 
-      // Also cache the selected default address and notify LocationContext so UI updates immediately
       const defaultAddr = updatedAddresses.find(a => 
         a.isDefault);
       if (defaultAddr) {
@@ -247,7 +242,7 @@ export default function DeliveryAddressScreen({ navigation }) {
           {addresses.map(renderAddressCard)}
         </ScrollView>
       )}
-      
+
       {addresses.length > 0 && (
         <FAB
           style={styles.fab}

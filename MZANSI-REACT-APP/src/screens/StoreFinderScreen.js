@@ -61,7 +61,7 @@ export default function StoreFinderScreen({ navigation }) {
     try {
       setLocationLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
+
       if (status !== 'granted') {
         Alert.alert(
           'Location Permission',
@@ -103,7 +103,6 @@ export default function StoreFinderScreen({ navigation }) {
   const filterStores = () => {
     let filtered = [...stores];
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(store => {
@@ -118,14 +117,12 @@ export default function StoreFinderScreen({ navigation }) {
       });
     }
 
-    // Filter by store chain
     if (selectedChain !== 'all') {
-      // selectedChain ids are normalized (e.g. 'pick-n-pay'), map to brand match
+
       const normalized = selectedChain.replace(/-/g, ' ').toLowerCase();
       filtered = filtered.filter(store => (store.brand || '').toLowerCase().includes(normalized));
     }
 
-    // Calculate distances and sort by distance if user location is available
     if (userLocation) {
       filtered = filtered.map(store => ({
         ...store,
@@ -172,7 +169,7 @@ export default function StoreFinderScreen({ navigation }) {
         if (supported) {
           Linking.openURL(url);
         } else {
-          // Fallback to Google Maps web
+
           const webUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
           Linking.openURL(webUrl);
         }
@@ -190,7 +187,7 @@ export default function StoreFinderScreen({ navigation }) {
           <Text style={styles.storeName}>{store.name}</Text>
           <Text style={styles.storeChain}>{store.brand}</Text>
         </View>
-        
+
         <View style={styles.storeStatus}>
           <View style={[
             styles.statusIndicator,
@@ -210,7 +207,7 @@ export default function StoreFinderScreen({ navigation }) {
           <Ionicons name="location" size={16} color={COLORS.textSecondary} />
           <Text style={styles.address}>{store.address || store.location || 'Address not available'}</Text>
         </View>
-        
+
         {typeof store.distance === 'number' && (
           <View style={styles.distanceContainer}>
             <Ionicons name="navigate" size={16} color={COLORS.primary} />
@@ -242,7 +239,7 @@ export default function StoreFinderScreen({ navigation }) {
           <Ionicons name="call" size={16} color={COLORS.primary} />
           Call
         </Button>
-        
+
         <Button
           mode="outlined"
           onPress={() => handleGetDirections(store)}
@@ -252,7 +249,7 @@ export default function StoreFinderScreen({ navigation }) {
           <Ionicons name="navigate" size={16} color={COLORS.primary} />
           Directions
         </Button>
-        
+
         <Button
           mode="contained"
           onPress={() => navigation.navigate('ProductSearch', { 
@@ -316,7 +313,7 @@ export default function StoreFinderScreen({ navigation }) {
           value={searchQuery}
           style={styles.searchBar}
         />
-        
+
         <FlatList
           data={storeChains}
           renderItem={({ item }) => (

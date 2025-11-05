@@ -68,5 +68,3 @@ const styles = StyleSheet.create({
   refreshBtn: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.primary, borderRadius: 8 },
   refreshText: { color: '#fff', fontWeight: '600' },
 });
-
-

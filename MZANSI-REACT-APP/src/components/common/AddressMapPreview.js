@@ -38,7 +38,7 @@ const AddressMapPreview = ({ address, onEdit }) => {
         )}
       </View>
 
-      {/* Large edit button removed to avoid duplicate edit controls; header edit remains */}
+      {}
 
       <View style={styles.mapContainer}>
         <MapView

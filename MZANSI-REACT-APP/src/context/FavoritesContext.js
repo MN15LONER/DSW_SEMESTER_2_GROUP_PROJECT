@@ -43,12 +43,10 @@ const initialState = {
 export const FavoritesProvider = ({ children }) => {
   const [state, dispatch] = useReducer(favoritesReducer, initialState);
 
-  // Load favorites from storage on app start
   useEffect(() => {
     loadFavoritesFromStorage();
   }, []);
 
-  // Save favorites to storage whenever favorites change
   useEffect(() => {
     saveFavoritesToStorage();
   }, [state.favorites]);

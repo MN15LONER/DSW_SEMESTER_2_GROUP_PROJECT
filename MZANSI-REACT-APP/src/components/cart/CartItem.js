@@ -23,7 +23,6 @@ export default function CartItem({ item }) {
     removeFromCart(item.id, item.storeId);
   };
 
-  // Normalize price to a safe number to avoid runtime errors when price is null/undefined
   const price = Number(item?.price ?? 0) || 0;
   const quantity = Number(item?.quantity ?? 0) || 0;
   const total = price * quantity;
@@ -35,7 +34,7 @@ export default function CartItem({ item }) {
         style={styles.productImage}
         resizeMode="cover"
       />
-      
+
       <View style={styles.productInfo}>
         <Text style={styles.productName} numberOfLines={2}>
           {item.name}
@@ -43,7 +42,7 @@ export default function CartItem({ item }) {
         <Text style={styles.productPrice}>
           R{price.toFixed(2)} each
         </Text>
-        
+
         <View style={styles.quantityContainer}>
           <TouchableOpacity 
             style={styles.quantityButton} 
@@ -51,9 +50,9 @@ export default function CartItem({ item }) {
           >
             <Ionicons name="remove" size={18} color={COLORS.primary} />
           </TouchableOpacity>
-          
+
           <Text style={styles.quantity}>{item.quantity}</Text>
-          
+
           <TouchableOpacity 
             style={styles.quantityButton} 
             onPress={increaseQuantity}
@@ -62,12 +61,12 @@ export default function CartItem({ item }) {
           </TouchableOpacity>
         </View>
       </View>
-      
+
       <View style={styles.rightSection}>
         <TouchableOpacity style={styles.removeButton} onPress={handleRemove}>
           <Ionicons name="trash-outline" size={20} color={COLORS.error} />
         </TouchableOpacity>
-        
+
         <Text style={styles.totalPrice}>
           R{total.toFixed(2)}
         </Text>
