@@ -7,6 +7,7 @@ import { COLORS } from '../styles/colors';
 import { useAuth } from '../context/AuthContext';
 import { firebaseService, auth } from '../services/firebase';
 import { updateProfile } from 'firebase/auth';
+
 export default function ProfileScreen({ navigation }) {
   const { user, logout, updateUserProfile, deleteAccount } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -16,7 +17,10 @@ export default function ProfileScreen({ navigation }) {
     if (user?.firstName) return user.firstName;
     return user?.email?.split('@')[0] || 'User';
   };
+
+ 
   const pickImage = async () => {
+
     Alert.alert(
       'Profile Picture',
       'Choose an option',
@@ -30,12 +34,14 @@ export default function ProfileScreen({ navigation }) {
                 Alert.alert('Permission Required', 'Permission to access the camera is required!');
                 return;
               }
+
               const cameraResult = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.8,
               });
+
               if (!cameraResult.canceled && cameraResult.assets[0]) {
                 await uploadProfilePicture(cameraResult.assets[0].uri);
               }
@@ -54,12 +60,14 @@ export default function ProfileScreen({ navigation }) {
                 Alert.alert('Permission Required', 'Permission to access camera roll is required!');
                 return;
               }
+
               const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.8,
               });
+
               if (!result.canceled && result.assets[0]) {
                 await uploadProfilePicture(result.assets[0].uri);
               }
@@ -74,22 +82,29 @@ export default function ProfileScreen({ navigation }) {
       { cancelable: true }
     );
   };
+
   const uploadProfilePicture = async (imageUri) => {
     try {
       setIsUploading(true);
+
       if (!user?.uid) {
         throw new Error('No logged-in user');
       }
+
       const downloadUrl = await firebaseService.users.uploadProfilePicture(user.uid, imageUri);
       if (!downloadUrl) {
         throw new Error('Failed to upload image to storage');
       }
+
+
       const updateResult = await updateUserProfile({ photoURL: downloadUrl });
+
       try {
         await updateProfile(auth.currentUser, { photoURL: downloadUrl });
       } catch (err) {
         console.warn('Could not update Firebase Auth profile photoURL:', err);
       }
+
       if (updateResult.success) {
         Alert.alert('Success', 'Profile picture updated successfully!');
       } else {
@@ -102,6 +117,8 @@ export default function ProfileScreen({ navigation }) {
       setIsUploading(false);
     }
   };
+
+ 
   const deleteProfilePicture = () => {
     Alert.alert(
       'Delete Profile Picture',
@@ -115,6 +132,7 @@ export default function ProfileScreen({ navigation }) {
             try {
               setIsUploading(true);
               const result = await updateUserProfile({ photoURL: '' });
+              
               if (result.success) {
                 Alert.alert('Success', 'Profile picture deleted successfully!');
               } else {
@@ -131,6 +149,7 @@ export default function ProfileScreen({ navigation }) {
       ]
     );
   };
+
   const handleDeleteAccount = () => {
     Alert.alert(
       'Delete Account',
@@ -141,6 +160,7 @@ export default function ProfileScreen({ navigation }) {
           text: 'Delete Account',
           style: 'destructive',
           onPress: () => {
+            // Second confirmation for extra safety
             Alert.alert(
               'Final Confirmation',
               'This will permanently delete your account and all associated data. Are you absolutely sure?',
@@ -153,12 +173,14 @@ export default function ProfileScreen({ navigation }) {
                     try {
                       setIsUploading(true);
                       const result = await deleteAccount();
+                      
                       if (result.success) {
                         Alert.alert(
                           'Account Deleted',
                           'Your account has been permanently deleted.',
                           [{ text: 'OK' }]
                         );
+                        
                       } else {
                         Alert.alert('Error', result.error || 'Failed to delete account. Please try again.');
                       }
@@ -177,16 +199,23 @@ export default function ProfileScreen({ navigation }) {
       ]
     );
   };
+
   const handleContactSupport = () => {
     const email = 'trellis973@gmail.com';
     const subject = 'Mzansi App Support Request';
     const body = `Hello Mzansi Support Team,
+
 I need assistance with the following:
+
 [Please describe your issue here]
+
 User: ${getDisplayName()}
 Email: ${user?.email || 'Not provided'}
+
 Thank you for your help!`;
+
     const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
     Linking.canOpenURL(mailtoUrl)
       .then((supported) => {
         if (supported) {
@@ -199,6 +228,7 @@ Thank you for your help!`;
               {
                 text: 'Copy Email',
                 onPress: () => {
+                  // Note: Clipboard functionality would require expo-clipboard
                   Alert.alert('Support Email', email);
                 }
               },
@@ -215,6 +245,7 @@ Thank you for your help!`;
         );
       });
   };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
@@ -248,6 +279,7 @@ Thank you for your help!`;
         <Text style={styles.userName}>{getDisplayName()}</Text>
         <Text style={styles.userEmail}>{user?.email || 'No email available'}</Text>
       </View>
+
       <View style={styles.menuSection}>
         <List.Item
           title="Order History"
@@ -270,7 +302,9 @@ Thank you for your help!`;
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => navigation.navigate('Favorites')}
         />
+        
         <Divider />
+        
         <List.Item
           title="Delivery Address"
           description="Manage your delivery locations"
@@ -278,7 +312,9 @@ Thank you for your help!`;
           right={props => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => navigation.navigate('DeliveryAddress')}
         />
+        
         <Divider />
+        
         <List.Item
           title="Payment Methods"
           description="Manage your payment options"
@@ -286,7 +322,9 @@ Thank you for your help!`;
           right={props => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => navigation.navigate('PaymentMethods')}
         />
+        
         <Divider />
+        
         <List.Item
           title="Notifications"
           description="Manage your notification preferences"
@@ -294,7 +332,9 @@ Thank you for your help!`;
           right={props => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => {}}
         />
+        
         <Divider />
+        
         <List.Item
           title="API Test"
           description="Test Google Places & Unsplash APIs"
@@ -302,6 +342,7 @@ Thank you for your help!`;
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => navigation.navigate('ApiTest')}
         />
+        
         <List.Item
           title="Help & Support"
           description="Get help with your orders"
@@ -309,7 +350,9 @@ Thank you for your help!`;
           right={props => <List.Icon {...props} icon="chevron-right" />}
           onPress={handleContactSupport}
         />
+
         <Divider />
+
         <List.Item
           title="Sign Out"
           description="Log out of your account"
@@ -329,13 +372,16 @@ Thank you for your help!`;
                     if (!result?.success) {
                       Alert.alert('Logout Failed', result?.error || 'Please try again.');
                     }
+                    
                   }
                 }
               ]
             );
           }}
         />
+
         <Divider />
+
         <List.Item
           title="Delete Account"
           description="Permanently delete your account and all data"
@@ -347,6 +393,7 @@ Thank you for your help!`;
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -35,15 +35,15 @@ export const LocationProvider = ({ children }) => {
     mountedRef.current = true;
     const initLocation = async () => {
       try {
-        const last = await Location.getLastKnownPositionAsync();
-        if (last?.coords) {
-          if (mountedRef.current) {
-            setUserLocation({ latitude: last.coords.latitude, longitude: last.coords.longitude });
-          }
-          return;
-        }
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
+          const last = await Location.getLastKnownPositionAsync();
+          if (last?.coords) {
+            if (mountedRef.current) {
+              setUserLocation({ latitude: last.coords.latitude, longitude: last.coords.longitude });
+            }
+            return;
+          }
           const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
           if (pos?.coords && mountedRef.current) {
             setUserLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
