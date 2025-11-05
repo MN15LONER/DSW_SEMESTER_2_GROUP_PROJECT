@@ -13,7 +13,6 @@ Clean, intuitive UI Built with React Native for smooth performance on Android an
 Running the App
 Make sure your in git bash
 npx expo start
-# or
 
 Tech Stack
 Layer	Technology
