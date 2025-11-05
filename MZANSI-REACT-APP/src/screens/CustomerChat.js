@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebase';
+import { notificationService } from '../services/notificationService';
 
 const CustomerChat = ({ route, navigation }) => {
   const { orderId, driverId } = route.params;
@@ -26,9 +27,28 @@ const CustomerChat = ({ route, navigation }) => {
   useEffect(() => {
     loadMessages();
     loadDriverInfo();
+
+    // Initialize notifications
+    notificationService.initialize();
+
     // Set up real-time listener for new messages
     const unsubscribe = firebaseService.chat.listenToMessages(orderId, (newMessages) => {
       setMessages(newMessages);
+
+      // Check for new driver messages and send notifications
+      const previousMessageCount = messages.length;
+      if (newMessages.length > previousMessageCount) {
+        const latestMessage = newMessages[newMessages.length - 1];
+        if (latestMessage.senderType === 'driver' && latestMessage.senderId !== user.uid) {
+          // Send notification for new driver message
+          notificationService.sendChatNotification(
+            orderId,
+            latestMessage.senderName,
+            latestMessage.message,
+            'driver'
+          );
+        }
+      }
     });
 
     return unsubscribe;

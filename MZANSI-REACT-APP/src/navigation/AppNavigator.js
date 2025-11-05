@@ -33,6 +33,7 @@ import CustomerChat from '../screens/CustomerChat';
 import StockManagementScreen from '../screens/StockManagementScreen';
 import OrderTrackingScreen from '../screens/OrderTrackingScreen';
 import LeafletBrowserScreen from '../screens/LeafletBrowserScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import { COLORS } from '../styles/colors';
 
 const Stack = createStackNavigator();
@@ -250,11 +251,18 @@ const MainStack = React.memo(() => {
           headerShown: false,
         }}
       />
-      <Stack.Screen 
-        name="Leaflets" 
+      <Stack.Screen
+        name="Leaflets"
         component={LeafletBrowserScreen}
         options={{
           title: 'Browse Leaflets',
+        }}
+      />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          title: 'Notifications',
         }}
       />
     </Stack.Navigator>

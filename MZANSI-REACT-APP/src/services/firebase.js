@@ -3,6 +3,7 @@ import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, u
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 // Static import to avoid Metro dynamic import resolution issues
 import { mockStores, getMockStores, getStoreProducts } from '../data/mockData';
 
@@ -155,88 +156,35 @@ export const firebaseService = {
     }
   },
 
-  // ORDERS
-  orders: {
-    create: async (orderData) => {
-      try {
-        // Clean the order data to remove any undefined values
-        const cleanedOrderData = JSON.parse(JSON.stringify(orderData, (key, value) => {
-          if (value === undefined) {
-            console.warn(`Removing undefined field: ${key}`);
-            return null;
-          }
-          return value;
-        }));
-
-        // Remove null values
-        const finalOrderData = Object.fromEntries(
-          Object.entries(cleanedOrderData).filter(([_, value]) => value !== null)
-        );
-
-        console.log('Cleaned order data:', finalOrderData);
-
-        const ordersRef = collection(db, 'orders');
-        const docRef = await addDoc(ordersRef, {
-          ...finalOrderData,
-          createdAt: new Date(),
-          status: 'pending'
-        });
-        return docRef.id;
-      } catch (error) {
-        console.error('Error creating order:', error);
-        // For prototype, return mock order ID
-        return 'order_' + Date.now();
-      }
-    },
-
-    getByUser: async (userId) => {
-      try {
-        const ordersRef = collection(db, 'orders');
-        const q = query(
-          ordersRef, 
-          where('userId', '==', userId)
-        );
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      } catch (error) {
-          if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
-            console.warn('Firestore permission error detected. Falling back to empty orders.');
-            _warnedFirestorePermissions = true;
-          } else if (!/permission/i.test(error.message)) {
-            console.error('Error fetching user orders:', error);
-          }
-        return [];
-      }
-    },
-
-    updateStatus: async (orderId, status) => {
-      try {
-        const orderRef = doc(db, 'orders', orderId);
-        await updateDoc(orderRef, { 
-          status,
-          updatedAt: new Date()
-        });
-        return true;
-      } catch (error) {
-        console.error('Error updating order status:', error);
-        return false;
-      }
-    }
-  },
-
   // USERS
   users: {
     uploadProfilePicture: async (userId, uri) => {
       try {
         if (!uri) return null;
-        // Fetch local file and convert to blob
-        const response = await fetch(uri);
-        const blob = await response.blob();
+
+        // For React Native, use Expo FileSystem to read the file as base64
+        const fileInfo = await FileSystem.getInfoAsync(uri);
+        if (!fileInfo.exists) {
+          throw new Error('File does not exist');
+        }
+
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        // Convert base64 to Uint8Array
+        const binaryString = atob(base64);
+        const uint8Array = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          uint8Array[i] = binaryString.charCodeAt(i);
+        }
 
         const fileName = `profile_pictures/${userId}_${Date.now()}.jpg`;
         const sRef = storageRef(storage, fileName);
 
-        const snapshot = await uploadBytes(sRef, blob);
+        const snapshot = await uploadBytes(sRef, uint8Array, {
+          contentType: 'image/jpeg'
+        });
         const url = await getDownloadURL(snapshot.ref);
         return url;
       } catch (error) {
@@ -672,7 +620,7 @@ export const firebaseService = {
       }
     },
 
-    updateStatus: async (orderId, status) => {
+    updateStatus: async (orderId, status, driverName = null) => {
       try {
         const orderRef = doc(db, 'orders', orderId);
         const updateData = {
@@ -697,6 +645,15 @@ export const firebaseService = {
         }
 
         await updateDoc(orderRef, updateData);
+
+        // Send notification for status update
+        if (status !== 'pending') {
+          // Import notification service dynamically to avoid circular dependency
+          import('../services/notificationService').then(({ notificationService }) => {
+            notificationService.sendOrderStatusNotification(orderId, status, driverName);
+          });
+        }
+
         return true;
       } catch (error) {
         console.error('Error updating order status:', error);
