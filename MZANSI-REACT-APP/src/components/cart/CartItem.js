@@ -3,14 +3,11 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../../context/CartContext';
 import { COLORS } from '../../styles/colors';
-
 export default function CartItem({ item }) {
   const { updateQuantity, removeFromCart } = useCart();
-
   const increaseQuantity = () => {
     updateQuantity(item.id, item.storeId, item.quantity + 1);
   };
-
   const decreaseQuantity = () => {
     if (item.quantity > 1) {
       updateQuantity(item.id, item.storeId, item.quantity - 1);
@@ -18,16 +15,12 @@ export default function CartItem({ item }) {
       removeFromCart(item.id, item.storeId);
     }
   };
-
   const handleRemove = () => {
     removeFromCart(item.id, item.storeId);
   };
-
-  // Normalize price to a safe number to avoid runtime errors when price is null/undefined
   const price = Number(item?.price ?? 0) || 0;
   const quantity = Number(item?.quantity ?? 0) || 0;
   const total = price * quantity;
-
   return (
     <View style={styles.container}>
       <Image 
@@ -35,7 +28,6 @@ export default function CartItem({ item }) {
         style={styles.productImage}
         resizeMode="cover"
       />
-      
       <View style={styles.productInfo}>
         <Text style={styles.productName} numberOfLines={2}>
           {item.name}
@@ -43,7 +35,6 @@ export default function CartItem({ item }) {
         <Text style={styles.productPrice}>
           R{price.toFixed(2)} each
         </Text>
-        
         <View style={styles.quantityContainer}>
           <TouchableOpacity 
             style={styles.quantityButton} 
@@ -51,9 +42,7 @@ export default function CartItem({ item }) {
           >
             <Ionicons name="remove" size={18} color={COLORS.primary} />
           </TouchableOpacity>
-          
           <Text style={styles.quantity}>{item.quantity}</Text>
-          
           <TouchableOpacity 
             style={styles.quantityButton} 
             onPress={increaseQuantity}
@@ -62,12 +51,10 @@ export default function CartItem({ item }) {
           </TouchableOpacity>
         </View>
       </View>
-      
       <View style={styles.rightSection}>
         <TouchableOpacity style={styles.removeButton} onPress={handleRemove}>
           <Ionicons name="trash-outline" size={20} color={COLORS.error} />
         </TouchableOpacity>
-        
         <Text style={styles.totalPrice}>
           R{total.toFixed(2)}
         </Text>
@@ -75,7 +62,6 @@ export default function CartItem({ item }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',

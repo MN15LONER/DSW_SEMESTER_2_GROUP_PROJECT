@@ -12,10 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import CartItem from '../components/cart/CartItem';
 import { useCart } from '../context/CartContext';
 import { COLORS } from '../styles/colors';
-
 export default function CartScreen({ navigation }) {
   const { cartItems, getCartTotal, getStoreGroups, clearCart } = useCart();
-
   if (cartItems.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -34,14 +32,11 @@ export default function CartScreen({ navigation }) {
       </View>
     );
   }
-
   const storeGroups = getStoreGroups();
   const total = getCartTotal();
-
   const handleCheckout = () => {
     navigation.navigate('Checkout');
   };
-
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollContainer}>
@@ -60,8 +55,7 @@ export default function CartScreen({ navigation }) {
           </View>
         ))}
       </ScrollView>
-
-      {/* Checkout Section */}
+      {}
       <View style={styles.checkoutContainer}>
         <View style={styles.totalContainer}>
           <Text style={styles.totalLabel}>Total</Text>
@@ -79,7 +73,6 @@ export default function CartScreen({ navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

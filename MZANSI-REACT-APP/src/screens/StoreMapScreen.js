@@ -16,33 +16,25 @@ import { mockStores } from '../data/mockData';
 import { COLORS } from '../styles/colors';
 import ImageWithFallback from '../components/common/ImageWithFallback';
 import { getImageForProduct } from '../utils/imageHelper';
-
 export default function StoreMapScreen({ navigation, route }) {
   const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState(null);
   const [directionsToStore, setDirectionsToStore] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showStoreModal, setShowStoreModal] = useState(false);
-
   useEffect(() => {
     loadStores();
   }, []);
-
   const loadStores = async () => {
     try {
       setLoading(true);
       let storeData = await firebaseService.stores.getAll();
-      
-      // If no stores in Firebase, use mock data with coordinates
       if (!storeData || storeData.length === 0) {
         storeData = mockStores;
       }
-      
-      // Ensure all stores have coordinates
       const storesWithCoords = storeData.filter(store => 
         store.latitude && store.longitude
       );
-      
       setStores(storesWithCoords);
     } catch (error) {
       console.error('Error loading stores:', error);
@@ -52,24 +44,19 @@ export default function StoreMapScreen({ navigation, route }) {
       setLoading(false);
     }
   };
-
   const handleStoreSelect = (store) => {
     setSelectedStore(store);
     setShowStoreModal(true);
   };
-
   const handleVisitStore = () => {
     setShowStoreModal(false);
     navigation.navigate('StoreDetail', { store: selectedStore });
   };
-
   const handleGetDirections = () => {
-    // Request directions to be rendered on the map view
     if (!selectedStore) return;
     setShowStoreModal(false);
     setDirectionsToStore(selectedStore);
   };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -88,7 +75,6 @@ export default function StoreMapScreen({ navigation, route }) {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -106,7 +92,6 @@ export default function StoreMapScreen({ navigation, route }) {
           <Ionicons name="refresh" size={24} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
-
       <StoreMapView
         stores={stores}
         onStoreSelect={handleStoreSelect}
@@ -114,8 +99,7 @@ export default function StoreMapScreen({ navigation, route }) {
         directionsToStore={directionsToStore}
         onClearDirections={() => setDirectionsToStore(null)}
       />
-
-      {/* Store Details Modal */}
+      {}
       <Modal
         visible={showStoreModal}
         animationType="slide"
@@ -135,13 +119,11 @@ export default function StoreMapScreen({ navigation, route }) {
                     <Ionicons name="close" size={24} color={COLORS.textPrimary} />
                   </TouchableOpacity>
                 </View>
-
                 <ImageWithFallback
                   source={{ uri: selectedStore.image || getImageForProduct({ name: selectedStore.name, category: selectedStore.category }) }}
                   style={styles.storeImage}
                   resizeMode="cover"
                 />
-
                 <View style={styles.storeInfo}>
                   <View style={styles.storeHeader}>
                     <View style={styles.storeStatus}>
@@ -159,22 +141,17 @@ export default function StoreMapScreen({ navigation, route }) {
                       <Text style={styles.reviews}>({selectedStore.reviews})</Text>
                     </View>
                   </View>
-
                   <Text style={styles.category}>{selectedStore.category}</Text>
                   <Text style={styles.address}>{selectedStore.address}</Text>
-                  
                   {selectedStore.phone && (
                     <Text style={styles.phone}>{selectedStore.phone}</Text>
                   )}
-
                   <Text style={styles.deliveryTime}>
                     Delivery: {selectedStore.deliveryTime}
                   </Text>
-
                   {selectedStore.description && (
                     <Text style={styles.description}>{selectedStore.description}</Text>
                   )}
-
                   {selectedStore.promotions && selectedStore.promotions.length > 0 && (
                     <View style={styles.promotionsSection}>
                       <Text style={styles.promotionsTitle}>Current Promotions:</Text>
@@ -186,7 +163,6 @@ export default function StoreMapScreen({ navigation, route }) {
                     </View>
                   )}
                 </View>
-
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
                     style={[styles.actionButton, styles.directionsButton]}
@@ -195,7 +171,6 @@ export default function StoreMapScreen({ navigation, route }) {
                     <Ionicons name="navigate" size={20} color="white" />
                     <Text style={styles.actionButtonText}>Directions</Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity
                     style={[styles.actionButton, styles.visitButton]}
                     onPress={handleVisitStore}
@@ -212,7 +187,6 @@ export default function StoreMapScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

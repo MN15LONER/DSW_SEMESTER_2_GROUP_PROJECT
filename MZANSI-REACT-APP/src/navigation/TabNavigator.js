@@ -6,19 +6,15 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AboutScreen from '../screens/AboutScreen';
 import { COLORS } from '../styles/colors';
 import { useCart } from '../context/CartContext';
-
 const Tab = createBottomTabNavigator();
-
 export default function TabNavigator() {
   const { cartItems } = useCart();
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Profile') {
@@ -26,7 +22,6 @@ export default function TabNavigator() {
           } else if (route.name === 'About') {
             iconName = focused ? 'information-circle' : 'information-circle-outline';
           }
-
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: COLORS.primary,

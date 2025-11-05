@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { ActivityIndicator, Text } from 'react-native-paper';
 import { COLORS } from '../../styles/colors';
-
 export default function LoadingSpinner({ 
   size = 'large', 
   text = 'Loading...', 
@@ -16,7 +15,6 @@ export default function LoadingSpinner({
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

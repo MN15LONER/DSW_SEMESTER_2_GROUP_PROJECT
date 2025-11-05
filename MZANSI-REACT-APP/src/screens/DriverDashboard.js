@@ -13,7 +13,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebase';
-
 const DriverDashboard = () => {
   const navigation = useNavigation();
   const { user, logout } = useAuth();
@@ -21,21 +20,15 @@ const DriverDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
-
   useEffect(() => {
     loadOrders();
   }, []);
-
   const loadOrders = async () => {
     setLoading(true);
     try {
       console.log('Loading real orders from Firebase...');
-      
-      // Get all orders from Firebase
       const allOrders = await firebaseService.orders.getAll();
       console.log('Orders loaded from Firebase:', allOrders);
-      
-      // Transform Firebase orders to match our display format
       const transformedOrders = allOrders.map(order => ({
         id: order.id,
         customerName: order.customerName || 'Customer',
@@ -50,12 +43,9 @@ const DriverDashboard = () => {
         paymentMethod: order.paymentMethod || 'cash',
         specialInstructions: order.specialInstructions || ''
       }));
-      
       setOrders(transformedOrders);
     } catch (error) {
       console.error('Error loading orders from Firebase:', error);
-      
-      // Fallback to mock data if Firebase fails
       console.log('Falling back to mock data...');
       const mockOrders = [
         {
@@ -94,7 +84,6 @@ const DriverDashboard = () => {
       setLoading(false);
     }
   };
-
   const onRefresh = () => {
     setRefreshing(true);
     loadOrders();
@@ -102,7 +91,6 @@ const DriverDashboard = () => {
       setRefreshing(false);
     }, 1000);
   };
-
   const handleAcceptOrder = (orderId) => {
     Alert.alert(
       'Accept Order',
@@ -114,12 +102,8 @@ const DriverDashboard = () => {
           onPress: async () => {
             try {
               console.log('Accepting order:', orderId);
-              
-              // Update order status in Firebase
               const success = await firebaseService.orders.updateStatus(orderId, 'accepted');
-              
               if (success) {
-                // Update order status locally
                 setOrders(prevOrders =>
                   prevOrders.map(order =>
                     order.id === orderId
@@ -140,7 +124,6 @@ const DriverDashboard = () => {
       ]
     );
   };
-
   const handleStartDelivery = (orderId) => {
     Alert.alert(
       'Start Delivery',
@@ -152,12 +135,8 @@ const DriverDashboard = () => {
           onPress: async () => {
             try {
               console.log('Starting delivery for order:', orderId);
-              
-              // Update order status in Firebase
               const success = await firebaseService.orders.updateStatus(orderId, 'in-transit');
-              
               if (success) {
-                // Update order status locally
                 setOrders(prevOrders =>
                   prevOrders.map(order =>
                     order.id === orderId
@@ -178,7 +157,6 @@ const DriverDashboard = () => {
       ]
     );
   };
-
   const handleCompleteDelivery = (orderId) => {
     Alert.alert(
       'Complete Delivery',
@@ -190,12 +168,8 @@ const DriverDashboard = () => {
           onPress: async () => {
             try {
               console.log('Completing delivery for order:', orderId);
-              
-              // Update order status in Firebase
               const success = await firebaseService.orders.updateStatus(orderId, 'delivered');
-              
               if (success) {
-                // Update order status locally
                 setOrders(prevOrders =>
                   prevOrders.map(order =>
                     order.id === orderId
@@ -216,7 +190,6 @@ const DriverDashboard = () => {
       ]
     );
   };
-
   const getFilteredOrders = () => {
     switch (activeTab) {
       case 'pending':
@@ -231,7 +204,6 @@ const DriverDashboard = () => {
         return orders;
     }
   };
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return '#FF6B6B';
@@ -241,7 +213,6 @@ const DriverDashboard = () => {
       default: return '#666';
     }
   };
-
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending': return 'time-outline';
@@ -251,7 +222,6 @@ const DriverDashboard = () => {
       default: return 'help-outline';
     }
   };
-
   const renderOrderItem = ({ item }) => (
     <View style={styles.orderCard}>
       <View style={styles.orderHeader}>
@@ -264,7 +234,6 @@ const DriverDashboard = () => {
           <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
         </View>
       </View>
-
       <View style={styles.orderDetails}>
         <Text style={styles.orderId}>Order #{item.id}</Text>
         <Text style={styles.orderDate}>
@@ -277,7 +246,6 @@ const DriverDashboard = () => {
           ⏱️ {item.estimatedDelivery}
         </Text>
       </View>
-
       <View style={styles.itemsContainer}>
         <Text style={styles.itemsTitle}>Items:</Text>
         {item.items.map((product, index) => (
@@ -286,10 +254,8 @@ const DriverDashboard = () => {
           </Text>
         ))}
       </View>
-
       <View style={styles.orderFooter}>
         <Text style={styles.totalAmount}>Total: R{item.total.toFixed(2)}</Text>
-        
         <View style={styles.actionButtons}>
           {item.status === 'pending' && (
             <TouchableOpacity
@@ -300,7 +266,6 @@ const DriverDashboard = () => {
               <Text style={styles.actionButtonText}>Accept</Text>
             </TouchableOpacity>
           )}
-          
           {item.status === 'accepted' && (
             <TouchableOpacity
               style={[styles.actionButton, styles.startButton]}
@@ -310,7 +275,6 @@ const DriverDashboard = () => {
               <Text style={styles.actionButtonText}>Start Delivery</Text>
             </TouchableOpacity>
           )}
-          
           {item.status === 'in-transit' && (
             <TouchableOpacity
               style={[styles.actionButton, styles.completeButton]}
@@ -320,7 +284,6 @@ const DriverDashboard = () => {
               <Text style={styles.actionButtonText}>Complete</Text>
             </TouchableOpacity>
           )}
-          
           <TouchableOpacity
             style={[styles.actionButton, styles.chatButton]}
             onPress={() => navigation.navigate('DriverChat', { 
@@ -335,7 +298,6 @@ const DriverDashboard = () => {
       </View>
     </View>
   );
-
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="receipt-outline" size={64} color="#ccc" />
@@ -348,7 +310,6 @@ const DriverDashboard = () => {
       </Text>
     </View>
   );
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -372,7 +333,6 @@ const DriverDashboard = () => {
           <Ionicons name="log-out-outline" size={24} color="#FF6B6B" />
         </TouchableOpacity>
       </View>
-
       <View style={styles.tabContainer}>
         {['pending', 'accepted', 'in-transit', 'delivered'].map((tab) => (
           <TouchableOpacity
@@ -392,7 +352,6 @@ const DriverDashboard = () => {
           </TouchableOpacity>
         ))}
       </View>
-
       <FlatList
         data={getFilteredOrders()}
         renderItem={renderOrderItem}
@@ -407,7 +366,6 @@ const DriverDashboard = () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -612,5 +570,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
 });
-
 export default DriverDashboard;

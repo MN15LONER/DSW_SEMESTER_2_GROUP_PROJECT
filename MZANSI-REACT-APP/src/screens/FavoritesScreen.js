@@ -11,19 +11,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../context/FavoritesContext';
 import { useCart } from '../context/CartContext';
 import ImageWithFallback from '../components/common/ImageWithFallback';
-
 const FavoritesScreen = ({ navigation }) => {
   const { favorites, removeFromFavorites } = useFavorites();
   const { addToCart } = useCart();
-
   const handleAddToCart = (product) => {
     addToCart(product);
   };
-
   const handleRemoveFavorite = (product) => {
     removeFromFavorites(product);
   };
-
   const renderFavoriteItem = ({ item }) => (
     <View style={styles.favoriteItem}>
       <ImageWithFallback
@@ -32,7 +28,6 @@ const FavoritesScreen = ({ navigation }) => {
         fallbackIcon="basket-outline"
         fallbackIconSize={25}
       />
-      
       <View style={styles.productInfo}>
         <Text style={styles.productName} numberOfLines={2}>
           {item.name}
@@ -40,7 +35,6 @@ const FavoritesScreen = ({ navigation }) => {
         <Text style={styles.storeName}>{item.storeName}</Text>
         <Text style={styles.productPrice}>R{item.price.toFixed(2)}</Text>
       </View>
-
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.addToCartButton}
@@ -48,7 +42,6 @@ const FavoritesScreen = ({ navigation }) => {
         >
           <Ionicons name="add-circle" size={24} color="#007AFF" />
         </TouchableOpacity>
-        
         <TouchableOpacity
           style={styles.removeButton}
           onPress={() => handleRemoveFavorite(item)}
@@ -58,7 +51,6 @@ const FavoritesScreen = ({ navigation }) => {
       </View>
     </View>
   );
-
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="heart-outline" size={80} color="#ccc" />
@@ -74,7 +66,6 @@ const FavoritesScreen = ({ navigation }) => {
       </TouchableOpacity>
     </View>
   );
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -83,7 +74,6 @@ const FavoritesScreen = ({ navigation }) => {
           {favorites.length} {favorites.length === 1 ? 'item' : 'items'}
         </Text>
       </View>
-
       {favorites.length === 0 ? (
         renderEmptyState()
       ) : (
@@ -98,7 +88,6 @@ const FavoritesScreen = ({ navigation }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -204,5 +193,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
 export default FavoritesScreen;

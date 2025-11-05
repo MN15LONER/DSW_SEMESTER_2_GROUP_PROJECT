@@ -3,9 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import AdminDashboard from '../screens/admin/AdminDashboard';
 import AdminUploadScreen from '../screens/admin/AdminUploadScreen';
 import { View, Text } from 'react-native';
-
 const Stack = createStackNavigator();
-
 export default function AdminStack() {
   return (
     <Stack.Navigator>

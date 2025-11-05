@@ -13,8 +13,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import { Platform, AppState } from 'react-native';
 import AsyncStoragePackage from '@react-native-async-storage/async-storage';
 let AsyncStorage = AsyncStoragePackage;
-
-// For web compatibility
 if (Platform.OS === 'web') {
   import('@react-native-async-storage/async-storage').then(module => {
     AsyncStorage = module.default;
@@ -24,53 +22,37 @@ if (Platform.OS === 'web') {
 }
 import { signInWithGoogle } from '../services/googleAuth';
 import { sendPasswordReset } from '../services/passwordResetService';
-
-// Session timeout configuration (3 hours in milliseconds)
-const SESSION_TIMEOUT = 3 * 60 * 60 * 1000; // 3 hours
+const SESSION_TIMEOUT = 3 * 60 * 60 * 1000; 
 const SESSION_KEYS = {
   LAST_ACTIVITY: 'session_last_activity',
   SESSION_START: 'session_start_time'
 };
-
 const AuthContext = createContext();
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true);
-
-  // Track latest user in a ref so the auth listener can consult it without creating
-  // a dependency cycle that re-subscribes on every user change.
   const currentUserRef = useRef(null);
-
-  // Session timeout refs
   const inactivityTimerRef = useRef(null);
   const lastActivityRef = useRef(Date.now());
-
   useEffect(() => {
     currentUserRef.current = user;
   }, [user]);
-
-  // Load stored user only once on mount (avoids resetting `user` repeatedly)
   useEffect(() => {
     const loadStoredUser = async () => {
       try {
         const storedUser = await AsyncStorage.getItem('user');
         if (storedUser) {
           const parsed = JSON.parse(storedUser);
-          // Only set if different uid to avoid unnecessary state churn
           setUser(prev => (prev && prev.uid === parsed.uid ? prev : parsed));
         }
       } catch (error) {
         console.error('Error loading stored user:', error);
       }
     };
-
     loadStoredUser();
   }, []);
-
-  // Session timeout functions
   const updateLastActivity = async () => {
     const now = Date.now();
     lastActivityRef.current = now;
@@ -80,7 +62,6 @@ export const AuthProvider = ({ children }) => {
       console.error('Error updating last activity:', error);
     }
   };
-
   const checkSessionValidity = async () => {
     try {
       const lastActivityStr = await AsyncStorage.getItem(SESSION_KEYS.LAST_ACTIVITY);
@@ -96,10 +77,9 @@ export const AuthProvider = ({ children }) => {
       return true;
     } catch (error) {
       console.error('Error checking session validity:', error);
-      return true; // Default to valid if error
+      return true; 
     }
   };
-
   const autoLogout = async () => {
     try {
       console.log('Auto-logging out due to inactivity...');
@@ -113,28 +93,20 @@ export const AuthProvider = ({ children }) => {
       console.error('Error during auto logout:', error);
     }
   };
-
   const startInactivityTimer = () => {
-    // Clear existing timer
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
-
-    // Start new timer
     inactivityTimerRef.current = setTimeout(async () => {
       console.log('Inactivity timeout reached');
       await checkSessionValidity();
-      // Restart timer to check again
       startInactivityTimer();
     }, SESSION_TIMEOUT);
   };
-
   const resetInactivityTimer = () => {
     updateLastActivity();
     startInactivityTimer();
   };
-
-  // Initialize session on user login
   const initializeSession = async () => {
     const now = Date.now();
     lastActivityRef.current = now;
@@ -146,57 +118,44 @@ export const AuthProvider = ({ children }) => {
     }
     startInactivityTimer();
   };
-
-  // App state listener for background/foreground transitions
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       if (nextAppState === 'active' && user) {
-        // App came to foreground, check session validity
         const isValid = await checkSessionValidity();
         if (isValid) {
           resetInactivityTimer();
         }
       }
     });
-
     return () => {
       subscription?.remove();
     };
   }, [user]);
-
-  // Start session when user logs in
   useEffect(() => {
     if (user) {
       initializeSession();
     } else {
-      // Clear timer when user logs out
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
         inactivityTimerRef.current = null;
       }
     }
-
     return () => {
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
       }
     };
   }, [user]);
-
-  // Subscribe to Firebase auth changes once (on mount)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         console.log('Auth state changed - firebaseUser:', firebaseUser?.uid);
         if (firebaseUser) {
-          // Only fetch user data if we don't already have the same user
           if (!currentUserRef.current || currentUserRef.current.uid !== firebaseUser.uid) {
             console.log('Fetching user data from Firestore for:', firebaseUser.uid);
-
             const userDocRef = doc(db, 'users', firebaseUser.uid);
             const snap = await getDoc(userDocRef);
             const userData = snap && snap.exists() ? snap.data() : null;
-
             if (userData) {
               const combinedProfile = {
                 uid: firebaseUser.uid,
@@ -204,9 +163,7 @@ export const AuthProvider = ({ children }) => {
                 displayName: firebaseUser.displayName,
                 ...userData
               };
-
               console.log('Setting user profile:', combinedProfile);
-
               setUser(combinedProfile);
               setUserProfile(userData);
               await AsyncStorage.setItem('user', JSON.stringify(combinedProfile));
@@ -225,7 +182,6 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Auth state change error:', error);
-        // Fallback to stored user if Firebase fails
         try {
           const storedUser = await AsyncStorage.getItem('user');
           if (storedUser && !firebaseUser) {
@@ -235,50 +191,38 @@ export const AuthProvider = ({ children }) => {
           console.error('Error accessing stored user:', storageError);
         }
       } finally {
-        // Initialization complete on first event
         setInitializing(false);
         setLoading(false);
       }
     });
-
     return unsubscribe;
   }, []);
-
   const login = async (email, password) => {
     try {
       console.log('AuthContext login called with:', email);
       setLoading(true);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
       console.log('Firebase auth successful, fetching user data...');
-      // Get additional user data from Firestore
       const userData = await firebaseService.users.get(userCredential.user.uid);
       console.log('User data from Firestore:', userData);
-      
       if (!userData) {
         console.error('No user data found in Firestore for:', userCredential.user.uid);
         return { success: false, error: 'User profile not found. Please contact support.' };
       }
-      
       const userProfile = {
         uid: userCredential.user.uid,
         email: userCredential.user.email,
         displayName: userCredential.user.displayName,
         ...userData
       };
-      
       console.log('Complete user profile:', userProfile);
       console.log('User type:', userProfile.userType);
-      
-      // Set user immediately to prevent navigation issues
       setUser(userProfile);
       await AsyncStorage.setItem('user', JSON.stringify(userProfile));
-      
       return { success: true, user: userProfile };
     } catch (error) {
       console.error('Login error:', error);
       let errorMessage = 'Login failed. Please try again.';
-      
       switch (error.code) {
         case 'auth/user-not-found':
           errorMessage = 'No account found with this email address.';
@@ -298,27 +242,21 @@ export const AuthProvider = ({ children }) => {
         default:
           errorMessage = error.message;
       }
-      
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
   };
-
   const register = async (email, password, userData) => {
     try {
       setLoading(true);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
-
-      // Update display name
       if (userData.displayName) {
         await updateProfile(firebaseUser, {
           displayName: userData.displayName
         });
       }
-
-      // Save additional user data to Firestore
       const userProfile = {
         email: firebaseUser.email,
         displayName: userData.displayName || '',
@@ -328,17 +266,14 @@ export const AuthProvider = ({ children }) => {
         address: userData.address || '',
         city: userData.city || '',
         postalCode: userData.postalCode || '',
-        userType: userData.userType || 'customer', // Include userType
+        userType: userData.userType || 'customer', 
         createdAt: new Date().toISOString()
       };
-
       await firebaseService.users.create(firebaseUser.uid, userProfile);
-      
       return { success: true, user: firebaseUser };
     } catch (error) {
       console.error('Registration error:', error);
       let errorMessage = 'Registration failed. Please try again.';
-      
       switch (error.code) {
         case 'auth/email-already-in-use':
           errorMessage = 'An account with this email already exists.';
@@ -352,13 +287,11 @@ export const AuthProvider = ({ children }) => {
         default:
           errorMessage = error.message;
       }
-      
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
   };
-
   const logout = async () => {
     try {
       setLoading(true);
@@ -372,19 +305,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
   const updateUserProfile = async (updatedData) => {
     try {
       if (!user) return { success: false, error: 'No user logged in' };
-      
       setLoading(true);
       await firebaseService.users.update(user.uid, updatedData);
-      
-      // Update local user state
       const updatedUser = { ...user, ...updatedData };
       setUser(updatedUser);
       await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-      
       return { success: true };
     } catch (error) {
       console.error('Update profile error:', error);
@@ -393,28 +321,15 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
-  /**
-   * Google Sign-In
-   * Handles authentication with Google and creates user profile if new user
-   * @param {Function} promptAsync - The Google auth prompt function
-   * @returns {Promise<Object>} Result object with success status
-   */
   const loginWithGoogle = async (promptAsync) => {
     try {
       setLoading(true);
-      
-      // Sign in with Google
       const result = await signInWithGoogle(promptAsync);
-      
       if (!result.success) {
         return result;
       }
-
       const firebaseUser = result.user;
       const isNewUser = result.isNewUser;
-
-      // If this is a new user, create their profile in Firestore
       if (isNewUser) {
         const userProfile = {
           email: firebaseUser.email,
@@ -429,13 +344,9 @@ export const AuthProvider = ({ children }) => {
           authProvider: 'google',
           createdAt: new Date().toISOString()
         };
-
         await firebaseService.users.create(firebaseUser.uid, userProfile);
       }
-
-      // The user state will be updated by the onAuthStateChanged listener
       return { success: true, user: firebaseUser };
-      
     } catch (error) {
       console.error('Google login error:', error);
       return { 
@@ -446,13 +357,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
-  /**
-   * Request Password Reset
-   * Sends a password reset email to the user
-   * @param {string} email - User's email address
-   * @returns {Promise<Object>} Result object with success status
-   */
   const requestPasswordReset = async (email) => {
     try {
       const result = await sendPasswordReset(email);
@@ -465,48 +369,28 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
-
   const isAdmin = userProfile?.role === 'admin' || user?.role === 'admin';
-  
   useEffect(() => {
     try {
-      // Use lightweight logging to avoid console spam during renders
-      // eslint-disable-next-line no-console
       console.log('AuthContext role check:', { userProfile, user, isAdmin });
     } catch (e) {}
   }, [userProfile, user, isAdmin]);
-
-  /**
-   * Delete User Account
-   * Permanently deletes the user's account and all associated data
-   * @returns {Promise<Object>} Result object with success status
-   */
   const deleteAccount = async () => {
     try {
       if (!user) return { success: false, error: 'No user logged in' };
-      
       setLoading(true);
-      
-      // Delete user data from Firestore first
       try {
         await firebaseService.users.delete(user.uid);
       } catch (error) {
         console.error('Error deleting user data from Firestore:', error);
-        // Continue with Firebase Auth deletion even if Firestore deletion fails
       }
-      
-      // Delete the Firebase Auth user
       await deleteUser(auth.currentUser);
-      
-      // Clear local state and storage
       setUser(null);
       await AsyncStorage.removeItem('user');
-      
       return { success: true };
     } catch (error) {
       console.error('Delete account error:', error);
       let errorMessage = 'Failed to delete account. Please try again.';
-      
       switch (error.code) {
         case 'auth/requires-recent-login':
           errorMessage = 'For security reasons, you need to sign in again before deleting your account.';
@@ -517,13 +401,11 @@ export const AuthProvider = ({ children }) => {
         default:
           errorMessage = error.message || errorMessage;
       }
-      
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
     }
   };
-
   const value = {
     user,
     userProfile,
@@ -539,14 +421,12 @@ export const AuthProvider = ({ children }) => {
     deleteAccount,
     isAuthenticated: !!user
   };
-
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
-
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -554,5 +434,4 @@ export const useAuth = () => {
   }
   return context;
 };
-
 export { AuthContext };

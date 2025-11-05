@@ -12,18 +12,15 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebase';
-
 const OrderTrackingScreen = ({ navigation }) => {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
-
   useEffect(() => {
     loadOrders();
   }, []);
-
   const loadOrders = async () => {
     try {
       setLoading(true);
@@ -36,13 +33,11 @@ const OrderTrackingScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await loadOrders();
     setRefreshing(false);
   };
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
@@ -59,7 +54,6 @@ const OrderTrackingScreen = ({ navigation }) => {
         return '#8E8E93';
     }
   };
-
   const getStatusIcon = (status) => {
     switch (status) {
       case 'pending':
@@ -76,7 +70,6 @@ const OrderTrackingScreen = ({ navigation }) => {
         return 'help-circle-outline';
     }
   };
-
   const getStatusText = (status) => {
     switch (status) {
       case 'pending':
@@ -93,15 +86,12 @@ const OrderTrackingScreen = ({ navigation }) => {
         return 'Unknown Status';
     }
   };
-
   const handleChatWithDriver = (order) => {
-    // Always allow chat - if no driver assigned, it will show a message
     navigation.navigate('CustomerChat', { 
       orderId: order.id, 
       driverId: order.driverId || 'placeholder' 
     });
   };
-
   const renderOrderItem = ({ item: order }) => (
     <TouchableOpacity
       style={styles.orderCard}
@@ -124,14 +114,12 @@ const OrderTrackingScreen = ({ navigation }) => {
           <Text style={styles.statusText}>{getStatusText(order.status)}</Text>
         </View>
       </View>
-
       <View style={styles.orderDetails}>
         <Text style={styles.orderTotal}>Total: R{order.total?.toFixed(2) || '0.00'}</Text>
         <Text style={styles.deliveryAddress}>
           Delivery: {order.deliveryAddress || 'Address not specified'}
         </Text>
       </View>
-
       <View style={styles.orderActions}>
         <TouchableOpacity
           style={styles.chatButton}
@@ -142,7 +130,6 @@ const OrderTrackingScreen = ({ navigation }) => {
             {order.driverId ? 'Chat with Driver' : 'Chat Support'}
           </Text>
         </TouchableOpacity>
-        
         <TouchableOpacity
           style={styles.detailsButton}
           onPress={() => setSelectedOrder(order)}
@@ -153,10 +140,8 @@ const OrderTrackingScreen = ({ navigation }) => {
       </View>
     </TouchableOpacity>
   );
-
   const renderOrderDetails = () => {
     if (!selectedOrder) return null;
-
     return (
       <View style={styles.detailsModal}>
         <View style={styles.detailsContent}>
@@ -169,7 +154,6 @@ const OrderTrackingScreen = ({ navigation }) => {
               <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
-
           <ScrollView style={styles.detailsBody}>
             <View style={styles.detailSection}>
               <Text style={styles.sectionTitle}>Order Information</Text>
@@ -194,7 +178,6 @@ const OrderTrackingScreen = ({ navigation }) => {
                 </Text>
               </View>
             </View>
-
             <View style={styles.detailSection}>
               <Text style={styles.sectionTitle}>Delivery Information</Text>
               <View style={styles.detailRow}>
@@ -210,7 +193,6 @@ const OrderTrackingScreen = ({ navigation }) => {
                 </View>
               )}
             </View>
-
             {selectedOrder.items && selectedOrder.items.length > 0 && (
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>Items</Text>
@@ -223,7 +205,6 @@ const OrderTrackingScreen = ({ navigation }) => {
                 ))}
               </View>
             )}
-
             <View style={styles.detailActions}>
               {selectedOrder.status === 'in_transit' && selectedOrder.driverId && (
                 <TouchableOpacity
@@ -243,7 +224,6 @@ const OrderTrackingScreen = ({ navigation }) => {
       </View>
     );
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -259,7 +239,6 @@ const OrderTrackingScreen = ({ navigation }) => {
         </View>
         <View style={styles.headerRight} />
       </View>
-
       <FlatList
         data={orders}
         renderItem={renderOrderItem}
@@ -278,12 +257,10 @@ const OrderTrackingScreen = ({ navigation }) => {
           </View>
         }
       />
-
       {renderOrderDetails()}
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -533,5 +510,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
 export default OrderTrackingScreen;

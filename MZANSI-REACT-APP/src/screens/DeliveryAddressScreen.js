@@ -15,37 +15,29 @@ import { useAuth } from '../context/AuthContext';
 import { useLocation } from '../context/LocationContext';
 import { firebaseService } from '../services/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 export default function DeliveryAddressScreen({ navigation }) {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { updateLocation, updateUserLocation } = useLocation();
-
   useEffect(() => {
     loadAddresses();
   }, []);
-
-  // Reload addresses when this screen regains focus (e.g., after adding/editing)
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadAddresses();
     });
     return unsubscribe;
   }, [navigation]);
-
   const loadAddresses = async () => {
     try {
       setLoading(true);
       if (user?.uid) {
-        // Try Firebase first
         const firebaseAddresses = await firebaseService.addresses.getByUser(user.uid);
         if (firebaseAddresses.length > 0) {
           setAddresses(firebaseAddresses);
-          // Also save to AsyncStorage as backup
           await AsyncStorage.setItem(`addresses_${user.uid}`, JSON.stringify(firebaseAddresses));
         } else {
-          // Fallback to AsyncStorage
           const savedAddresses = await AsyncStorage.getItem(`addresses_${user.uid}`);
           if (savedAddresses) {
             setAddresses(JSON.parse(savedAddresses));
@@ -54,7 +46,6 @@ export default function DeliveryAddressScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Error loading addresses:', error);
-      // Fallback to AsyncStorage on Firebase error
       try {
         const savedAddresses = await AsyncStorage.getItem(`addresses_${user?.uid}`);
         if (savedAddresses) {
@@ -67,7 +58,6 @@ export default function DeliveryAddressScreen({ navigation }) {
       setLoading(false);
     }
   };
-
   const saveAddressToFirebase = async (addressData, isUpdate = false, addressId = null) => {
     try {
       if (isUpdate && addressId) {
@@ -78,18 +68,14 @@ export default function DeliveryAddressScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Firebase save error:', error);
-      // Continue with local storage as fallback
     }
   };
-
   const handleAddAddress = () => {
     navigation.navigate('AddEditAddress', { mode: 'add' });
   };
-
   const handleEditAddress = (address) => {
     navigation.navigate('AddEditAddress', { mode: 'edit', address });
   };
-
   const handleDeleteAddress = (addressId) => {
     Alert.alert(
       'Delete Address',
@@ -101,13 +87,9 @@ export default function DeliveryAddressScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Delete from Firebase
               await firebaseService.addresses.delete(addressId);
-              
               const updatedAddresses = addresses.filter(addr => addr.id !== addressId);
               setAddresses(updatedAddresses);
-              
-              // Update AsyncStorage
               await AsyncStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedAddresses));
             } catch (error) {
               console.error('Error deleting address:', error);
@@ -118,25 +100,17 @@ export default function DeliveryAddressScreen({ navigation }) {
       ]
     );
   };
-
   const handleSetDefault = async (addressId) => {
     try {
       const updatedAddresses = addresses.map(addr => ({
         ...addr,
         isDefault: addr.id === addressId
       }));
-      
-      // Update all addresses in Firebase
       for (const addr of updatedAddresses) {
         await saveAddressToFirebase({ isDefault: addr.isDefault }, true, addr.id);
       }
-      
       setAddresses(updatedAddresses);
-      
-      // Save to AsyncStorage as backup
       await AsyncStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedAddresses));
-
-      // Also cache the selected default address and notify LocationContext so UI updates immediately
       const defaultAddr = updatedAddresses.find(a => 
         a.isDefault);
       if (defaultAddr) {
@@ -145,7 +119,6 @@ export default function DeliveryAddressScreen({ navigation }) {
         } catch (e) {
           console.error('Error caching default address:', e);
         }
-
         const formatted = defaultAddr.formattedAddress || [defaultAddr.street, defaultAddr.city, defaultAddr.province].filter(Boolean).join(', ');
         if (updateLocation) updateLocation(formatted);
         if (updateUserLocation && defaultAddr.latitude && defaultAddr.longitude) updateUserLocation({ latitude: defaultAddr.latitude, longitude: defaultAddr.longitude });
@@ -155,7 +128,6 @@ export default function DeliveryAddressScreen({ navigation }) {
       Alert.alert('Error', 'Failed to set default address. Please try again.');
     }
   };
-
   const renderAddressCard = (address) => (
     <Card key={address.id} style={styles.addressCard}>
       <Card.Content>
@@ -183,7 +155,6 @@ export default function DeliveryAddressScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
-
         <Text style={styles.addressText}>
           {address.street}
         </Text>
@@ -195,7 +166,6 @@ export default function DeliveryAddressScreen({ navigation }) {
             <Ionicons name="call" size={14} color={COLORS.gray} /> {address.phone}
           </Text>
         )}
-
         {!address.isDefault && (
           <Button
             mode="outlined"
@@ -208,7 +178,6 @@ export default function DeliveryAddressScreen({ navigation }) {
       </Card.Content>
     </Card>
   );
-
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="location-outline" size={80} color={COLORS.gray} />
@@ -225,7 +194,6 @@ export default function DeliveryAddressScreen({ navigation }) {
       </Button>
     </View>
   );
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -234,7 +202,6 @@ export default function DeliveryAddressScreen({ navigation }) {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       {addresses.length === 0 ? (
@@ -247,7 +214,6 @@ export default function DeliveryAddressScreen({ navigation }) {
           {addresses.map(renderAddressCard)}
         </ScrollView>
       )}
-      
       {addresses.length > 0 && (
         <FAB
           style={styles.fab}
@@ -258,7 +224,6 @@ export default function DeliveryAddressScreen({ navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

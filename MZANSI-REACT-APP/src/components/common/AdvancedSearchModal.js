@@ -16,7 +16,6 @@ import Slider from '@react-native-community/slider';
 import { googlePlacesService } from '../../services/googlePlacesApi';
 import { storeAvailabilityService } from '../../services/storeAvailabilityService';
 import { COLORS } from '../../styles/colors';
-
 export default function AdvancedSearchModal({ 
   visible, 
   onClose, 
@@ -35,7 +34,6 @@ export default function AdvancedSearchModal({
   const [priceRange, setPriceRange] = useState(initialFilters.priceRange || 'all');
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const categories = [
     { label: 'All Categories', value: 'all' },
     { label: 'Supermarket', value: 'supermarket' },
@@ -46,7 +44,6 @@ export default function AdvancedSearchModal({
     { label: 'Gas Station', value: 'gas_station' },
     { label: 'Bank/ATM', value: 'bank' },
   ];
-
   const sortOptions = [
     { label: 'Distance', value: 'distance' },
     { label: 'Rating', value: 'rating' },
@@ -54,7 +51,6 @@ export default function AdvancedSearchModal({
     { label: 'Newest', value: 'newest' },
     { label: 'Most Reviews', value: 'reviews' },
   ];
-
   const priceRanges = [
     { label: 'All Prices', value: 'all' },
     { label: 'Budget (R)', value: 'budget' },
@@ -62,7 +58,6 @@ export default function AdvancedSearchModal({
     { label: 'Premium (RRR)', value: 'premium' },
     { label: 'Luxury (RRRR)', value: 'luxury' },
   ];
-
   useEffect(() => {
     if (searchQuery.length > 2) {
       const debounceTimer = setTimeout(() => {
@@ -73,24 +68,21 @@ export default function AdvancedSearchModal({
       setSearchSuggestions([]);
     }
   }, [searchQuery]);
-
   const fetchSearchSuggestions = async () => {
     try {
       const suggestions = await googlePlacesService.autocomplete(searchQuery, userLocation);
-      setSearchSuggestions(suggestions.slice(0, 5)); // Limit to 5 suggestions
+      setSearchSuggestions(suggestions.slice(0, 5)); 
     } catch (error) {
       console.error('Error fetching suggestions:', error);
     }
   };
-
   const handleSearch = async () => {
     setLoading(true);
-    
     try {
       const filters = {
         query: searchQuery,
         category,
-        radius: radius * 1000, // Convert km to meters
+        radius: radius * 1000, 
         minRating,
         openOnly,
         deliveryOnly,
@@ -99,52 +91,39 @@ export default function AdvancedSearchModal({
         priceRange,
         userLocation
       };
-
       let results = [];
-
       if (searchQuery.trim()) {
-        // Search using Google Places API
         results = await googlePlacesService.searchPlaces(searchQuery, userLocation, radius * 1000);
       } else if (category !== 'all') {
-        // Search by category
         results = await googlePlacesService.findStoresByCategory(category, userLocation, radius * 1000);
       } else {
-        // Find nearby stores
         results = await googlePlacesService.findNearbyStores(userLocation, radius * 1000);
       }
-
-      // Apply additional filters
       let filteredResults = results;
-
       if (minRating > 0) {
         filteredResults = filteredResults.filter(store => store.rating >= minRating);
       }
-
       if (openOnly) {
         filteredResults = filteredResults.filter(store => store.isOpen);
       }
-
       if (deliveryOnly) {
-        // Check delivery availability for each store
         const deliveryChecks = await Promise.all(
           filteredResults.map(async (store) => {
             try {
               const availability = await storeAvailabilityService.getStoreAvailability(store.id);
               return availability.deliveryAvailable;
             } catch (error) {
-              return true; // Default to available if check fails
+              return true; 
             }
           })
         );
         filteredResults = filteredResults.filter((store, index) => deliveryChecks[index]);
       }
-
       if (hasPromotions) {
         filteredResults = filteredResults.filter(store => 
           store.promotions && store.promotions.length > 0
         );
       }
-
       if (priceRange !== 'all') {
         const priceMapping = {
           'budget': [0, 1],
@@ -157,10 +136,7 @@ export default function AdvancedSearchModal({
           allowedPriceLevels.includes(store.priceLevel || 0)
         );
       }
-
-      // Sort results
       filteredResults = sortResults(filteredResults, sortBy, userLocation);
-
       onSearch(filteredResults, filters);
       onClose();
     } catch (error) {
@@ -170,7 +146,6 @@ export default function AdvancedSearchModal({
       setLoading(false);
     }
   };
-
   const sortResults = (results, sortBy, userLocation) => {
     switch (sortBy) {
       case 'distance':
@@ -193,7 +168,6 @@ export default function AdvancedSearchModal({
         return results;
     }
   };
-
   const resetFilters = () => {
     setSearchQuery('');
     setCategory('all');
@@ -206,12 +180,10 @@ export default function AdvancedSearchModal({
     setPriceRange('all');
     setSearchSuggestions([]);
   };
-
   const selectSuggestion = (suggestion) => {
     setSearchQuery(suggestion.description);
     setSearchSuggestions([]);
   };
-
   return (
     <Modal
       visible={visible}
@@ -227,9 +199,8 @@ export default function AdvancedSearchModal({
               <Ionicons name="close" size={24} color={COLORS.textPrimary} />
             </TouchableOpacity>
           </View>
-
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Search Query */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Search Query</Text>
               <TextInput
@@ -238,8 +209,7 @@ export default function AdvancedSearchModal({
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
-              
-              {/* Search Suggestions */}
+              {}
               {searchSuggestions.length > 0 && (
                 <View style={styles.suggestions}>
                   {searchSuggestions.map((suggestion) => (
@@ -258,8 +228,7 @@ export default function AdvancedSearchModal({
                 </View>
               )}
             </View>
-
-            {/* Category */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Category</Text>
               <View style={styles.pickerContainer}>
@@ -274,8 +243,7 @@ export default function AdvancedSearchModal({
                 </Picker>
               </View>
             </View>
-
-            {/* Search Radius */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Search Radius: {radius} km</Text>
               <Slider
@@ -294,8 +262,7 @@ export default function AdvancedSearchModal({
                 <Text style={styles.sliderLabel}>50 km</Text>
               </View>
             </View>
-
-            {/* Minimum Rating */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Minimum Rating: {minRating.toFixed(1)} ⭐</Text>
               <Slider
@@ -314,11 +281,9 @@ export default function AdvancedSearchModal({
                 <Text style={styles.sliderLabel}>5.0</Text>
               </View>
             </View>
-
-            {/* Filter Switches */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Filters</Text>
-              
               <View style={styles.switchRow}>
                 <Text style={styles.switchLabel}>Open Now Only</Text>
                 <Switch
@@ -328,7 +293,6 @@ export default function AdvancedSearchModal({
                   thumbColor={openOnly ? COLORS.white : COLORS.gray}
                 />
               </View>
-
               <View style={styles.switchRow}>
                 <Text style={styles.switchLabel}>Delivery Available</Text>
                 <Switch
@@ -338,7 +302,6 @@ export default function AdvancedSearchModal({
                   thumbColor={deliveryOnly ? COLORS.white : COLORS.gray}
                 />
               </View>
-
               <View style={styles.switchRow}>
                 <Text style={styles.switchLabel}>Has Promotions</Text>
                 <Switch
@@ -349,8 +312,7 @@ export default function AdvancedSearchModal({
                 />
               </View>
             </View>
-
-            {/* Sort By */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Sort By</Text>
               <View style={styles.pickerContainer}>
@@ -365,8 +327,7 @@ export default function AdvancedSearchModal({
                 </Picker>
               </View>
             </View>
-
-            {/* Price Range */}
+            {}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Price Range</Text>
               <View style={styles.pickerContainer}>
@@ -382,8 +343,7 @@ export default function AdvancedSearchModal({
               </View>
             </View>
           </ScrollView>
-
-          {/* Action Buttons */}
+          {}
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.button, styles.resetButton]}
@@ -391,7 +351,6 @@ export default function AdvancedSearchModal({
             >
               <Text style={styles.resetButtonText}>Reset</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               style={[styles.button, styles.searchButton]}
               onPress={handleSearch}
@@ -407,7 +366,6 @@ export default function AdvancedSearchModal({
     </Modal>
   );
 }
-
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,

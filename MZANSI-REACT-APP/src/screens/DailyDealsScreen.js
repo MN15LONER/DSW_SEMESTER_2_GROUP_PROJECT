@@ -17,23 +17,19 @@ import { COLORS } from '../styles/colors';
 import EmptyState from '../components/common/EmptyState';
 import ImageWithFallback from '../components/common/ImageWithFallback';
 import { getImageForProduct } from '../utils/imageHelper';
-
 export default function DailyDealsScreen({ navigation }) {
   const [deals, setDeals] = useState([]);
   const [promotionalProducts, setPromotionalProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
-
   useEffect(() => {
     loadDealsAndPromotions();
   }, []);
-
   const loadDealsAndPromotions = async () => {
     try {
       setLoading(true);
       const dailyDeals = productSearchService.getDailyDeals();
       const promoProducts = productSearchService.getPromotionalProducts();
-      
       setDeals(dailyDeals);
       setPromotionalProducts(promoProducts);
     } catch (error) {
@@ -43,7 +39,6 @@ export default function DailyDealsScreen({ navigation }) {
       setLoading(false);
     }
   };
-
   const handleAddToCart = (product, store) => {
     const cartItem = {
       id: product.id,
@@ -55,11 +50,9 @@ export default function DailyDealsScreen({ navigation }) {
       storeId: store.storeId,
       storeName: store.storeName
     };
-    
     addToCart(cartItem);
     Alert.alert('Added to Cart', `${product.name} added to cart with special price!`);
   };
-
   const renderDealItem = ({ item: deal }) => (
     <TouchableOpacity style={styles.dealCard}>
       <ImageWithFallback source={{ uri: deal.image }} style={styles.dealImage} />
@@ -70,9 +63,7 @@ export default function DailyDealsScreen({ navigation }) {
             {deal.discount > 0 ? `${deal.discount}% OFF` : 'SPECIAL OFFER'}
           </Chip>
         </View>
-        
         <Text style={styles.dealDescription}>{deal.description}</Text>
-        
         <View style={styles.dealFooter}>
           <View style={styles.storesContainer}>
             <Ionicons name="storefront" size={14} color={COLORS.primary} />
@@ -80,18 +71,15 @@ export default function DailyDealsScreen({ navigation }) {
               Available at {deal.stores.length} store{deal.stores.length > 1 ? 's' : ''}
             </Text>
           </View>
-          
           <View style={styles.validityContainer}>
             <Ionicons name="time" size={14} color={COLORS.textSecondary} />
             <Text style={styles.validityText}>Valid until {new Date(deal.validUntil).toLocaleDateString()}</Text>
           </View>
         </View>
-        
         <Text style={styles.dealTerms}>{deal.terms}</Text>
       </View>
     </TouchableOpacity>
   );
-
   const renderPromotionalProduct = ({ item: product }) => {
     const bestPromoStore = product.promotionalStores.reduce((best, current) => {
       if (!best) return current;
@@ -99,22 +87,18 @@ export default function DailyDealsScreen({ navigation }) {
       const currentDiscount = current.promotion?.value || 0;
       return currentDiscount > bestDiscount ? current : best;
     }, null);
-
     return (
     <View style={styles.productCard}>
       <ImageWithFallback source={{ uri: product.image || getImageForProduct(product) }} style={styles.productImage} />
-        
         <View style={styles.productInfo}>
           <Text style={styles.productName}>{product.name}</Text>
           <Text style={styles.productBrand}>{product.brand}</Text>
-          
           <View style={styles.ratingContainer}>
             <Ionicons name="star" size={14} color="#FFD700" />
             <Text style={styles.rating}>{product.rating}</Text>
             <Text style={styles.reviews}>({product.reviews})</Text>
           </View>
         </View>
-
         <View style={styles.promotionSection}>
           <Text style={styles.promotionLabel}>Best Deal:</Text>
           <View style={styles.priceContainer}>
@@ -132,12 +116,10 @@ export default function DailyDealsScreen({ navigation }) {
               </>
             )}
           </View>
-          
           <Text style={styles.storeInfo}>
             at {productSearchService.getStoreById(bestPromoStore?.storeId)?.name || 'Store'}
           </Text>
         </View>
-
         <View style={styles.productActions}>
           <Button
             mode="outlined"
@@ -149,7 +131,6 @@ export default function DailyDealsScreen({ navigation }) {
           >
             Compare Prices
           </Button>
-          
           <Button
             mode="contained"
             onPress={() => handleAddToCart(product, bestPromoStore)}
@@ -162,7 +143,6 @@ export default function DailyDealsScreen({ navigation }) {
       </View>
     );
   };
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -181,7 +161,6 @@ export default function DailyDealsScreen({ navigation }) {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -199,7 +178,6 @@ export default function DailyDealsScreen({ navigation }) {
           <Ionicons name="refresh" size={24} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
-
       <FlatList
         ListHeaderComponent={() => (
           <>
@@ -216,7 +194,6 @@ export default function DailyDealsScreen({ navigation }) {
                 />
               </View>
             )}
-            
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>💰 Products on Promotion</Text>
               {promotionalProducts.length === 0 && (
@@ -239,7 +216,6 @@ export default function DailyDealsScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

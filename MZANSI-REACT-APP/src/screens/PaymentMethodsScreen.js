@@ -14,36 +14,28 @@ import { COLORS } from '../styles/colors';
 import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 export default function PaymentMethodsScreen({ navigation }) {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-
   useEffect(() => {
     loadPaymentMethods();
   }, []);
-
-  // Reload on focus (after returning from add/edit screens)
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadPaymentMethods();
     });
     return unsubscribe;
   }, [navigation]);
-
   const loadPaymentMethods = async () => {
     try {
       setLoading(true);
       if (user?.uid) {
-        // Try Firebase first
         const firebaseMethods = await firebaseService.paymentMethods.getByUser(user.uid);
         if (firebaseMethods.length > 0) {
           setPaymentMethods(firebaseMethods);
-          // Also save to AsyncStorage as backup
           await AsyncStorage.setItem(`paymentMethods_${user.uid}`, JSON.stringify(firebaseMethods));
         } else {
-          // Fallback to AsyncStorage
           const savedMethods = await AsyncStorage.getItem(`paymentMethods_${user.uid}`);
           if (savedMethods) {
             setPaymentMethods(JSON.parse(savedMethods));
@@ -52,7 +44,6 @@ export default function PaymentMethodsScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Error loading payment methods:', error);
-      // Fallback to AsyncStorage on Firebase error
       try {
         const savedMethods = await AsyncStorage.getItem(`paymentMethods_${user?.uid}`);
         if (savedMethods) {
@@ -65,7 +56,6 @@ export default function PaymentMethodsScreen({ navigation }) {
       setLoading(false);
     }
   };
-
   const savePaymentMethodToFirebase = async (methodData, isUpdate = false, methodId = null) => {
     try {
       if (isUpdate && methodId) {
@@ -76,18 +66,14 @@ export default function PaymentMethodsScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Firebase save error:', error);
-      // Continue with local storage as fallback
     }
   };
-
   const handleAddPaymentMethod = () => {
     navigation.navigate('AddEditPaymentMethod', { mode: 'add' });
   };
-
   const handleEditPaymentMethod = (method) => {
     navigation.navigate('AddEditPaymentMethod', { mode: 'edit', paymentMethod: method });
   };
-
   const handleDeletePaymentMethod = (methodId) => {
     Alert.alert(
       'Delete Payment Method',
@@ -99,13 +85,9 @@ export default function PaymentMethodsScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Delete from Firebase
               await firebaseService.paymentMethods.delete(methodId);
-              
               const updatedMethods = paymentMethods.filter(pm => pm.id !== methodId);
               setPaymentMethods(updatedMethods);
-              
-              // Update AsyncStorage
               await AsyncStorage.setItem(`paymentMethods_${user.uid}`, JSON.stringify(updatedMethods));
             } catch (error) {
               console.error('Error deleting payment method:', error);
@@ -116,29 +98,22 @@ export default function PaymentMethodsScreen({ navigation }) {
       ]
     );
   };
-
   const handleSetDefault = async (methodId) => {
     try {
       const updatedMethods = paymentMethods.map(pm => ({
         ...pm,
         isDefault: pm.id === methodId
       }));
-      
-      // Update all payment methods in Firebase
       for (const pm of updatedMethods) {
         await savePaymentMethodToFirebase({ isDefault: pm.isDefault }, true, pm.id);
       }
-      
       setPaymentMethods(updatedMethods);
-      
-      // Save to AsyncStorage as backup
       await AsyncStorage.setItem(`paymentMethods_${user.uid}`, JSON.stringify(updatedMethods));
     } catch (error) {
       console.error('Error setting default payment method:', error);
       Alert.alert('Error', 'Failed to set default payment method. Please try again.');
     }
   };
-
   const getCardIcon = (type) => {
     switch (type?.toLowerCase()) {
       case 'visa':
@@ -151,13 +126,11 @@ export default function PaymentMethodsScreen({ navigation }) {
         return 'credit-card';
     }
   };
-
   const maskCardNumber = (cardNumber) => {
     if (!cardNumber) return '';
     const last4 = cardNumber.slice(-4);
     return `**** **** **** ${last4}`;
   };
-
   const renderPaymentMethodCard = (method) => (
     <Card key={method.id} style={styles.methodCard}>
       <Card.Content>
@@ -191,7 +164,6 @@ export default function PaymentMethodsScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
-
         {!method.isDefault && (
           <Button
             mode="outlined"
@@ -204,7 +176,6 @@ export default function PaymentMethodsScreen({ navigation }) {
       </Card.Content>
     </Card>
   );
-
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="card-outline" size={80} color={COLORS.gray} />
@@ -221,7 +192,6 @@ export default function PaymentMethodsScreen({ navigation }) {
       </Button>
     </View>
   );
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -230,7 +200,6 @@ export default function PaymentMethodsScreen({ navigation }) {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       {paymentMethods.length === 0 ? (
@@ -243,7 +212,6 @@ export default function PaymentMethodsScreen({ navigation }) {
           {paymentMethods.map(renderPaymentMethodCard)}
         </ScrollView>
       )}
-      
       {paymentMethods.length > 0 && (
         <FAB
           style={styles.fab}
@@ -254,7 +222,6 @@ export default function PaymentMethodsScreen({ navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

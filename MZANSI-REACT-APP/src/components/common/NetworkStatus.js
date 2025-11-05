@@ -3,21 +3,16 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
-
 const NetworkStatus = () => {
   const [isConnected, setIsConnected] = useState(true);
   const [showBanner, setShowBanner] = useState(false);
   const slideAnim = new Animated.Value(-50);
-
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
       const connected = state.isConnected && state.isInternetReachable;
-      
       if (connected !== isConnected) {
         setIsConnected(connected);
-        
         if (!connected) {
-          // Show offline banner
           setShowBanner(true);
           Animated.timing(slideAnim, {
             toValue: 0,
@@ -25,7 +20,6 @@ const NetworkStatus = () => {
             useNativeDriver: true,
           }).start();
         } else {
-          // Hide banner after showing "back online" briefly
           setTimeout(() => {
             Animated.timing(slideAnim, {
               toValue: -50,
@@ -36,12 +30,9 @@ const NetworkStatus = () => {
         }
       }
     });
-
     return () => unsubscribe();
   }, [isConnected]);
-
   if (!showBanner) return null;
-
   return (
     <Animated.View 
       style={[
@@ -63,7 +54,6 @@ const NetworkStatus = () => {
     </Animated.View>
   );
 };
-
 const styles = StyleSheet.create({
   banner: {
     position: 'absolute',
@@ -84,5 +74,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
 export default NetworkStatus;

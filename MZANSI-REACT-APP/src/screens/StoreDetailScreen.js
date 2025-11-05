@@ -14,20 +14,16 @@ import { useCart } from '../context/CartContext';
 import { getStoreProducts, generateProductsForStore } from '../data/mockData';
 import { firebaseService } from '../services/firebase';
 import { COLORS } from '../styles/colors';
-
 export default function StoreDetailScreen({ route, navigation }) {
   const { store } = route.params;
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { addToCart } = useCart();
-
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        // Try Firebase first, then fallback to local generated data
         const storeProducts = await firebaseService.products.getByStore(store.id);
         if (!storeProducts || (Array.isArray(storeProducts) && storeProducts.length === 0)) {
-          // If store isn't in mockStores, generate products from the store's category
           const generated = generateProductsForStore(store, 24);
           setProducts(generated);
         } else {
@@ -35,23 +31,18 @@ export default function StoreDetailScreen({ route, navigation }) {
         }
       } catch (error) {
         console.error('Error loading products:', error);
-        // Fallback to generated data
         const generated = generateProductsForStore(store, 24);
         setProducts(generated);
       }
     };
-    
     loadProducts();
   }, [store.id]);
-
   const categories = ['All', 'Specials'];
-
   const filteredProducts = selectedCategory === 'All'
     ? products
     : selectedCategory === 'Specials'
       ? products.filter(product => product.isSpecial)
       : products;
-
   const handleAddToCart = (product) => {
     addToCart({
       id: product.id,
@@ -62,11 +53,9 @@ export default function StoreDetailScreen({ route, navigation }) {
       storeName: store.name,
     });
   };
-
   const Header = () => (
     <>
       <StoreHeader store={store} />
-
       <View style={styles.storeInfo}>
         <View style={styles.infoRow}>
           <Ionicons name="time-outline" size={16} color={COLORS.gray} />
@@ -87,7 +76,6 @@ export default function StoreDetailScreen({ route, navigation }) {
           </Text>
         </View>
       </View>
-
       {store.promotions && store.promotions.length > 0 && (
         <View style={styles.promotionsContainer}>
           <Text style={styles.sectionTitle}>Current Promotions</Text>
@@ -99,7 +87,6 @@ export default function StoreDetailScreen({ route, navigation }) {
           ))}
         </View>
       )}
-
       <View style={styles.categoryContainer}>
         <Text style={styles.sectionTitle}>Browse Products</Text>
         <View style={styles.categoryChipsRow}>
@@ -124,7 +111,6 @@ export default function StoreDetailScreen({ route, navigation }) {
       </View>
     </>
   );
-
   const EmptyComponent = () => (
     <View style={styles.emptyState}>
       <Ionicons name="basket-outline" size={50} color={COLORS.gray} />
@@ -136,7 +122,6 @@ export default function StoreDetailScreen({ route, navigation }) {
       </Text>
     </View>
   );
-
   return (
     <View style={styles.container}>
       <ProductGrid
@@ -146,14 +131,12 @@ export default function StoreDetailScreen({ route, navigation }) {
         ListEmptyComponent={EmptyComponent}
         extraData={selectedCategory}
       />
-
-      {/* Contact Store Button */}
+      {}
       <View style={styles.contactContainer}>
         <Button
           mode="outlined"
           icon="message-outline"
           onPress={() => {
-            // In real app, this would open in-app messaging
             alert('Contact feature coming soon!');
           }}
           style={styles.contactButton}
@@ -164,7 +147,6 @@ export default function StoreDetailScreen({ route, navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

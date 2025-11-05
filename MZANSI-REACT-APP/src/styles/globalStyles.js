@@ -1,6 +1,5 @@
 import { COLORS } from './colors';
 import { DefaultTheme } from 'react-native-paper';
-
 export const theme = {
   ...DefaultTheme,
   colors: {
@@ -12,7 +11,6 @@ export const theme = {
     text: COLORS.textPrimary,
   },
 };
-
 export const globalStyles = {
   container: {
     flex: 1,

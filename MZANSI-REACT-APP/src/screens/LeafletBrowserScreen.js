@@ -2,26 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, RefreshControl } from 'react-native';
 import { listLeaflets } from '../services/localLeafletsService';
 import { COLORS } from '../styles/colors';
-
 export default function LeafletBrowserScreen() {
   const [items, setItems] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-
   const load = async () => {
     const data = await listLeaflets();
     setItems(data);
   };
-
   useEffect(() => {
     load();
   }, []);
-
   const onRefresh = async () => {
     setRefreshing(true);
     await load();
     setRefreshing(false);
   };
-
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Image source={{ uri: item.fileUri }} style={styles.image} />
@@ -33,7 +28,6 @@ export default function LeafletBrowserScreen() {
       </View>
     </View>
   );
-
   return (
     <View style={styles.container}>
       {items.length === 0 ? (
@@ -53,7 +47,6 @@ export default function LeafletBrowserScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   list: { padding: 12 },
@@ -68,5 +61,3 @@ const styles = StyleSheet.create({
   refreshBtn: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: COLORS.primary, borderRadius: 8 },
   refreshText: { color: '#fff', fontWeight: '600' },
 });
-
-

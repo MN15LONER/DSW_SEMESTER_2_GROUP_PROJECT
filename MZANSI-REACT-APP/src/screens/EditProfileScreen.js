@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import { auth, firebaseService } from '../services/firebase';
 import { updateProfile, updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { COLORS } from '../styles/colors';
-
 export default function EditProfileScreen({ navigation }) {
   const { user, updateUserProfile } = useAuth();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
@@ -15,36 +14,27 @@ export default function EditProfileScreen({ navigation }) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
-
   const passwordsMatch = !newPassword || newPassword === confirmPassword;
-
   const requireReauth = (originalEmail, newEmail, newPassword) => {
     return (newEmail && newEmail !== originalEmail) || !!newPassword;
   };
-
   const handleSave = async () => {
     if (!user) return;
     if (!passwordsMatch) {
       Alert.alert('Validation', 'New passwords do not match');
       return;
     }
-
     setSaving(true);
     const authUser = auth.currentUser;
     const updates = {};
-
     try {
-      // If we need to re-authenticate for email/password changes
       if (requireReauth(user.email, email, newPassword)) {
         if (!currentPassword) {
           throw new Error('Please enter your current password to change email or password');
         }
-
         const credential = EmailAuthProvider.credential(user.email, currentPassword);
         await reauthenticateWithCredential(authUser, credential);
       }
-
-      // Update display name in Firebase Auth
       if (displayName !== user.displayName) {
         try {
           await updateProfile(authUser, { displayName });
@@ -54,8 +44,6 @@ export default function EditProfileScreen({ navigation }) {
           throw err;
         }
       }
-
-      // Update email in Firebase Auth
       if (email !== user.email) {
         try {
           await updateEmail(authUser, email);
@@ -65,8 +53,6 @@ export default function EditProfileScreen({ navigation }) {
           throw err;
         }
       }
-
-      // Update password in Firebase Auth
       if (newPassword) {
         try {
           await updatePassword(authUser, newPassword);
@@ -75,30 +61,21 @@ export default function EditProfileScreen({ navigation }) {
           throw err;
         }
       }
-
-      // Update phone (stored in Firestore user doc)
       if (phone !== user.phone) {
         updates.phone = phone;
       }
-
-      // Persist changes to Firestore (and update local AuthContext via updateUserProfile)
       if (Object.keys(updates).length > 0) {
         const success = await firebaseService.users.update(user.uid, updates);
         if (!success) {
           throw new Error('Failed to update user profile in database');
         }
-
-        // Update local context/user storage
         await updateUserProfile(updates);
       }
-
       Alert.alert('Success', 'Profile updated successfully');
       navigation.goBack();
     } catch (error) {
       console.error('EditProfile save error:', error);
       let message = error?.message || 'Failed to update profile. Please try again.';
-
-      // Firebase-specific friendly messages
       if (error?.code === 'auth/requires-recent-login') {
         message = 'For security reasons, please sign in again and then try changing your email or password.';
       } else if (error?.code === 'auth/invalid-email') {
@@ -108,18 +85,15 @@ export default function EditProfileScreen({ navigation }) {
       } else if (error?.code === 'auth/wrong-password') {
         message = 'Current password is incorrect.';
       }
-
       Alert.alert('Update Failed', message);
     } finally {
       setSaving(false);
     }
   };
-
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <View style={styles.container}>
         <Title style={styles.title}>Edit Profile</Title>
-
         <TextInput
           label="Display Name"
           value={displayName}
@@ -127,7 +101,6 @@ export default function EditProfileScreen({ navigation }) {
           style={styles.input}
           mode="outlined"
         />
-
         <TextInput
           label="Email"
           value={email}
@@ -137,7 +110,6 @@ export default function EditProfileScreen({ navigation }) {
           style={styles.input}
           mode="outlined"
         />
-
         <TextInput
           label="Phone Number"
           value={phone}
@@ -146,9 +118,7 @@ export default function EditProfileScreen({ navigation }) {
           style={styles.input}
           mode="outlined"
         />
-
         <HelperText type="info">If you want to change email or password, enter your current password below.</HelperText>
-
         <TextInput
           label="Current Password"
           value={currentPassword}
@@ -157,7 +127,6 @@ export default function EditProfileScreen({ navigation }) {
           style={styles.input}
           mode="outlined"
         />
-
         <TextInput
           label="New Password"
           value={newPassword}
@@ -166,7 +135,6 @@ export default function EditProfileScreen({ navigation }) {
           style={styles.input}
           mode="outlined"
         />
-
         <TextInput
           label="Confirm New Password"
           value={confirmPassword}
@@ -175,9 +143,7 @@ export default function EditProfileScreen({ navigation }) {
           style={styles.input}
           mode="outlined"
         />
-
         {!passwordsMatch && <HelperText type="error">Passwords do not match</HelperText>}
-
         <Button
           mode="contained"
           onPress={handleSave}
@@ -191,7 +157,6 @@ export default function EditProfileScreen({ navigation }) {
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

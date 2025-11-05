@@ -16,7 +16,6 @@ import * as Location from 'expo-location';
 import { productSearchService } from '../services/productSearchService';
 import { COLORS } from '../styles/colors';
 import EmptyState from '../components/common/EmptyState';
-
 export default function StoreFinderScreen({ navigation }) {
   const [stores, setStores] = useState([]);
   const [filteredStores, setFilteredStores] = useState([]);
@@ -25,7 +24,6 @@ export default function StoreFinderScreen({ navigation }) {
   const [selectedChain, setSelectedChain] = useState('all');
   const [loading, setLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(false);
-
   const storeChains = [
     { id: 'all', name: 'All Stores' },
     { id: 'pick-n-pay', name: 'Pick n Pay' },
@@ -34,16 +32,13 @@ export default function StoreFinderScreen({ navigation }) {
     { id: 'shoprite', name: 'Shoprite' },
     { id: 'makro', name: 'Makro' }
   ];
-
   useEffect(() => {
     loadStores();
     getCurrentLocation();
   }, []);
-
   useEffect(() => {
     filterStores();
   }, [stores, searchQuery, selectedChain, userLocation]);
-
   const loadStores = async () => {
     try {
       setLoading(true);
@@ -56,12 +51,10 @@ export default function StoreFinderScreen({ navigation }) {
       setLoading(false);
     }
   };
-
   const getCurrentLocation = async () => {
     try {
       setLocationLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
       if (status !== 'granted') {
         Alert.alert(
           'Location Permission',
@@ -69,7 +62,6 @@ export default function StoreFinderScreen({ navigation }) {
         );
         return;
       }
-
       const location = await Location.getCurrentPositionAsync({});
       setUserLocation({
         latitude: location.coords.latitude,
@@ -82,12 +74,10 @@ export default function StoreFinderScreen({ navigation }) {
       setLocationLoading(false);
     }
   };
-
   const calculateDistance = (storeCoords) => {
     if (!userLocation) return null;
     if (!storeCoords || typeof storeCoords.latitude !== 'number' || typeof storeCoords.longitude !== 'number') return null;
-
-    const R = 6371; // Earth's radius in km
+    const R = 6371; 
     const dLat = (storeCoords.latitude - userLocation.latitude) * Math.PI / 180;
     const dLon = (storeCoords.longitude - userLocation.longitude) * Math.PI / 180;
     const a = 
@@ -96,14 +86,10 @@ export default function StoreFinderScreen({ navigation }) {
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const distance = R * c;
-
     return distance;
   };
-
   const filterStores = () => {
     let filtered = [...stores];
-
-    // Filter by search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(store => {
@@ -117,25 +103,18 @@ export default function StoreFinderScreen({ navigation }) {
         );
       });
     }
-
-    // Filter by store chain
     if (selectedChain !== 'all') {
-      // selectedChain ids are normalized (e.g. 'pick-n-pay'), map to brand match
       const normalized = selectedChain.replace(/-/g, ' ').toLowerCase();
       filtered = filtered.filter(store => (store.brand || '').toLowerCase().includes(normalized));
     }
-
-    // Calculate distances and sort by distance if user location is available
     if (userLocation) {
       filtered = filtered.map(store => ({
         ...store,
         distance: store.coordinates ? calculateDistance(store.coordinates) : null
       })).sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
     }
-
     setFilteredStores(filtered);
   };
-
   const handleCallStore = (phoneNumber) => {
     const url = `tel:${phoneNumber}`;
     Linking.canOpenURL(url)
@@ -151,13 +130,11 @@ export default function StoreFinderScreen({ navigation }) {
         Alert.alert('Error', 'Could not open phone app');
       });
   };
-
   const handleGetDirections = (store) => {
     if (!store.coordinates || typeof store.coordinates.latitude !== 'number' || typeof store.coordinates.longitude !== 'number') {
       Alert.alert('No coordinates', 'This store does not have location coordinates available.');
       return;
     }
-
     const { latitude, longitude } = store.coordinates;
     const label = encodeURIComponent(store.name || 'Store');
     let url;
@@ -166,14 +143,12 @@ export default function StoreFinderScreen({ navigation }) {
     } else {
       url = `geo:0,0?q=${latitude},${longitude}(${label})`;
     }
-
     Linking.canOpenURL(url)
       .then((supported) => {
         if (supported) {
           Linking.openURL(url);
         } else {
-          // Fallback to Google Maps web
-          const webUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+          const webUrl = `https:
           Linking.openURL(webUrl);
         }
       })
@@ -182,7 +157,6 @@ export default function StoreFinderScreen({ navigation }) {
         Alert.alert('Error', 'Could not open maps app');
       });
   };
-
   const renderStoreItem = ({ item: store }) => (
     <View style={styles.storeCard}>
       <View style={styles.storeHeader}>
@@ -190,7 +164,6 @@ export default function StoreFinderScreen({ navigation }) {
           <Text style={styles.storeName}>{store.name}</Text>
           <Text style={styles.storeChain}>{store.brand}</Text>
         </View>
-        
         <View style={styles.storeStatus}>
           <View style={[
             styles.statusIndicator,
@@ -204,25 +177,21 @@ export default function StoreFinderScreen({ navigation }) {
           </Text>
         </View>
       </View>
-
       <View style={styles.storeDetails}>
         <View style={styles.addressContainer}>
           <Ionicons name="location" size={16} color={COLORS.textSecondary} />
           <Text style={styles.address}>{store.address || store.location || 'Address not available'}</Text>
         </View>
-        
         {typeof store.distance === 'number' && (
           <View style={styles.distanceContainer}>
             <Ionicons name="navigate" size={16} color={COLORS.primary} />
             <Text style={styles.distance}>{store.distance.toFixed(1)} km away</Text>
           </View>
         )}
-
         <View style={styles.hoursContainer}>
           <Ionicons name="time" size={16} color={COLORS.textSecondary} />
           <Text style={styles.hours}>{store.hours}</Text>
         </View>
-
         {store.phone && (
           <View style={styles.phoneContainer}>
             <Ionicons name="call" size={16} color={COLORS.textSecondary} />
@@ -230,7 +199,6 @@ export default function StoreFinderScreen({ navigation }) {
           </View>
         )}
       </View>
-
       <View style={styles.storeActions}>
         <Button
           mode="outlined"
@@ -242,7 +210,6 @@ export default function StoreFinderScreen({ navigation }) {
           <Ionicons name="call" size={16} color={COLORS.primary} />
           Call
         </Button>
-        
         <Button
           mode="outlined"
           onPress={() => handleGetDirections(store)}
@@ -252,7 +219,6 @@ export default function StoreFinderScreen({ navigation }) {
           <Ionicons name="navigate" size={16} color={COLORS.primary} />
           Directions
         </Button>
-        
         <Button
           mode="contained"
           onPress={() => navigation.navigate('ProductSearch', { 
@@ -266,7 +232,6 @@ export default function StoreFinderScreen({ navigation }) {
       </View>
     </View>
   );
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -285,7 +250,6 @@ export default function StoreFinderScreen({ navigation }) {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -308,7 +272,6 @@ export default function StoreFinderScreen({ navigation }) {
           />
         </TouchableOpacity>
       </View>
-
       <View style={styles.searchSection}>
         <Searchbar
           placeholder="Search stores by name or location..."
@@ -316,7 +279,6 @@ export default function StoreFinderScreen({ navigation }) {
           value={searchQuery}
           style={styles.searchBar}
         />
-        
         <FlatList
           data={storeChains}
           renderItem={({ item }) => (
@@ -341,7 +303,6 @@ export default function StoreFinderScreen({ navigation }) {
           contentContainerStyle={styles.filtersContainer}
         />
       </View>
-
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsCount}>
           {filteredStores.length} store{filteredStores.length !== 1 ? 's' : ''} found
@@ -350,7 +311,6 @@ export default function StoreFinderScreen({ navigation }) {
           <Text style={styles.sortedBy}>Sorted by distance</Text>
         )}
       </View>
-
       <FlatList
         data={filteredStores}
         renderItem={renderStoreItem}
@@ -373,7 +333,6 @@ export default function StoreFinderScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

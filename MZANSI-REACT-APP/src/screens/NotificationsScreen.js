@@ -13,26 +13,21 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../styles/colors';
 import { useAuth } from '../context/AuthContext';
-
 const NOTIFICATIONS_STORAGE_KEY = 'user_notifications';
-
 export default function NotificationsScreen({ navigation }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
   useEffect(() => {
     loadNotifications();
   }, [user]);
-
   const loadNotifications = async () => {
     try {
       setLoading(true);
       const stored = await AsyncStorage.getItem(`${NOTIFICATIONS_STORAGE_KEY}_${user?.uid}`);
       if (stored) {
         const parsedNotifications = JSON.parse(stored);
-        // Sort by timestamp, most recent first
         const sortedNotifications = parsedNotifications.sort((a, b) =>
           new Date(b.timestamp) - new Date(a.timestamp)
         );
@@ -44,13 +39,11 @@ export default function NotificationsScreen({ navigation }) {
       setLoading(false);
     }
   };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await loadNotifications();
     setRefreshing(false);
   };
-
   const markAsRead = async (notificationId) => {
     try {
       const updatedNotifications = notifications.map(notification =>
@@ -67,7 +60,6 @@ export default function NotificationsScreen({ navigation }) {
       console.error('Error marking notification as read:', error);
     }
   };
-
   const markAllAsRead = async () => {
     try {
       const updatedNotifications = notifications.map(notification => ({
@@ -83,7 +75,6 @@ export default function NotificationsScreen({ navigation }) {
       console.error('Error marking all notifications as read:', error);
     }
   };
-
   const clearAllNotifications = () => {
     Alert.alert(
       'Clear All Notifications',
@@ -105,7 +96,6 @@ export default function NotificationsScreen({ navigation }) {
       ]
     );
   };
-
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'chat_message':
@@ -116,7 +106,6 @@ export default function NotificationsScreen({ navigation }) {
         return 'notifications';
     }
   };
-
   const getNotificationColor = (type) => {
     switch (type) {
       case 'chat_message':
@@ -127,12 +116,10 @@ export default function NotificationsScreen({ navigation }) {
         return COLORS.gray;
     }
   };
-
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
@@ -142,10 +129,8 @@ export default function NotificationsScreen({ navigation }) {
       return `${diffInDays}d ago`;
     }
   };
-
   const renderNotification = ({ item: notification }) => {
     const isUnread = !notification.read;
-
     return (
       <TouchableOpacity
         style={[styles.notificationItem, isUnread && styles.unreadNotification]}
@@ -153,7 +138,6 @@ export default function NotificationsScreen({ navigation }) {
           if (isUnread) {
             markAsRead(notification.id);
           }
-          // Handle navigation based on notification type
           if (notification.data?.type === 'chat_message' && notification.data?.orderId) {
             navigation.navigate('CustomerChat', {
               orderId: notification.data.orderId,
@@ -186,9 +170,7 @@ export default function NotificationsScreen({ navigation }) {
       </TouchableOpacity>
     );
   };
-
   const unreadCount = notifications.filter(n => !n.read).length;
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -197,7 +179,6 @@ export default function NotificationsScreen({ navigation }) {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -226,7 +207,6 @@ export default function NotificationsScreen({ navigation }) {
           )}
         </View>
       </View>
-
       {notifications.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="notifications-off-outline" size={64} color={COLORS.gray} />
@@ -247,7 +227,6 @@ export default function NotificationsScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
         />
       )}
-
       {notifications.length > 0 && (
         <View style={styles.footer}>
           <TouchableOpacity
@@ -261,7 +240,6 @@ export default function NotificationsScreen({ navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

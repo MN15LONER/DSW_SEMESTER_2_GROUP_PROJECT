@@ -10,7 +10,6 @@ import {
 import { Button, Chip, Divider } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
-
 const CATEGORIES = [
   'All',
   'Supermarket',
@@ -20,7 +19,6 @@ const CATEGORIES = [
   'Wholesale',
   'Electronics',
 ];
-
 const PRICE_RANGES = [
   { label: 'All Prices', min: 0, max: Infinity },
   { label: 'Under R50', min: 0, max: 50 },
@@ -28,7 +26,6 @@ const PRICE_RANGES = [
   { label: 'R100 - R200', min: 100, max: 200 },
   { label: 'Over R200', min: 200, max: Infinity },
 ];
-
 const SORT_OPTIONS = [
   { label: 'Relevance', value: 'relevance' },
   { label: 'Price: Low to High', value: 'price_asc' },
@@ -36,7 +33,6 @@ const SORT_OPTIONS = [
   { label: 'Rating', value: 'rating' },
   { label: 'Distance', value: 'distance' },
 ];
-
 export default function SearchFilter({ 
   visible, 
   onClose, 
@@ -48,7 +44,6 @@ export default function SearchFilter({
   const [selectedSort, setSelectedSort] = useState(initialFilters.sort || 'relevance');
   const [showSpecialsOnly, setShowSpecialsOnly] = useState(initialFilters.specialsOnly || false);
   const [showOpenOnly, setShowOpenOnly] = useState(initialFilters.openOnly || false);
-
   const handleApply = () => {
     const filters = {
       category: selectedCategory,
@@ -60,7 +55,6 @@ export default function SearchFilter({
     onApplyFilters(filters);
     onClose();
   };
-
   const handleReset = () => {
     setSelectedCategory('All');
     setSelectedPriceRange(0);
@@ -68,7 +62,6 @@ export default function SearchFilter({
     setShowSpecialsOnly(false);
     setShowOpenOnly(false);
   };
-
   return (
     <Modal
       visible={visible}
@@ -77,7 +70,7 @@ export default function SearchFilter({
       onRequestClose={onClose}
     >
       <View style={styles.container}>
-        {/* Header */}
+        {}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={COLORS.gray} />
@@ -87,9 +80,8 @@ export default function SearchFilter({
             <Text style={styles.resetText}>Reset</Text>
           </TouchableOpacity>
         </View>
-
         <ScrollView style={styles.content}>
-          {/* Category Filter */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Category</Text>
             <View style={styles.chipContainer}>
@@ -111,10 +103,8 @@ export default function SearchFilter({
               ))}
             </View>
           </View>
-
           <Divider style={styles.divider} />
-
-          {/* Price Range */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Price Range</Text>
             <View style={styles.chipContainer}>
@@ -136,10 +126,8 @@ export default function SearchFilter({
               ))}
             </View>
           </View>
-
           <Divider style={styles.divider} />
-
-          {/* Sort Options */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Sort By</Text>
             {SORT_OPTIONS.map((option) => (
@@ -157,13 +145,10 @@ export default function SearchFilter({
               </TouchableOpacity>
             ))}
           </View>
-
           <Divider style={styles.divider} />
-
-          {/* Additional Filters */}
+          {}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Additional Filters</Text>
-            
             <TouchableOpacity
               style={styles.toggleOption}
               onPress={() => setShowSpecialsOnly(!showSpecialsOnly)}
@@ -175,7 +160,6 @@ export default function SearchFilter({
                 color={showSpecialsOnly ? COLORS.primary : COLORS.gray}
               />
             </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.toggleOption}
               onPress={() => setShowOpenOnly(!showOpenOnly)}
@@ -189,8 +173,7 @@ export default function SearchFilter({
             </TouchableOpacity>
           </View>
         </ScrollView>
-
-        {/* Apply Button */}
+        {}
         <View style={styles.footer}>
           <Button
             mode="contained"
@@ -205,7 +188,6 @@ export default function SearchFilter({
     </Modal>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

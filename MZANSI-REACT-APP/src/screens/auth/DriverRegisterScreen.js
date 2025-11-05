@@ -14,7 +14,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { firebaseService } from '../../services/firebase';
-
 const DriverRegisterScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -33,77 +32,60 @@ const DriverRegisterScreen = ({ navigation }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const { register, loading } = useAuth();
-
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
   };
-
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
     }
-
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
     }
-
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     } else if (!/^(\+27|0)[6-8][0-9]{8}$/.test(formData.phone.replace(/\s/g, ''))) {
       newErrors.phone = 'Please enter a valid South African phone number';
     }
-
     if (!formData.licenseNumber.trim()) {
       newErrors.licenseNumber = 'Driver license number is required';
     }
-
     if (!formData.vehicleType.trim()) {
       newErrors.vehicleType = 'Vehicle type is required';
     }
-
     if (!formData.vehicleModel.trim()) {
       newErrors.vehicleModel = 'Vehicle model is required';
     }
-
     if (!formData.vehicleRegistration.trim()) {
       newErrors.vehicleRegistration = 'Vehicle registration is required';
     }
-
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-
     if (!formData.acceptTerms) {
       newErrors.acceptTerms = 'You must accept the terms and conditions';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleDriverRegister = async () => {
     if (!validateForm()) return;
-
     const userData = {
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
@@ -114,21 +96,17 @@ const DriverRegisterScreen = ({ navigation }) => {
       vehicleType: formData.vehicleType.trim(),
       vehicleModel: formData.vehicleModel.trim(),
       vehicleRegistration: formData.vehicleRegistration.trim(),
-      isActive: false, // Will be activated by admin
+      isActive: false, 
       isAvailable: false
     };
-
     try {
       const result = await register(
         formData.email.trim().toLowerCase(), 
         formData.password, 
         userData
       );
-      
       if (result.success) {
-        // Create driver profile in Firebase
         await firebaseService.drivers.create(result.user.uid, userData);
-        
         Alert.alert(
           'Registration Successful', 
           'Your driver account has been created and is pending approval. You will receive an email once your account is activated.',
@@ -136,7 +114,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             {
               text: 'OK',
               onPress: () => {
-                // Don't navigate manually - let the auth state change handle navigation
                 console.log('Driver registration completed - auth state will handle navigation');
               }
             }
@@ -150,12 +127,8 @@ const DriverRegisterScreen = ({ navigation }) => {
       Alert.alert('Error', 'Failed to create driver account. Please try again.');
     }
   };
-
   const formatPhoneNumber = (text) => {
-    // Remove all non-digits
     const cleaned = text.replace(/\D/g, '');
-    
-    // Format as South African number
     if (cleaned.length <= 3) {
       return cleaned;
     } else if (cleaned.length <= 6) {
@@ -166,9 +139,7 @@ const DriverRegisterScreen = ({ navigation }) => {
       return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 10)}`;
     }
   };
-
   const vehicleTypes = ['Car', 'Motorcycle', 'Van', 'Truck', 'Bicycle'];
-
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
@@ -182,7 +153,6 @@ const DriverRegisterScreen = ({ navigation }) => {
           <Text style={styles.title}>Become a Driver</Text>
           <Text style={styles.subtitle}>Join our delivery team and start earning</Text>
         </View>
-
         <View style={styles.form}>
           <View style={styles.row}>
             <View style={[styles.inputContainer, styles.halfWidth]}>
@@ -199,7 +169,6 @@ const DriverRegisterScreen = ({ navigation }) => {
               </View>
               {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
             </View>
-
             <View style={[styles.inputContainer, styles.halfWidth]}>
               <Text style={styles.label}>Last Name</Text>
               <View style={[styles.inputWrapper, errors.lastName && styles.inputError]}>
@@ -215,7 +184,6 @@ const DriverRegisterScreen = ({ navigation }) => {
               {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
             </View>
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email Address</Text>
             <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
@@ -232,7 +200,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             </View>
             {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Phone Number</Text>
             <View style={[styles.inputWrapper, errors.phone && styles.inputError]}>
@@ -248,7 +215,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             </View>
             {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Driver License Number</Text>
             <View style={[styles.inputWrapper, errors.licenseNumber && styles.inputError]}>
@@ -263,7 +229,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             </View>
             {errors.licenseNumber && <Text style={styles.errorText}>{errors.licenseNumber}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Vehicle Type</Text>
             <View style={[styles.inputWrapper, errors.vehicleType && styles.inputError]}>
@@ -278,7 +243,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             </View>
             {errors.vehicleType && <Text style={styles.errorText}>{errors.vehicleType}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Vehicle Model</Text>
             <View style={[styles.inputWrapper, errors.vehicleModel && styles.inputError]}>
@@ -293,7 +257,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             </View>
             {errors.vehicleModel && <Text style={styles.errorText}>{errors.vehicleModel}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Vehicle Registration</Text>
             <View style={[styles.inputWrapper, errors.vehicleRegistration && styles.inputError]}>
@@ -308,7 +271,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             </View>
             {errors.vehicleRegistration && <Text style={styles.errorText}>{errors.vehicleRegistration}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
             <View style={[styles.inputWrapper, errors.password && styles.inputError]}>
@@ -334,7 +296,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             </View>
             {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Confirm Password</Text>
             <View style={[styles.inputWrapper, errors.confirmPassword && styles.inputError]}>
@@ -360,7 +321,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             </View>
             {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
           </View>
-
           <View style={styles.termsContainer}>
             <TouchableOpacity
               style={styles.checkboxContainer}
@@ -380,7 +340,6 @@ const DriverRegisterScreen = ({ navigation }) => {
             </TouchableOpacity>
             {errors.acceptTerms && <Text style={styles.errorText}>{errors.acceptTerms}</Text>}
           </View>
-
           <TouchableOpacity 
             style={[styles.registerButton, loading && styles.registerButtonDisabled]} 
             onPress={handleDriverRegister}
@@ -392,14 +351,12 @@ const DriverRegisterScreen = ({ navigation }) => {
               <Text style={styles.registerButtonText}>Apply as Driver</Text>
             )}
           </TouchableOpacity>
-
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Already have a driver account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('DriverLogin')}>
               <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
-
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -412,7 +369,6 @@ const DriverRegisterScreen = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -571,5 +527,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
 export default DriverRegisterScreen;

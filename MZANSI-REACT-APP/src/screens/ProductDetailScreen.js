@@ -1,10 +1,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import ProductDetailModal from '../components/store/ProductDetailModal';
-
 export default function ProductDetailScreen({ route, navigation }) {
   const { product } = route.params || {};
-
   return (
     <View style={styles.container}>
       <ProductDetailModal
@@ -15,12 +13,9 @@ export default function ProductDetailScreen({ route, navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
   },
 });
-
-

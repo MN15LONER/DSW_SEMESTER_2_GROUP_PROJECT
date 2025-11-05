@@ -11,7 +11,6 @@ import {
 import { googlePlacesService } from '../../services/googlePlacesApi';
 import { unsplashService } from '../../services/unsplashApi';
 import { COLORS } from '../../styles/colors';
-
 export default function ApiTestComponent() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState({
@@ -19,29 +18,23 @@ export default function ApiTestComponent() {
     unsplash: null,
     errors: []
   });
-
   const testGooglePlacesApi = async () => {
     setLoading(true);
     try {
       console.log('Testing Google Places API...');
-      
-      // Test with a simple search for supermarkets in Johannesburg
       const testLocation = {
         latitude: -26.2041,
         longitude: 28.0473
       };
-      
       const places = await googlePlacesService.findNearbyStores(testLocation, 5000, 'supermarket');
-      
       setResults(prev => ({
         ...prev,
         googlePlaces: {
           success: true,
           message: `Found ${places.length} stores`,
-          data: places.slice(0, 3) // Show first 3 results
+          data: places.slice(0, 3) 
         }
       }));
-      
       Alert.alert('Success', `Google Places API working! Found ${places.length} stores.`);
     } catch (error) {
       console.error('Google Places API Error:', error);
@@ -54,20 +47,16 @@ export default function ApiTestComponent() {
         },
         errors: [...prev.errors, `Google Places: ${error.message}`]
       }));
-      
       Alert.alert('Google Places Error', error.message);
     } finally {
       setLoading(false);
     }
   };
-
   const testUnsplashApi = async () => {
     setLoading(true);
     try {
       console.log('Testing Unsplash API...');
-      
       const images = await unsplashService.searchPhotos('grocery store', 3);
-      
       setResults(prev => ({
         ...prev,
         unsplash: {
@@ -76,7 +65,6 @@ export default function ApiTestComponent() {
           data: images
         }
       }));
-      
       Alert.alert('Success', `Unsplash API working! Found ${images.length} images.`);
     } catch (error) {
       console.error('Unsplash API Error:', error);
@@ -89,17 +77,14 @@ export default function ApiTestComponent() {
         },
         errors: [...prev.errors, `Unsplash: ${error.message}`]
       }));
-      
       Alert.alert('Unsplash Error', error.message);
     } finally {
       setLoading(false);
     }
   };
-
   const testBothApis = async () => {
     setLoading(true);
     setResults({ googlePlaces: null, unsplash: null, errors: [] });
-    
     try {
       await Promise.all([
         testGooglePlacesApi(),
@@ -111,16 +96,13 @@ export default function ApiTestComponent() {
       setLoading(false);
     }
   };
-
   const clearResults = () => {
     setResults({ googlePlaces: null, unsplash: null, errors: [] });
   };
-
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>API Integration Test</Text>
       <Text style={styles.subtitle}>Test your Google Places and Unsplash API keys</Text>
-
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[styles.button, styles.googleButton]}
@@ -129,7 +111,6 @@ export default function ApiTestComponent() {
         >
           <Text style={styles.buttonText}>Test Google Places API</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.button, styles.unsplashButton]}
           onPress={testUnsplashApi}
@@ -137,7 +118,6 @@ export default function ApiTestComponent() {
         >
           <Text style={styles.buttonText}>Test Unsplash API</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.button, styles.testAllButton]}
           onPress={testBothApis}
@@ -145,7 +125,6 @@ export default function ApiTestComponent() {
         >
           <Text style={styles.buttonText}>Test Both APIs</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.button, styles.clearButton]}
           onPress={clearResults}
@@ -154,19 +133,16 @@ export default function ApiTestComponent() {
           <Text style={styles.clearButtonText}>Clear Results</Text>
         </TouchableOpacity>
       </View>
-
       {loading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Testing APIs...</Text>
         </View>
       )}
-
-      {/* Results Display */}
+      {}
       {(results.googlePlaces || results.unsplash) && (
         <View style={styles.resultsContainer}>
           <Text style={styles.resultsTitle}>Test Results</Text>
-
           {results.googlePlaces && (
             <View style={styles.resultItem}>
               <Text style={styles.resultHeader}>Google Places API</Text>
@@ -179,7 +155,6 @@ export default function ApiTestComponent() {
                 </Text>
               </View>
               <Text style={styles.resultMessage}>{results.googlePlaces.message}</Text>
-              
               {results.googlePlaces.success && results.googlePlaces.data && (
                 <View style={styles.dataContainer}>
                   <Text style={styles.dataTitle}>Sample Results:</Text>
@@ -192,7 +167,6 @@ export default function ApiTestComponent() {
               )}
             </View>
           )}
-
           {results.unsplash && (
             <View style={styles.resultItem}>
               <Text style={styles.resultHeader}>Unsplash API</Text>
@@ -205,7 +179,6 @@ export default function ApiTestComponent() {
                 </Text>
               </View>
               <Text style={styles.resultMessage}>{results.unsplash.message}</Text>
-              
               {results.unsplash.success && results.unsplash.data && (
                 <View style={styles.dataContainer}>
                   <Text style={styles.dataTitle}>Sample Images:</Text>
@@ -218,7 +191,6 @@ export default function ApiTestComponent() {
               )}
             </View>
           )}
-
           {results.errors.length > 0 && (
             <View style={styles.errorsContainer}>
               <Text style={styles.errorsTitle}>Errors:</Text>
@@ -229,7 +201,6 @@ export default function ApiTestComponent() {
           )}
         </View>
       )}
-
       <View style={styles.infoContainer}>
         <Text style={styles.infoTitle}>API Status Information:</Text>
         <Text style={styles.infoText}>
@@ -245,7 +216,6 @@ export default function ApiTestComponent() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

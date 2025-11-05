@@ -6,19 +6,15 @@ import ProductDetailModal from './ProductDetailModal';
 import ImageWithFallback from '../common/ImageWithFallback';
 import { getImageForProduct } from '../../utils/imageHelper';
 import { unsplashService, imageCache, getOptimizedImageUrl } from '../../services/unsplashApi';
-
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
   const [modalVisible, setModalVisible] = useState(false);
-
   const handleAddToCart = () => {
     addToCart(product);
   };
-
   const handleProductPress = () => {
     setModalVisible(true);
   };
-
   return (
     <>
       <TouchableOpacity style={styles.card} onPress={handleProductPress}>
@@ -39,7 +35,6 @@ const ProductCard = ({ product }) => {
                 return getOptimizedImageUrl(raw, 600, 600, 85) || raw;
               }
             } catch (e) {
-              // ignore
             }
             return null;
           }}
@@ -48,18 +43,15 @@ const ProductCard = ({ product }) => {
           fallbackIcon="basket-outline"
           fallbackIconSize={30}
         />
-        
         {product.isSpecial && (
           <View style={styles.specialBadge}>
             <Text style={styles.specialText}>SPECIAL</Text>
           </View>
         )}
-
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>
             {product.name}
           </Text>
-          
           <View style={styles.priceContainer}>
             <Text style={styles.currentPrice}>
               R{product.price.toFixed(2)}
@@ -70,7 +62,6 @@ const ProductCard = ({ product }) => {
               </Text>
             )}
           </View>
-          
           <TouchableOpacity 
             style={styles.addButton} 
             onPress={(e) => {
@@ -83,7 +74,6 @@ const ProductCard = ({ product }) => {
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
-
       <ProductDetailModal
         visible={modalVisible}
         product={product}
@@ -92,7 +82,6 @@ const ProductCard = ({ product }) => {
     </>
   );
 };
-
 const styles = StyleSheet.create({
   card: {
     width: '48%',
@@ -161,5 +150,4 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 });
-
 export default ProductCard;

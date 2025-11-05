@@ -13,50 +13,39 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-
 const DriverLoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const { login, loading, logout } = useAuth();
-
   const validateForm = () => {
     const newErrors = {};
-
     if (!email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-
     if (!password) {
       newErrors.password = 'Password is required';
     } else if (password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleDriverLogin = async () => {
     console.log('Driver login button pressed');
     console.log('Email:', email);
     console.log('Password length:', password.length);
-    
     if (!validateForm()) {
       console.log('Form validation failed');
       return;
     }
-
     console.log('Starting login process...');
     const result = await login(email.trim().toLowerCase(), password);
-    
     console.log('Login result:', result);
-    
     if (!result.success) {
-      // Provide more helpful error messages
       let errorMessage = result.error;
       if (result.error.includes('invalid-credential')) {
         errorMessage = 'Invalid email or password. Please check your credentials or register as a new driver.';
@@ -64,24 +53,17 @@ const DriverLoginScreen = ({ navigation }) => {
       console.log('Login failed:', errorMessage);
       Alert.alert('Login Failed', errorMessage);
     } else {
-      // Debug: Log user data to help troubleshoot
       console.log('Login successful. User data:', result.user);
       console.log('User type:', result.user?.userType);
-      
-      // Check if user is a driver
       if (result.user && result.user.userType === 'driver') {
         console.log('Driver login successful - user will be redirected to driver dashboard');
-        // The authentication state change should automatically navigate to DriverStack
-        // No manual navigation needed - the AppNavigator will handle this
       } else {
         console.log('Access denied - user type:', result.user?.userType);
         Alert.alert('Access Denied', `This account is not authorized for driver access. User type: ${result.user?.userType || 'undefined'}`);
-        // Sign out the user
         await logout();
       }
     }
   };
-
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
@@ -95,7 +77,6 @@ const DriverLoginScreen = ({ navigation }) => {
           <Text style={styles.title}>Driver Portal</Text>
           <Text style={styles.subtitle}>Sign in to access your delivery dashboard</Text>
         </View>
-
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Driver Email</Text>
@@ -118,7 +99,6 @@ const DriverLoginScreen = ({ navigation }) => {
             </View>
             {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
             <View style={[styles.inputWrapper, errors.password && styles.inputError]}>
@@ -149,13 +129,11 @@ const DriverLoginScreen = ({ navigation }) => {
             </View>
             {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
-
           <View style={styles.helpTextContainer}>
             <Text style={styles.helpText}>
               Don't have a driver account? Tap "Sign Up as Driver" below to register.
             </Text>
           </View>
-
           <TouchableOpacity 
             style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
             onPress={handleDriverLogin}
@@ -167,12 +145,10 @@ const DriverLoginScreen = ({ navigation }) => {
               <Text style={styles.loginButtonText}>Sign In as Driver</Text>
             )}
           </TouchableOpacity>
-
           <View style={styles.footer}>
             <Text style={styles.footerText}>Need driver access?</Text>
             <Text style={styles.footerText}>Contact your store manager</Text>
           </View>
-
           <TouchableOpacity 
             style={styles.signupButton}
             onPress={() => {
@@ -186,7 +162,6 @@ const DriverLoginScreen = ({ navigation }) => {
             <Ionicons name="person-add-outline" size={20} color="#007AFF" />
             <Text style={styles.signupButtonText}>Sign Up as Driver</Text>
           </TouchableOpacity>
-
           <TouchableOpacity 
             style={styles.backButton}
             onPress={() => {
@@ -205,7 +180,6 @@ const DriverLoginScreen = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -350,5 +324,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
 export default DriverLoginScreen;

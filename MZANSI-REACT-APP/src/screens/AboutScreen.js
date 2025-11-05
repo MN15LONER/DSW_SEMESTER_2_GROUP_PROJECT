@@ -3,24 +3,17 @@ import { View, Text, StyleSheet, ScrollView, Linking, Alert, Modal, TouchableOpa
 import { Card, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/colors';
-
 export default function AboutScreen() {
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
   const [selectedRating, setSelectedRating] = useState(0);
-
   const handleContactSupport = () => {
     const email = 'trellis973@gmail.com';
     const subject = 'Mzansi App Support Request';
     const body = `Hello Mzansi Support Team,
-
 I need assistance with the following:
-
 [Please describe your issue here]
-
 Thank you for your help!`;
-
     const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
     Linking.canOpenURL(mailtoUrl)
       .then((supported) => {
         if (supported) {
@@ -49,11 +42,9 @@ Thank you for your help!`;
         );
       });
   };
-
   const handleRateApp = () => {
     setRatingModalVisible(true);
   };
-
   const handleRatingSubmit = () => {
     if (selectedRating > 0) {
       Alert.alert(
@@ -67,7 +58,6 @@ Thank you for your help!`;
       Alert.alert('Please select a rating', 'Choose at least 1 star to submit your rating.');
     }
   };
-
   const renderStar = (starNumber) => (
     <TouchableOpacity
       key={starNumber}
@@ -81,7 +71,6 @@ Thank you for your help!`;
       />
     </TouchableOpacity>
   );
-
   return (
     <ScrollView style={styles.container}>
       <Card style={styles.heroCard}>
@@ -93,11 +82,9 @@ Thank you for your help!`;
           <Text style={styles.version}>Version 1.0.0 (Prototype)</Text>
         </Card.Content>
       </Card>
-
       <Card style={styles.featuresCard}>
         <Card.Content>
           <Text style={styles.sectionTitle}>What We Offer</Text>
-          
           <View style={styles.featureItem}>
             <Ionicons name="newspaper" size={24} color={COLORS.primary} />
             <View style={styles.featureText}>
@@ -107,7 +94,6 @@ Thank you for your help!`;
               </Text>
             </View>
           </View>
-
           <View style={styles.featureItem}>
             <Ionicons name="storefront" size={24} color={COLORS.primary} />
             <View style={styles.featureText}>
@@ -117,7 +103,6 @@ Thank you for your help!`;
               </Text>
             </View>
           </View>
-
           <View style={styles.featureItem}>
             <Ionicons name="bicycle" size={24} color={COLORS.primary} />
             <View style={styles.featureText}>
@@ -127,7 +112,6 @@ Thank you for your help!`;
               </Text>
             </View>
           </View>
-
           <View style={styles.featureItem}>
             <Ionicons name="location" size={24} color={COLORS.primary} />
             <View style={styles.featureText}>
@@ -139,7 +123,6 @@ Thank you for your help!`;
           </View>
         </Card.Content>
       </Card>
-
       <Card style={styles.missionCard}>
         <Card.Content>
           <Text style={styles.sectionTitle}>Our Mission</Text>
@@ -150,7 +133,6 @@ Thank you for your help!`;
           </Text>
         </Card.Content>
       </Card>
-
       <Card style={styles.contactCard}>
         <Card.Content>
           <Text style={styles.sectionTitle}>Get in Touch</Text>
@@ -172,7 +154,6 @@ Thank you for your help!`;
           </Button>
         </Card.Content>
       </Card>
-
       <Modal
         visible={ratingModalVisible}
         transparent={true}
@@ -183,11 +164,9 @@ Thank you for your help!`;
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Rate Our App</Text>
             <Text style={styles.modalSubtitle}>How would you rate your experience?</Text>
-
             <View style={styles.starsContainer}>
               {[1, 2, 3, 4, 5].map(renderStar)}
             </View>
-
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
@@ -211,7 +190,6 @@ Thank you for your help!`;
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

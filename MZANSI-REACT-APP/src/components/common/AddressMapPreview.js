@@ -3,7 +3,6 @@ import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
-
 const AddressMapPreview = ({ address, onEdit }) => {
   if (!address || !address.latitude || !address.longitude) {
     return (
@@ -18,14 +17,12 @@ const AddressMapPreview = ({ address, onEdit }) => {
       </View>
     );
   }
-
   const region = {
     latitude: address.latitude,
     longitude: address.longitude,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -37,9 +34,7 @@ const AddressMapPreview = ({ address, onEdit }) => {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Large edit button removed to avoid duplicate edit controls; header edit remains */}
-
+      {}
       <View style={styles.mapContainer}>
         <MapView
           provider={PROVIDER_GOOGLE}
@@ -60,7 +55,6 @@ const AddressMapPreview = ({ address, onEdit }) => {
           />
         </MapView>
       </View>
-
       <View style={styles.addressInfo}>
         <Text style={styles.addressText}>
           {address.formattedAddress || `${address.street}, ${address.city}, ${address.province} ${address.postalCode}`}
@@ -69,7 +63,6 @@ const AddressMapPreview = ({ address, onEdit }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
@@ -171,5 +164,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
 export default AddressMapPreview;

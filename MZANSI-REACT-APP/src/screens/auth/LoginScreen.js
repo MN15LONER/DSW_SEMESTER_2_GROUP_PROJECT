@@ -13,72 +13,41 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const { login, loading, loginWithGoogle } = useAuth();
-  
-
   const validateForm = () => {
     const newErrors = {};
-
     if (!email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-
     if (!password) {
       newErrors.password = 'Password is required';
     } else if (password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleLogin = async () => {
     if (!validateForm()) return;
-
     const result = await login(email.trim().toLowerCase(), password);
-    
     if (!result.success) {
       Alert.alert('Login Failed', result.error);
     }
-
   };
-
   const handleForgotPassword = () => {
-    // Navigate to ForgotPassword screen
     navigation.navigate('ForgotPassword');
   };
-
-  /**
-   * Handle Google Sign-In Response
-   * This effect listens for the Google authentication response
-   */
-  // Google flow removed — no-op
-
-  /**
-   * Handle Google Sign-In
-   * Processes the Google authentication and handles errors
-   */
   const handleGoogleSignIn = async () => {
-    // Google sign-in removed — keep function stub in case we re-add later
   };
-
-  /**
-   * Initiate Google Sign-In Flow
-   * Starts the Google authentication process
-   */
   const initiateGoogleSignIn = async () => {
-    // Google sign-in removed — no-op
   };
-
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
@@ -89,7 +58,6 @@ const LoginScreen = ({ navigation }) => {
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to your Mzansi account</Text>
         </View>
-
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email Address</Text>
@@ -112,7 +80,6 @@ const LoginScreen = ({ navigation }) => {
             </View>
             {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
             <View style={[styles.inputWrapper, errors.password && styles.inputError]}>
@@ -143,11 +110,9 @@ const LoginScreen = ({ navigation }) => {
             </View>
             {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
-
           <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotPassword}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             style={[styles.loginButton, loading && styles.loginButtonDisabled]}
             onPress={handleLogin}
@@ -159,22 +124,18 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.loginButtonText}>Sign In</Text>
             )}
           </TouchableOpacity>
-
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
-
-          {/* Google Sign-In removed per request */}
-
+          {}
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>Don't have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
               <Text style={styles.signupLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
-
           <TouchableOpacity 
             style={styles.driverLoginButton}
             onPress={() => navigation.navigate('DriverLogin')}
@@ -182,7 +143,6 @@ const LoginScreen = ({ navigation }) => {
             <Ionicons name="car-outline" size={20} color="#007AFF" />
             <Text style={styles.driverLoginText}>Driver Login</Text>
           </TouchableOpacity>
-
           <TouchableOpacity 
             style={styles.driverSignupButton}
             onPress={() => navigation.navigate('DriverRegister')}
@@ -195,7 +155,6 @@ const LoginScreen = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -352,5 +311,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 });
-
 export default LoginScreen;

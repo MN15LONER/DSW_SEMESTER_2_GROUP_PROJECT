@@ -1,7 +1,6 @@
 import React from 'react';
 import { FlatList, View, StyleSheet } from 'react-native';
 import FlyerCard from './FlyerCard';
-
 export default function FlyerGrid({ stores, onStorePress }) {
   const renderStore = ({ item }) => (
     <FlyerCard 
@@ -9,7 +8,6 @@ export default function FlyerGrid({ stores, onStorePress }) {
       onPress={() => onStorePress(item)}
     />
   );
-
   return (
     <View style={styles.container}>
       <FlatList
@@ -24,7 +22,6 @@ export default function FlyerGrid({ stores, onStorePress }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,

@@ -16,52 +16,40 @@ import { validators, sanitizers, validateForm, sanitizeFormData } from '../utils
 import { useLocation } from '../context/LocationContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../styles/colors';
-
 export default function CheckoutScreen({ navigation }) {
   const { cartItems, getCartTotal, getStoreGroups, clearCart } = useCart();
   const { user } = useAuth();
   const { selectedLocation, updateLocation, updateUserLocation } = useLocation();
-  
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
-
   const storeGroups = getStoreGroups();
   const subtotal = getCartTotal();
-  const deliveryFee = subtotal > 350 ? 0 : 35; // Free delivery over R350
+  const deliveryFee = subtotal > 350 ? 0 : 35; 
   const total = subtotal + deliveryFee;
-
   const handlePlaceOrder = async () => {
-    // Sanitize form data
     const formData = {
       deliveryAddress: sanitizers.address(deliveryAddress),
       contactNumber: sanitizers.phone(contactNumber),
       specialInstructions: sanitizers.text(specialInstructions)
     };
-
-    // Validate form data
     const validationRules = {
       deliveryAddress: [validators.address],
       contactNumber: [validators.phone],
       specialInstructions: [validators.specialInstructions]
     };
-
     const { isValid, errors: validationErrors } = validateForm(formData, validationRules);
-    
     if (!isValid) {
       setErrors(validationErrors);
       Alert.alert('Validation Error', 'Please correct the errors in the form');
       return;
     }
-
     setErrors({});
     setIsProcessing(true);
-    
     try {
-      // Create order data
       const orderData = {
         userId: user?.uid || 'anonymous',
         customerName: user?.displayName || 'Customer',
@@ -85,21 +73,13 @@ export default function CheckoutScreen({ navigation }) {
         orderDate: new Date().toISOString(),
         status: 'pending'
       };
-
-      // Debug: Log the order data to see what might be undefined
       console.log('Order data being sent to Firebase:', JSON.stringify(orderData, null, 2));
-      
-      // Check for undefined values
       Object.entries(orderData).forEach(([key, value]) => {
         if (value === undefined) {
           console.error(`Undefined field found: ${key}`);
         }
       });
-
-      // Create order in Firebase
       const orderId = await firebaseService.orders.create(orderData);
-      
-      // Clear cart and navigate to confirmation
       clearCart();
       navigation.replace('OrderConfirmation', {
         orderId,
@@ -107,7 +87,6 @@ export default function CheckoutScreen({ navigation }) {
         deliveryAddress: formData.deliveryAddress,
         storeGroups: getStoreGroups()
       });
-      
     } catch (error) {
       console.error('Error placing order:', error);
       Alert.alert('Order Failed', 'There was an error placing your order. Please try again.');
@@ -115,15 +94,11 @@ export default function CheckoutScreen({ navigation }) {
       setIsProcessing(false);
     }
   };
-
-  // Try to prefill delivery address from the user's default address
   useEffect(() => {
     let mounted = true;
     const loadDefault = async () => {
       try {
         if (!user?.uid) return;
-
-        // Try AsyncStorage cached default first
         const cached = await AsyncStorage.getItem(`default_address_${user.uid}`);
         if (cached) {
           const addr = JSON.parse(cached);
@@ -131,14 +106,11 @@ export default function CheckoutScreen({ navigation }) {
           if (mounted) {
             setDeliveryAddress(formatted);
             if (addr.phone) setContactNumber(addr.phone);
-            // sync LocationContext so Home deliver-to displays the same default
             if (updateLocation) updateLocation(formatted);
             if (updateUserLocation && addr.latitude && addr.longitude) updateUserLocation({ latitude: addr.latitude, longitude: addr.longitude });
           }
           return;
         }
-
-        // Fallback to Firestore addresses for the user
         const addresses = await firebaseService.addresses.getByUser(user.uid);
         if (addresses && addresses.length > 0) {
           const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
@@ -146,7 +118,6 @@ export default function CheckoutScreen({ navigation }) {
           if (mounted) {
             setDeliveryAddress(formatted);
             if (defaultAddr.phone) setContactNumber(defaultAddr.phone);
-            // sync LocationContext so Home deliver-to displays the same default
             if (updateLocation) updateLocation(formatted);
             if (updateUserLocation && defaultAddr.latitude && defaultAddr.longitude) updateUserLocation({ latitude: defaultAddr.latitude, longitude: defaultAddr.longitude });
           }
@@ -155,15 +126,13 @@ export default function CheckoutScreen({ navigation }) {
         console.error('Error loading default delivery address:', error);
       }
     };
-
     loadDefault();
     return () => { mounted = false; };
   }, [user?.uid]);
-
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollContainer}>
-        {/* Order Summary */}
+        {}
         <Card style={styles.section}>
           <Card.Title title="Order Summary" />
           <Card.Content>
@@ -185,8 +154,7 @@ export default function CheckoutScreen({ navigation }) {
             ))}
           </Card.Content>
         </Card>
-
-        {/* Delivery Information */}
+        {}
         <Card style={styles.section}>
           <Card.Title title="Delivery Information" />
           <Card.Content>
@@ -200,7 +168,6 @@ export default function CheckoutScreen({ navigation }) {
               numberOfLines={3}
               placeholder="Enter your full delivery address"
             />
-            
             <TextInput
               label="Contact Number *"
               value={contactNumber}
@@ -210,7 +177,6 @@ export default function CheckoutScreen({ navigation }) {
               keyboardType="phone-pad"
               placeholder="e.g. 0821234567"
             />
-            
             <View style={styles.locationInfo}>
               <Ionicons name="location" size={16} color={COLORS.primary} />
               <Text style={styles.locationText}>
@@ -219,8 +185,7 @@ export default function CheckoutScreen({ navigation }) {
             </View>
           </Card.Content>
         </Card>
-
-        {/* Payment Method */}
+        {}
         <Card style={styles.section}>
           <Card.Title title="Payment Method" />
           <Card.Content>
@@ -243,8 +208,7 @@ export default function CheckoutScreen({ navigation }) {
             </RadioButton.Group>
           </Card.Content>
         </Card>
-
-        {/* Special Instructions */}
+        {}
         <Card style={styles.section}>
           <Card.Title title="Special Instructions (Optional)" />
           <Card.Content>
@@ -258,8 +222,7 @@ export default function CheckoutScreen({ navigation }) {
             />
           </Card.Content>
         </Card>
-
-        {/* Order Total */}
+        {}
         <Card style={styles.section}>
           <Card.Content>
             <View style={styles.totalRow}>
@@ -284,8 +247,7 @@ export default function CheckoutScreen({ navigation }) {
           </Card.Content>
         </Card>
       </ScrollView>
-
-      {/* Place Order Button */}
+      {}
       <View style={styles.checkoutContainer}>
         <Button
           mode="contained"
@@ -301,7 +263,6 @@ export default function CheckoutScreen({ navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

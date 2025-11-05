@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-
 const RegisterScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -28,70 +27,56 @@ const RegisterScreen = ({ navigation }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const { register, loading } = useAuth();
-
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
   };
-
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'First name is required';
     }
-
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
     }
-
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     } else if (!/^(\+27|0)[6-8][0-9]{8}$/.test(formData.phone.replace(/\s/g, ''))) {
       newErrors.phone = 'Please enter a valid South African phone number';
     }
-
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleRegister = async () => {
     if (!validateForm()) return;
-
     const userData = {
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
       displayName: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
       phone: formData.phone.trim(),
     };
-
     const result = await register(
       formData.email.trim().toLowerCase(), 
       formData.password, 
       userData
     );
-    
     if (result.success) {
       Alert.alert(
         'Registration Successful!',
@@ -102,12 +87,8 @@ const RegisterScreen = ({ navigation }) => {
       Alert.alert('Registration Failed', result.error);
     }
   };
-
   const formatPhoneNumber = (text) => {
-    // Remove all non-digits
     const cleaned = text.replace(/\D/g, '');
-    
-    // Format as South African number
     if (cleaned.length <= 3) {
       return cleaned;
     } else if (cleaned.length <= 6) {
@@ -118,7 +99,6 @@ const RegisterScreen = ({ navigation }) => {
       return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 10)}`;
     }
   };
-
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
@@ -129,7 +109,6 @@ const RegisterScreen = ({ navigation }) => {
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Join Mzansi and start shopping</Text>
         </View>
-
         <View style={styles.form}>
           <View style={styles.row}>
             <View style={[styles.inputContainer, styles.halfWidth]}>
@@ -146,7 +125,6 @@ const RegisterScreen = ({ navigation }) => {
               </View>
               {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
             </View>
-
             <View style={[styles.inputContainer, styles.halfWidth]}>
               <Text style={styles.label}>Last Name</Text>
               <View style={[styles.inputWrapper, errors.lastName && styles.inputError]}>
@@ -162,7 +140,6 @@ const RegisterScreen = ({ navigation }) => {
               {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
             </View>
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email Address</Text>
             <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
@@ -179,7 +156,6 @@ const RegisterScreen = ({ navigation }) => {
             </View>
             {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Phone Number</Text>
             <View style={[styles.inputWrapper, errors.phone && styles.inputError]}>
@@ -195,7 +171,6 @@ const RegisterScreen = ({ navigation }) => {
             </View>
             {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
             <View style={[styles.inputWrapper, errors.password && styles.inputError]}>
@@ -221,7 +196,6 @@ const RegisterScreen = ({ navigation }) => {
             </View>
             {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
           </View>
-
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Confirm Password</Text>
             <View style={[styles.inputWrapper, errors.confirmPassword && styles.inputError]}>
@@ -247,7 +221,6 @@ const RegisterScreen = ({ navigation }) => {
             </View>
             {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
           </View>
-
           <TouchableOpacity 
             style={[styles.registerButton, loading && styles.registerButtonDisabled]} 
             onPress={handleRegister}
@@ -259,7 +232,6 @@ const RegisterScreen = ({ navigation }) => {
               <Text style={styles.registerButtonText}>Create Account</Text>
             )}
           </TouchableOpacity>
-
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -271,7 +243,6 @@ const RegisterScreen = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -376,5 +347,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
 export default RegisterScreen;

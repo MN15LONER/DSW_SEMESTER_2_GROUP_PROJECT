@@ -3,19 +3,14 @@ import { View, Text, StyleSheet, Button } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { Alert } from 'react-native';
-
 export default function AdminDashboard() {
   const { isAdmin, loading, logout } = useAuth();
   const navigation = useNavigation();
-
   useEffect(() => {
-    // If not admin (and not loading), redirect to main user stack
     if (!loading && !isAdmin) {
-      // replace so user cannot go back to admin
       navigation.replace('Main');
     }
   }, [isAdmin, loading]);
-
   if (loading) {
     return (
       <View style={styles.container}>
@@ -23,7 +18,6 @@ export default function AdminDashboard() {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Admin Dashboard</Text>
@@ -46,7 +40,6 @@ export default function AdminDashboard() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

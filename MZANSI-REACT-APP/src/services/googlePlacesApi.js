@@ -1,37 +1,24 @@
-// Google Places API service for enhanced location search and store discovery
-// You'll need to get an API key from https://console.cloud.google.com/
-
 import Constants from 'expo-constants';
-
 const GOOGLE_PLACES_API_KEY = Constants.expoConfig?.extra?.googlePlacesApiKey || 'AIzaSyCBhYA1g0dEdw6VfjsVKsDUbrhop84MpfY';
 const GOOGLE_PLACES_BASE_URL = 'https://maps.googleapis.com/maps/api/place';
-
 class GooglePlacesService {
   constructor() {
     this.apiKey = GOOGLE_PLACES_API_KEY;
   }
-
-  // Search for places using text query
   async searchPlaces(query, location = null, radius = 5000) {
     try {
       let url = `${GOOGLE_PLACES_BASE_URL}/textsearch/json?query=${encodeURIComponent(query)}&key=${this.apiKey}`;
-      
       if (location) {
         url += `&location=${location.latitude},${location.longitude}&radius=${radius}`;
       }
-
       const response = await fetch(url);
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       const data = await response.json();
-      
       if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
         throw new Error(`Places API error: ${data.status}`);
       }
-
       return data.results.map(place => ({
         id: place.place_id,
         name: place.name,
@@ -53,24 +40,17 @@ class GooglePlacesService {
       return [];
     }
   }
-
-  // Find nearby stores/supermarkets
   async findNearbyStores(location, radius = 5000, type = 'supermarket') {
     try {
       const url = `${GOOGLE_PLACES_BASE_URL}/nearbysearch/json?location=${location.latitude},${location.longitude}&radius=${radius}&type=${type}&key=${this.apiKey}`;
-      
       const response = await fetch(url);
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       const data = await response.json();
-      
       if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
         throw new Error(`Places API error: ${data.status}`);
       }
-
       return data.results.map(place => ({
         id: place.place_id,
         name: place.name,
@@ -92,26 +72,18 @@ class GooglePlacesService {
       return [];
     }
   }
-
-  // Get place details by place ID
   async getPlaceDetails(placeId) {
     try {
-      // Request address components as well so clients can extract street/city/province/postal code
       const fields = 'place_id,name,formatted_address,geometry,address_components,rating,formatted_phone_number,opening_hours,website,photos,price_level,types';
       const url = `${GOOGLE_PLACES_BASE_URL}/details/json?place_id=${placeId}&fields=${fields}&key=${this.apiKey}`;
-      
       const response = await fetch(url);
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       const data = await response.json();
-      
       if (data.status !== 'OK') {
         throw new Error(`Places API error: ${data.status}`);
       }
-
       const place = data.result;
       return {
         id: place.place_id,
@@ -141,46 +113,30 @@ class GooglePlacesService {
       return null;
     }
   }
-
-  // Get photo URL from photo reference
   getPhotoUrl(photoReference, maxWidth = 400) {
     if (!photoReference) return null;
     return `${GOOGLE_PLACES_BASE_URL}/photo?maxwidth=${maxWidth}&photoreference=${photoReference}&key=${this.apiKey}`;
   }
-
-  // Autocomplete for location search
   async autocomplete(input, location = null, radius = 50000, preferredTypes = ['address', 'geocode', 'establishment']) {
     try {
       console.log('Autocomplete called with input:', input);
-
-      // Try preferred types in order (address -> geocode -> establishment). If none return results,
-      // fall back to a text search which can provide broader matches.
       for (const type of preferredTypes) {
         let url = `${GOOGLE_PLACES_BASE_URL}/autocomplete/json?input=${encodeURIComponent(input)}&key=${this.apiKey}`;
-
         if (location) {
           url += `&location=${location.latitude},${location.longitude}&radius=${radius}`;
         }
-
-        // Limit to South Africa
         url += '&components=country:za';
-
-        // Request a type filter to prefer street/locality results when possible
         if (type) {
           url += `&types=${encodeURIComponent(type)}`;
         }
-
         console.debug('Autocomplete URL (type=', type, '):', url);
         const response = await fetch(url);
-
         if (!response.ok) {
           console.warn(`Autocomplete HTTP status ${response.status} for type ${type}`);
-          continue; // try next type
+          continue; 
         }
-
         const data = await response.json();
         console.debug('Autocomplete data (type=', type, '):', data);
-
         if (data.status === 'OK' && Array.isArray(data.predictions) && data.predictions.length > 0) {
           return data.predictions.map(prediction => ({
             id: prediction.place_id,
@@ -190,14 +146,10 @@ class GooglePlacesService {
             types: prediction.types || []
           }));
         }
-
-        // continue to next preferred type if ZERO_RESULTS or other non-OK
         if (data.status && data.status !== 'ZERO_RESULTS' && data.status !== 'OK') {
           console.warn(`Places API returned status ${data.status} for autocomplete (type=${type})`);
         }
       }
-
-      // Fallback: use text search which often returns formatted addresses
       const textResults = await this.searchPlaces(input, location, radius);
       if (textResults && textResults.length > 0) {
         return textResults.slice(0, 10).map(place => ({
@@ -208,31 +160,23 @@ class GooglePlacesService {
           types: place.types || []
         }));
       }
-
       return [];
     } catch (error) {
       console.error('Error in autocomplete:', error);
       return [];
     }
   }
-
-  // Get coordinates from place ID
   async getCoordinatesFromPlaceId(placeId) {
     try {
       const url = `${GOOGLE_PLACES_BASE_URL}/details/json?place_id=${placeId}&fields=geometry&key=${this.apiKey}`;
-      
       const response = await fetch(url);
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       const data = await response.json();
-      
       if (data.status !== 'OK') {
         throw new Error(`Places API error: ${data.status}`);
       }
-
       return {
         latitude: data.result.geometry.location.lat,
         longitude: data.result.geometry.location.lng
@@ -242,10 +186,8 @@ class GooglePlacesService {
       return null;
     }
   }
-
-  // Calculate distance between two points
   calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the Earth in kilometers
+    const R = 6371; 
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = 
@@ -256,8 +198,6 @@ class GooglePlacesService {
     const distance = R * c;
     return distance;
   }
-
-  // Find stores by category with enhanced search
   async findStoresByCategory(category, location, radius = 10000) {
     const categoryMapping = {
       'supermarket': ['supermarket', 'grocery_or_supermarket'],
@@ -270,21 +210,15 @@ class GooglePlacesService {
       'hospital': ['hospital', 'doctor'],
       'school': ['school', 'university']
     };
-
     const types = categoryMapping[category.toLowerCase()] || [category];
     let allResults = [];
-
     for (const type of types) {
       const results = await this.findNearbyStores(location, radius, type);
       allResults = [...allResults, ...results];
     }
-
-    // Remove duplicates based on place_id
     const uniqueResults = allResults.filter((store, index, self) =>
       index === self.findIndex(s => s.id === store.id)
     );
-
-    // Sort by distance
     return uniqueResults
       .map(store => ({
         ...store,
@@ -298,10 +232,7 @@ class GooglePlacesService {
       .sort((a, b) => a.distance - b.distance);
   }
 }
-
 export const googlePlacesService = new GooglePlacesService();
-
-// Helper functions for integration with existing app
 export const enhanceStoreWithPlacesData = async (store) => {
   try {
     if (store.placeId) {
@@ -310,7 +241,6 @@ export const enhanceStoreWithPlacesData = async (store) => {
         return {
           ...store,
           ...placeDetails,
-          // Preserve original store data
           id: store.id,
           category: store.category,
           promotions: store.promotions,
@@ -324,12 +254,9 @@ export const enhanceStoreWithPlacesData = async (store) => {
     return store;
   }
 };
-
 export const searchStoresWithPlaces = async (query, userLocation) => {
   try {
     const placesResults = await googlePlacesService.searchPlaces(query, userLocation);
-    
-    // Convert Places results to store format
     return placesResults.map(place => ({
       id: place.id,
       name: place.name,
@@ -341,11 +268,11 @@ export const searchStoresWithPlaces = async (query, userLocation) => {
       longitude: place.longitude,
       address: place.address,
       rating: place.rating,
-      reviews: Math.floor(Math.random() * 1000) + 100, // Mock review count
+      reviews: Math.floor(Math.random() * 1000) + 100, 
       deliveryTime: 'Same day',
       image: place.photos.length > 0 ? 
         googlePlacesService.getPhotoUrl(place.photos[0].reference) : 
-        'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop',
+        'https: //via.placeholder.com/150',
       isOpen: place.isOpen,
       promotions: [],
       description: `${place.name} - ${place.address}`

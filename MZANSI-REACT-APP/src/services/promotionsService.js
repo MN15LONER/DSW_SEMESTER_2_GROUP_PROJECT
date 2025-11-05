@@ -1,46 +1,33 @@
-// Dynamic pricing and promotions management service
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 class PromotionsService {
   constructor() {
     this.promotionsCache = new Map();
     this.pricingCache = new Map();
     this.lastUpdate = new Map();
-    this.updateInterval = 15 * 60 * 1000; // 15 minutes
+    this.updateInterval = 15 * 60 * 1000; 
   }
-
-  // Get active promotions for a store
   async getStorePromotions(storeId) {
     const cacheKey = `promotions_${storeId}`;
     const lastUpdateTime = this.lastUpdate.get(cacheKey);
     const now = Date.now();
-
     if (lastUpdateTime && (now - lastUpdateTime) < this.updateInterval) {
       return this.promotionsCache.get(cacheKey);
     }
-
     try {
       const promotions = await this.fetchStorePromotions(storeId);
-      
       this.promotionsCache.set(cacheKey, promotions);
       this.lastUpdate.set(cacheKey, now);
-
-      // Cache to AsyncStorage
       await AsyncStorage.setItem(cacheKey, JSON.stringify({
         data: promotions,
         timestamp: now
       }));
-
       return promotions;
     } catch (error) {
       console.error('Error fetching promotions:', error);
       return this.getDefaultPromotions(storeId);
     }
   }
-
-  // Fetch promotions from backend (simulated)
   async fetchStorePromotions(storeId) {
-    // Simulate API call with realistic South African retail promotions
     const promotionTypes = [
       {
         id: 'buy_2_get_1',
@@ -115,11 +102,8 @@ class PromotionsService {
         active: Math.random() > 0.3
       }
     ];
-
-    // Return 2-4 random active promotions
     const activePromotions = promotionTypes.filter(p => p.active);
     const numPromotions = Math.min(Math.floor(Math.random() * 3) + 2, activePromotions.length);
-    
     return activePromotions
       .sort(() => Math.random() - 0.5)
       .slice(0, numPromotions)
@@ -129,7 +113,6 @@ class PromotionsService {
         createdAt: new Date().toISOString()
       }));
   }
-
   getDefaultPromotions(storeId) {
     return [
       {
@@ -147,17 +130,12 @@ class PromotionsService {
       }
     ];
   }
-
-  // Calculate dynamic pricing for products
   async calculateDynamicPrice(productId, basePrice, storeId, userProfile = {}) {
     try {
       const factors = await this.getPricingFactors(productId, storeId);
       const promotions = await this.getStorePromotions(storeId);
-      
       let finalPrice = basePrice;
       let appliedDiscounts = [];
-
-      // Apply time-based pricing
       if (factors.timeBasedDiscount > 0) {
         const timeDiscount = basePrice * (factors.timeBasedDiscount / 100);
         finalPrice -= timeDiscount;
@@ -168,8 +146,6 @@ class PromotionsService {
           percentage: factors.timeBasedDiscount
         });
       }
-
-      // Apply demand-based pricing
       if (factors.demandMultiplier !== 1) {
         const demandAdjustment = basePrice * (factors.demandMultiplier - 1);
         finalPrice += demandAdjustment;
@@ -182,8 +158,6 @@ class PromotionsService {
           });
         }
       }
-
-      // Apply promotions
       for (const promotion of promotions) {
         const discount = this.calculatePromotionDiscount(promotion, finalPrice, userProfile);
         if (discount.applicable && discount.amount > 0) {
@@ -197,15 +171,12 @@ class PromotionsService {
           });
         }
       }
-
-      // Ensure price doesn't go below minimum
-      const minimumPrice = basePrice * 0.1; // Never go below 10% of base price
+      const minimumPrice = basePrice * 0.1; 
       finalPrice = Math.max(finalPrice, minimumPrice);
-
       return {
         productId,
         basePrice,
-        finalPrice: Math.round(finalPrice * 100) / 100, // Round to 2 decimal places
+        finalPrice: Math.round(finalPrice * 100) / 100, 
         savings: Math.round((basePrice - finalPrice) * 100) / 100,
         savingsPercentage: Math.round(((basePrice - finalPrice) / basePrice) * 100),
         appliedDiscounts,
@@ -225,76 +196,48 @@ class PromotionsService {
       };
     }
   }
-
-  // Get pricing factors (demand, time, inventory, etc.)
   async getPricingFactors(productId, storeId) {
     const hour = new Date().getHours();
     const dayOfWeek = new Date().getDay();
-    
     return {
-      // Time-based factors
       timeBasedDiscount: this.getTimeBasedDiscount(hour, dayOfWeek),
-      
-      // Demand-based factors (simulate based on time and randomness)
       demandMultiplier: this.getDemandMultiplier(hour, dayOfWeek),
-      
-      // Inventory factors
-      inventoryLevel: Math.random(), // 0-1, where 1 is full stock
-      
-      // Competition factors
-      competitorPricing: Math.random() * 0.2 - 0.1, // -10% to +10%
-      
-      // Seasonal factors
+      inventoryLevel: Math.random(), 
+      competitorPricing: Math.random() * 0.2 - 0.1, 
       seasonalMultiplier: this.getSeasonalMultiplier(),
-      
-      // Store-specific factors
-      storePerformance: Math.random() * 0.1, // 0-10% adjustment
+      storePerformance: Math.random() * 0.1, 
     };
   }
-
   getTimeBasedDiscount(hour, dayOfWeek) {
-    // Higher discounts during off-peak hours
-    if (hour >= 22 || hour <= 6) return 15; // Late night/early morning
-    if (hour >= 14 && hour <= 16) return 10; // Afternoon lull
-    if (dayOfWeek === 1 || dayOfWeek === 2) return 5; // Monday/Tuesday
+    if (hour >= 22 || hour <= 6) return 15; 
+    if (hour >= 14 && hour <= 16) return 10; 
+    if (dayOfWeek === 1 || dayOfWeek === 2) return 5; 
     return 0;
   }
-
   getDemandMultiplier(hour, dayOfWeek) {
-    // Higher prices during peak hours
-    if ((hour >= 17 && hour <= 19) || (hour >= 11 && hour <= 13)) return 1.1; // Peak hours
-    if (dayOfWeek === 5 || dayOfWeek === 6) return 1.05; // Friday/Saturday
+    if ((hour >= 17 && hour <= 19) || (hour >= 11 && hour <= 13)) return 1.1; 
+    if (dayOfWeek === 5 || dayOfWeek === 6) return 1.05; 
     return 1.0;
   }
-
   getSeasonalMultiplier() {
     const month = new Date().getMonth();
-    // Simulate seasonal pricing (e.g., higher prices in December)
-    if (month === 11) return 1.1; // December
-    if (month >= 5 && month <= 7) return 0.95; // Winter months
+    if (month === 11) return 1.1; 
+    if (month >= 5 && month <= 7) return 0.95; 
     return 1.0;
   }
-
-  // Calculate promotion discount
   calculatePromotionDiscount(promotion, price, userProfile) {
     if (!promotion.active || new Date() > new Date(promotion.validUntil)) {
       return { applicable: false, amount: 0, percentage: 0 };
     }
-
-    // Check conditions
     if (promotion.conditions.firstTimeOnly && userProfile.isReturningCustomer) {
       return { applicable: false, amount: 0, percentage: 0 };
     }
-
     if (promotion.conditions.minAmount && price < promotion.conditions.minAmount) {
       return { applicable: false, amount: 0, percentage: 0 };
     }
-
     if (promotion.conditions.weekendOnly && !this.isWeekend()) {
       return { applicable: false, amount: 0, percentage: 0 };
     }
-
-    // Calculate discount based on type
     switch (promotion.type) {
       case 'percentage':
         const percentageAmount = price * (promotion.discount / 100);
@@ -303,14 +246,12 @@ class PromotionsService {
           amount: percentageAmount,
           percentage: promotion.discount
         };
-
       case 'fixed_amount':
         return {
           applicable: true,
           amount: Math.min(promotion.discount, price),
           percentage: (promotion.discount / price) * 100
         };
-
       case 'bulk':
         const tier = promotion.conditions.tiers
           .reverse()
@@ -324,19 +265,13 @@ class PromotionsService {
           };
         }
         return { applicable: false, amount: 0, percentage: 0 };
-
       default:
         return { applicable: false, amount: 0, percentage: 0 };
     }
   }
-
-  // Get personalized promotions based on user behavior
   async getPersonalizedPromotions(userId, userProfile) {
     try {
-      // Simulate personalized promotions based on user data
       const personalizedPromotions = [];
-
-      // Frequent shopper promotion
       if (userProfile.orderCount > 10) {
         personalizedPromotions.push({
           id: 'loyal_customer',
@@ -350,8 +285,6 @@ class PromotionsService {
           personalized: true
         });
       }
-
-      // Category-based promotion
       if (userProfile.favoriteCategory) {
         personalizedPromotions.push({
           id: 'category_special',
@@ -365,8 +298,6 @@ class PromotionsService {
           personalized: true
         });
       }
-
-      // Birthday promotion
       if (this.isBirthdayMonth(userProfile.birthDate)) {
         personalizedPromotions.push({
           id: 'birthday_special',
@@ -380,15 +311,12 @@ class PromotionsService {
           personalized: true
         });
       }
-
       return personalizedPromotions;
     } catch (error) {
       console.error('Error getting personalized promotions:', error);
       return [];
     }
   }
-
-  // Apply promotion to cart
   applyPromotionToCart(cart, promotion) {
     let totalDiscount = 0;
     const updatedItems = cart.items.map(item => {
@@ -397,7 +325,6 @@ class PromotionsService {
         item.price * item.quantity,
         {}
       );
-      
       if (discount.applicable) {
         totalDiscount += discount.amount;
         return {
@@ -411,7 +338,6 @@ class PromotionsService {
       }
       return item;
     });
-
     return {
       ...cart,
       items: updatedItems,
@@ -420,13 +346,10 @@ class PromotionsService {
       total: cart.subtotal - ((cart.totalDiscount || 0) + totalDiscount)
     };
   }
-
-  // Utility functions
   isWeekend() {
     const day = new Date().getDay();
-    return day === 0 || day === 6; // Sunday or Saturday
+    return day === 0 || day === 6; 
   }
-
   getNextSunday() {
     const today = new Date();
     const daysUntilSunday = 7 - today.getDay();
@@ -435,29 +358,22 @@ class PromotionsService {
     nextSunday.setHours(23, 59, 59, 999);
     return nextSunday;
   }
-
   isBirthdayMonth(birthDate) {
     if (!birthDate) return false;
     const birth = new Date(birthDate);
     const now = new Date();
     return birth.getMonth() === now.getMonth();
   }
-
   getEndOfMonth() {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
   }
-
-  // Clear cache
   clearCache() {
     this.promotionsCache.clear();
     this.pricingCache.clear();
     this.lastUpdate.clear();
   }
-
-  // Get promotion analytics
   async getPromotionAnalytics(storeId, dateRange) {
-    // Simulate promotion performance analytics
     return {
       totalPromotions: Math.floor(Math.random() * 10) + 5,
       activePromotions: Math.floor(Math.random() * 5) + 2,
@@ -469,15 +385,12 @@ class PromotionsService {
         redemptions: Math.floor(Math.random() * 200) + 50,
         savings: Math.floor(Math.random() * 10000) + 2000
       },
-      conversionRate: (Math.random() * 0.3 + 0.1).toFixed(2), // 10-40%
-      averageOrderIncrease: (Math.random() * 50 + 20).toFixed(2) // 20-70%
+      conversionRate: (Math.random() * 0.3 + 0.1).toFixed(2), 
+      averageOrderIncrease: (Math.random() * 50 + 20).toFixed(2) 
     };
   }
 }
-
 export const promotionsService = new PromotionsService();
-
-// Helper functions for formatting
 export const formatDiscount = (discount, type = 'percentage') => {
   if (type === 'percentage') {
     return `${discount}% OFF`;
@@ -486,11 +399,9 @@ export const formatDiscount = (discount, type = 'percentage') => {
   }
   return `${discount} OFF`;
 };
-
 export const formatSavings = (savings) => {
   return `You save R${savings.toFixed(2)}`;
 };
-
 export const isPromotionValid = (promotion) => {
   return promotion.active && new Date() <= new Date(promotion.validUntil);
 };

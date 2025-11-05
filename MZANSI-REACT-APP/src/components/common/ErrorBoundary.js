@@ -3,25 +3,20 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
-
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
   }
-
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
-
   componentDidCatch(error, errorInfo) {
     console.error('Error caught by boundary:', error, errorInfo);
   }
-
   handleRetry = () => {
     this.setState({ hasError: false, error: null });
   };
-
   render() {
     if (this.state.hasError) {
       return (
@@ -41,11 +36,9 @@ class ErrorBoundary extends React.Component {
         </View>
       );
     }
-
     return this.props.children;
   }
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -73,5 +66,4 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
   },
 });
-
 export default ErrorBoundary;

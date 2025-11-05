@@ -12,23 +12,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/colors';
 import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebase';
-
 export default function OrderHistoryScreen({ navigation }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { user } = useAuth();
-
   useEffect(() => {
     fetchUserOrders();
   }, [user?.uid]);
-
   const fetchUserOrders = async () => {
     if (!user?.uid) {
       setLoading(false);
       return;
     }
-
     try {
       setLoading(true);
       setError(null);
@@ -41,7 +37,6 @@ export default function OrderHistoryScreen({ navigation }) {
       setLoading(false);
     }
   };
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'delivered':
@@ -54,7 +49,6 @@ export default function OrderHistoryScreen({ navigation }) {
         return COLORS.gray;
     }
   };
-
   const getStatusText = (status) => {
     switch (status) {
       case 'delivered':
@@ -67,16 +61,11 @@ export default function OrderHistoryScreen({ navigation }) {
         return 'Unknown';
     }
   };
-
   const formatDate = (order) => {
     try {
-      // Handle different date field names and Firestore Timestamps
       const dateValue = order.createdAt || order.orderDate || order.date;
       if (!dateValue) return 'Date not available';
-      
-      // Convert Firestore Timestamp to Date if needed
       const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-      
       return date.toLocaleDateString('en-ZA', {
         year: 'numeric',
         month: 'long',
@@ -87,22 +76,15 @@ export default function OrderHistoryScreen({ navigation }) {
       return 'Date not available';
     }
   };
-
-  // Convert Firestore Timestamps to serializable format for navigation
   const serializeOrder = (order) => {
     const serialized = { ...order };
-    
-    // Convert all Firestore Timestamps to ISO strings
     Object.keys(serialized).forEach(key => {
       if (serialized[key]?.toDate) {
         serialized[key] = serialized[key].toDate().toISOString();
       }
     });
-    
     return serialized;
   };
-
-  // Loading state
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -111,8 +93,6 @@ export default function OrderHistoryScreen({ navigation }) {
       </View>
     );
   }
-
-  // Error state
   if (error) {
     return (
       <View style={styles.errorContainer}>
@@ -125,8 +105,6 @@ export default function OrderHistoryScreen({ navigation }) {
       </View>
     );
   }
-
-  // Empty state - no orders
   if (orders.length === 0) {
     return (
       <View style={styles.emptyContainer}>
@@ -144,7 +122,6 @@ export default function OrderHistoryScreen({ navigation }) {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollContainer}>
@@ -155,7 +132,7 @@ export default function OrderHistoryScreen({ navigation }) {
           >
             <Card style={styles.orderCard}>
               <Card.Content>
-                {/* Order Header */}
+                {}
                 <View style={styles.orderHeader}>
                   <View style={styles.orderInfo}>
                     <Text style={styles.orderId}>#{order.id}</Text>
@@ -168,14 +145,12 @@ export default function OrderHistoryScreen({ navigation }) {
                     {getStatusText(order.status)}
                   </Chip>
                 </View>
-
-                {/* Store Info */}
+                {}
                 <View style={styles.storeInfo}>
                   <Ionicons name="storefront-outline" size={16} color={COLORS.primary} />
                   <Text style={styles.storeName}>{order.storeName}</Text>
                 </View>
-
-                {/* Items Preview */}
+                {}
                 <View style={styles.itemsPreview}>
                   <Text style={styles.itemsTitle}>Items:</Text>
                   {order.items.slice(0, 2).map((item, index) => (
@@ -189,8 +164,7 @@ export default function OrderHistoryScreen({ navigation }) {
                     </Text>
                   )}
                 </View>
-
-                {/* Order Footer */}
+                {}
                 <View style={styles.orderFooter}>
                   <Text style={styles.totalAmount}>
                     Total: R{order.total.toFixed(2)}
@@ -220,7 +194,6 @@ export default function OrderHistoryScreen({ navigation }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

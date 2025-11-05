@@ -14,17 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { realProductDataService, formatPrice, getPromotionLabel } from '../services/realProductDataService';
 import { useCart } from '../context/CartContext';
 import { COLORS } from '../styles/colors';
-
 export default function CategoryProductsScreen({ navigation, route }) {
   const { category } = route.params;
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
-
   useEffect(() => {
     loadProducts();
   }, [category]);
-
   const loadProducts = async () => {
     try {
       setLoading(true);
@@ -37,7 +34,6 @@ export default function CategoryProductsScreen({ navigation, route }) {
       setLoading(false);
     }
   };
-
   const handleAddToCart = (product) => {
     const cartItem = {
       id: product.id,
@@ -45,14 +41,12 @@ export default function CategoryProductsScreen({ navigation, route }) {
       price: product.hasPromotion ? product.promotionPrice : product.price,
       image: product.image,
       quantity: 1,
-      storeId: 'category_store', // Generic store for category browsing
+      storeId: 'category_store', 
       storeName: `${category} Store`
     };
-    
     addToCart(cartItem);
     Alert.alert('Added to Cart', `${product.name} has been added to your cart.`);
   };
-
   const renderProduct = ({ item }) => (
     <TouchableOpacity 
       style={styles.productCard}
@@ -71,24 +65,20 @@ export default function CategoryProductsScreen({ navigation, route }) {
           </View>
         )}
       </View>
-      
       <View style={styles.productInfo}>
         <Text style={styles.productBrand}>{item.brand}</Text>
         <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
         <Text style={styles.productUnit}>{item.unit}</Text>
-        
         <View style={styles.storeInfo}>
           <Ionicons name="storefront-outline" size={12} color={COLORS.primary} />
           <Text style={styles.storeName} numberOfLines={1}>{item.storeName}</Text>
           <Text style={styles.storeDistance}>• {item.storeDistance}</Text>
         </View>
-        
         <View style={styles.ratingContainer}>
           <Ionicons name="star" size={14} color="#FFD700" />
           <Text style={styles.rating}>{item.rating}</Text>
           <Text style={styles.reviews}>({item.reviews})</Text>
         </View>
-        
         <View style={styles.priceContainer}>
           {item.hasPromotion ? (
             <>
@@ -100,7 +90,6 @@ export default function CategoryProductsScreen({ navigation, route }) {
             <Text style={styles.price}>{formatPrice(item.price)}</Text>
           )}
         </View>
-        
         <TouchableOpacity
           style={[
             styles.addButton,
@@ -124,7 +113,6 @@ export default function CategoryProductsScreen({ navigation, route }) {
       </View>
     </TouchableOpacity>
   );
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -144,7 +132,6 @@ export default function CategoryProductsScreen({ navigation, route }) {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -162,13 +149,11 @@ export default function CategoryProductsScreen({ navigation, route }) {
           <Ionicons name="refresh" size={24} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
-
       <View style={styles.statsContainer}>
         <Text style={styles.statsText}>
           {products.length} products found • {products.filter(p => p.hasPromotion).length} on special
         </Text>
       </View>
-
       <FlatList
         data={products}
         renderItem={renderProduct}
@@ -183,7 +168,6 @@ export default function CategoryProductsScreen({ navigation, route }) {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

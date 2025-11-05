@@ -1,10 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-
 const NOTIFICATIONS_STORAGE_KEY = 'user_notifications';
-
-// Configure notification behavior
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -13,34 +10,25 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
-
 class NotificationService {
   constructor() {
     this.isInitialized = false;
     this.currentUserId = null;
   }
-
   async initialize(userId) {
     if (this.isInitialized && this.currentUserId === userId) return;
-
     try {
       this.currentUserId = userId;
-
-      // Request permissions
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
-
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
-
       if (finalStatus !== 'granted') {
         console.warn('Notification permissions not granted');
         return false;
       }
-
-      // Set up notification channel for Android
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('default', {
           name: 'Default',
@@ -49,7 +37,6 @@ class NotificationService {
           lightColor: '#FF231F7C',
         });
       }
-
       this.isInitialized = true;
       console.log('Notification service initialized');
       return true;
@@ -58,12 +45,9 @@ class NotificationService {
       return false;
     }
   }
-
   async sendLocalNotification(title, body, data = {}) {
     try {
       const notificationId = Date.now().toString();
-
-      // Schedule the notification
       const notificationIdFromExpo = await Notifications.scheduleNotificationAsync({
         content: {
           title,
@@ -71,10 +55,8 @@ class NotificationService {
           data: { ...data, notificationId },
           sound: 'default',
         },
-        trigger: null, // Send immediately
+        trigger: null, 
       });
-
-      // Store notification in AsyncStorage for the notifications screen
       if (this.currentUserId) {
         const storedNotifications = await this.getStoredNotifications();
         const newNotification = {
@@ -90,25 +72,21 @@ class NotificationService {
           timestamp: new Date().toISOString(),
           read: false
         };
-
         storedNotifications.push(newNotification);
         await AsyncStorage.setItem(
           `${NOTIFICATIONS_STORAGE_KEY}_${this.currentUserId}`,
           JSON.stringify(storedNotifications)
         );
       }
-
       return notificationId;
     } catch (error) {
       console.error('Failed to send local notification:', error);
       return null;
     }
   }
-
   async getStoredNotifications() {
     try {
       if (!this.currentUserId) return [];
-
       const stored = await AsyncStorage.getItem(`${NOTIFICATIONS_STORAGE_KEY}_${this.currentUserId}`);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
@@ -116,18 +94,15 @@ class NotificationService {
       return [];
     }
   }
-
   async markNotificationAsRead(notificationId) {
     try {
       if (!this.currentUserId) return;
-
       const storedNotifications = await this.getStoredNotifications();
       const updatedNotifications = storedNotifications.map(notification =>
         notification.id === notificationId
           ? { ...notification, read: true }
           : notification
       );
-
       await AsyncStorage.setItem(
         `${NOTIFICATIONS_STORAGE_KEY}_${this.currentUserId}`,
         JSON.stringify(updatedNotifications)
@@ -136,32 +111,26 @@ class NotificationService {
       console.error('Error marking notification as read:', error);
     }
   }
-
   async clearAllNotifications() {
     try {
       if (!this.currentUserId) return;
-
       await AsyncStorage.removeItem(`${NOTIFICATIONS_STORAGE_KEY}_${this.currentUserId}`);
     } catch (error) {
       console.error('Error clearing notifications:', error);
     }
   }
-
   async sendChatNotification(orderId, senderName, message, senderType) {
     const title = senderType === 'driver' ? 'New Message from Driver' : 'New Message from Customer';
     const body = `${senderName}: ${message.length > 50 ? message.substring(0, 50) + '...' : message}`;
-
     return await this.sendLocalNotification(title, body, {
       type: 'chat_message',
       orderId,
       senderType,
     });
   }
-
   async sendOrderStatusNotification(orderId, status, driverName = null) {
     let title = 'Order Update';
     let body = '';
-
     switch (status) {
       case 'assigned':
         title = 'Driver Assigned';
@@ -186,33 +155,24 @@ class NotificationService {
       default:
         body = `Your order #${orderId.slice(-6)} status has been updated to ${status}`;
     }
-
     return await this.sendLocalNotification(title, body, {
       type: 'order_status',
       orderId,
       status,
     });
   }
-
-  // Listen for incoming notifications
   setNotificationListener(callback) {
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       callback(notification);
     });
-
     return subscription;
   }
-
-  // Listen for notification responses (when user taps notification)
   setNotificationResponseListener(callback) {
     const subscription = Notifications.addNotificationResponseReceivedListener(response => {
       callback(response);
     });
-
     return subscription;
   }
-
-  // Get the current notification token (for push notifications)
   async getExpoPushToken() {
     try {
       const token = await Notifications.getExpoPushTokenAsync();
@@ -222,8 +182,6 @@ class NotificationService {
       return null;
     }
   }
-
-  // Cancel all scheduled notifications
   async cancelAllNotifications() {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
@@ -232,5 +190,4 @@ class NotificationService {
     }
   }
 }
-
 export const notificationService = new NotificationService();

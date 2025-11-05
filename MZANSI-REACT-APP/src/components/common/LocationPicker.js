@@ -5,7 +5,6 @@ import { useLocation } from '../../context/LocationContext';
 import { mockLocations } from '../../data/mockData';
 import { googlePlacesService } from '../../services/googlePlacesApi';
 import * as Location from 'expo-location';
-
 const LocationPicker = () => {
   const { selectedLocation, updateLocation, updateUserLocation } = useLocation();
   const [modalVisible, setModalVisible] = useState(false);
@@ -14,23 +13,18 @@ const LocationPicker = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const debounceTimer = useRef(null);
-
   const filteredLocations = mockLocations.filter(location =>
     location.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
   const searchLocations = async (query) => {
     if (!query || query.length < 3) {
       setSearchResults([]);
       return;
     }
-
     setIsSearching(true);
     try {
-      // Use autocomplete for live Google-style suggestions
       const predictions = await googlePlacesService.autocomplete(query);
-      // Map predictions to a uniform shape (id, mainText, secondaryText, description)
-      setSearchResults(predictions.slice(0, 10)); // Limit to 10
+      setSearchResults(predictions.slice(0, 10)); 
     } catch (error) {
       console.error('Location search error:', error);
       setSearchResults([]);
@@ -38,7 +32,6 @@ const LocationPicker = () => {
       setIsSearching(false);
     }
   };
-
   const handleSearchChange = (text) => {
     setSearchQuery(text);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -50,7 +43,6 @@ const LocationPicker = () => {
       setSearchResults([]);
     }
   };
-
   const handleSearchSubmit = () => {
     if (searchQuery.length < 3) {
       return;
@@ -61,7 +53,6 @@ const LocationPicker = () => {
       Alert.alert('No locations found', 'Try a different place name.');
     }
   };
-
   const getCurrentLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -69,13 +60,11 @@ const LocationPicker = () => {
         Alert.alert('Permission Denied', 'Location permission is required to use current location.');
         return;
       }
-
       const location = await Location.getCurrentPositionAsync({});
       const address = await Location.reverseGeocodeAsync({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       });
-
       if (address.length > 0) {
         const currentAddress = `${address[0].street || ''} ${address[0].city || ''}, ${address[0].region || ''}`.trim();
         updateLocation(currentAddress);
@@ -88,7 +77,6 @@ const LocationPicker = () => {
       Alert.alert('Error', 'Unable to get current location. Please try again.');
     }
   };
-
   const handleLocationSelect = async (item) => {
     try {
       if (typeof item === 'string') {
@@ -98,8 +86,6 @@ const LocationPicker = () => {
         setSearchQuery('');
         return;
       }
-
-      // If item looks like a place prediction (has id), fetch full details
       if (item && item.id) {
         setIsFetchingDetails(true);
         const placeDetails = await googlePlacesService.getPlaceDetails(item.id);
@@ -107,7 +93,6 @@ const LocationPicker = () => {
           updateLocation(placeDetails.address || placeDetails.name);
           updateUserLocation({ latitude: placeDetails.latitude, longitude: placeDetails.longitude });
         } else {
-          // Fallback to description
           updateLocation(item.description || item.mainText || item.name);
           updateUserLocation(null);
         }
@@ -115,8 +100,6 @@ const LocationPicker = () => {
         setSearchQuery('');
         return;
       }
-
-      // Fallback for other shapes
       if (item && item.latitude && item.longitude) {
         updateLocation(item.address || item.name);
         updateUserLocation({ latitude: item.latitude, longitude: item.longitude });
@@ -131,11 +114,9 @@ const LocationPicker = () => {
       setIsFetchingDetails(false);
     }
   };
-
   const handleLocationPress = () => {
     setModalVisible(true);
   };
-
   const renderLocationItem = ({ item }) => (
     <TouchableOpacity
       style={[
@@ -167,7 +148,6 @@ const LocationPicker = () => {
       )}
     </TouchableOpacity>
   );
-
   return (
     <>
       <TouchableOpacity style={styles.container} onPress={handleLocationPress}>
@@ -180,7 +160,6 @@ const LocationPicker = () => {
         </View>
         <Ionicons name="chevron-down" size={20} color="#666" />
       </TouchableOpacity>
-
       <Modal
         animationType="slide"
         transparent={true}
@@ -198,7 +177,6 @@ const LocationPicker = () => {
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
-
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
               <TextInput
@@ -214,7 +192,6 @@ const LocationPicker = () => {
                 <ActivityIndicator size="small" color="#666" style={styles.loadingIcon} />
               )}
             </View>
-
             <FlatList
               data={searchQuery.length >= 3 ? searchResults : filteredLocations}
               keyExtractor={(item, index) => typeof item === 'string' ? `${item}-${index}` : item.id}
@@ -222,14 +199,12 @@ const LocationPicker = () => {
               style={styles.locationsList}
               showsVerticalScrollIndicator={false}
             />
-
             {searchQuery.length >= 3 && !isSearching && searchResults.length === 0 && (
               <View style={styles.emptyStateContainer}>
                 <Ionicons name="search" size={24} color="#999" />
                 <Text style={styles.emptyStateText}>No locations found</Text>
               </View>
             )}
-
             <TouchableOpacity
               style={styles.currentLocationButton}
               onPress={getCurrentLocation}
@@ -243,7 +218,6 @@ const LocationPicker = () => {
     </>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
@@ -386,5 +360,4 @@ const styles = StyleSheet.create({
     color: '#999',
   },
 });
-
 export default LocationPicker;

@@ -1,7 +1,6 @@
 import React from 'react';
 import { RefreshControl } from 'react-native';
 import { COLORS } from '../../styles/colors';
-
 const PullToRefresh = ({ refreshing, onRefresh, children, ...props }) => {
   return (
     <RefreshControl
@@ -15,5 +14,4 @@ const PullToRefresh = ({ refreshing, onRefresh, children, ...props }) => {
     </RefreshControl>
   );
 };
-
 export default PullToRefresh;

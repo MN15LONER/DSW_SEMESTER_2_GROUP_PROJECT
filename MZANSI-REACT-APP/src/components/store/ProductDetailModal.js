@@ -14,35 +14,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../../context/CartContext';
 import { useFavorites } from '../../context/FavoritesContext';
 import { unsplashService, imageCache, getOptimizedImageUrl } from '../../services/unsplashApi';
-
 const { width } = Dimensions.get('window');
-
 const ProductDetailModal = ({ visible, product, onClose }) => {
   const { addToCart } = useCart();
   const { toggleFavorite, isFavorite: checkIsFavorite } = useFavorites();
   const [quantity, setQuantity] = useState(1);
-
   if (!product) return null;
-
   const isFavorite = checkIsFavorite(product.id);
-
   const handleAddToCart = () => {
     addToCart({ ...product, quantity });
     onClose();
   };
-
   const incrementQuantity = () => {
     setQuantity(prev => prev + 1);
   };
-
   const decrementQuantity = () => {
     setQuantity(prev => Math.max(1, prev - 1));
   };
-
   const handleToggleFavorite = () => {
     toggleFavorite(product);
   };
-
   return (
     <Modal
       animationType="slide"
@@ -52,7 +43,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          {/* Header */}
+          {}
           <View style={styles.header}>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Ionicons name="close" size={24} color="#333" />
@@ -65,9 +56,8 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
               />
             </TouchableOpacity>
           </View>
-
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Product Image */}
+            {}
             <View style={styles.imageContainer}>
               <ImageWithFallback
                 source={{ uri: product.image || getImageForProduct(product) }}
@@ -86,7 +76,6 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
                       return getOptimizedImageUrl(raw, 900, 600, 90) || raw;
                     }
                   } catch (e) {
-                    // ignore
                   }
                   return null;
                 }}
@@ -100,36 +89,31 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
                 </View>
               )}
             </View>
-
-            {/* Product Info */}
+            {}
             <View style={styles.productInfo}>
               <Text style={styles.productName}>{product.name}</Text>
               <Text style={styles.productCategory}>{product.category}</Text>
-              
               <View style={styles.priceContainer}>
                 <Text style={styles.currentPrice}>R{(product.price || 0).toFixed(2)}</Text>
                 {product.originalPrice && product.originalPrice > product.price && (
                   <Text style={styles.originalPrice}>R{(product.originalPrice || 0).toFixed(2)}</Text>
                 )}
               </View>
-
-              {/* Description */}
+              {}
               <View style={styles.descriptionContainer}>
                 <Text style={styles.sectionTitle}>Description</Text>
                 <Text style={styles.description}>
                   {product.description || 'Fresh and high-quality product available at great prices. Perfect for your daily needs.'}
                 </Text>
               </View>
-
-              {/* Nutritional Info (if available) */}
+              {}
               {product.nutritionalInfo && (
                 <View style={styles.nutritionContainer}>
                   <Text style={styles.sectionTitle}>Nutritional Information</Text>
                   <Text style={styles.nutritionText}>{product.nutritionalInfo}</Text>
                 </View>
               )}
-
-              {/* Product Details */}
+              {}
               <View style={styles.detailsContainer}>
                 <Text style={styles.sectionTitle}>Product Details</Text>
                 <View style={styles.detailRow}>
@@ -147,8 +131,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
               </View>
             </View>
           </ScrollView>
-
-          {/* Bottom Action Bar */}
+          {}
           <View style={styles.actionBar}>
             <View style={styles.quantityContainer}>
               <TouchableOpacity 
@@ -165,7 +148,6 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
                 <Ionicons name="add" size={20} color="#007AFF" />
               </TouchableOpacity>
             </View>
-
             <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
               <Text style={styles.addToCartText}>
                 Add to Cart - R{((product.price || 0) * quantity).toFixed(2)}
@@ -177,7 +159,6 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
     </Modal>
   );
 };
-
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
@@ -339,5 +320,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
 export default ProductDetailModal;

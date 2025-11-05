@@ -4,11 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ImageWithFallback from '../common/ImageWithFallback';
 import { getImageForProduct } from '../../utils/imageHelper';
 import { COLORS } from '../../styles/colors';
-
 const { width } = Dimensions.get('window');
-
 export default function StoreHeader({ store }) {
-  // Local logos for featured brands (match FlyerCard logic)
   let localLogo = null;
   if (store && store.name) {
     const name = store.name.toLowerCase();
@@ -16,9 +13,7 @@ export default function StoreHeader({ store }) {
     else if (name.includes('mr')) localLogo = require('../../../assets/images/Store_Logos/Mr-Price-logo.jpg');
     else if (name.includes('incredible')) localLogo = require('../../../assets/images/Store_Logos/Incredible_connections.png');
   }
-
   const src = localLogo ? localLogo : { uri: store.flyerImage || store.image || getImageForProduct({ name: store.name, category: store.category }) };
-
   return (
     <View style={styles.container}>
       <ImageWithFallback source={src} style={styles.storeImage} resizeMode={localLogo ? 'contain' : 'cover'} />
@@ -29,7 +24,6 @@ export default function StoreHeader({ store }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     height: 200,

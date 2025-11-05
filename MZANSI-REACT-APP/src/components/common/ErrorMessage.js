@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
-
 export default function ErrorMessage({ 
   title = 'Something went wrong',
   message = 'Please try again later',
@@ -29,7 +28,6 @@ export default function ErrorMessage({
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

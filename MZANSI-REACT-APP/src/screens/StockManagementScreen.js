@@ -14,7 +14,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebase';
-
 const StockManagementScreen = ({ navigation }) => {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
@@ -23,16 +22,13 @@ const StockManagementScreen = ({ navigation }) => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [stockModalVisible, setStockModalVisible] = useState(false);
   const [newStock, setNewStock] = useState('');
-  const [filter, setFilter] = useState('all'); // all, low, out
-
+  const [filter, setFilter] = useState('all'); 
   useEffect(() => {
     loadProducts();
   }, []);
-
   const loadProducts = async () => {
     try {
       setLoading(true);
-      // Get products for the current user's store
       const storeProducts = await firebaseService.products.getByStore(user.storeId || 'default-store');
       setProducts(storeProducts);
     } catch (error) {
@@ -42,26 +38,20 @@ const StockManagementScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await loadProducts();
     setRefreshing(false);
   };
-
   const handleUpdateStock = async () => {
     if (!selectedProduct || !newStock.trim()) return;
-
     const stockQuantity = parseInt(newStock);
     if (isNaN(stockQuantity) || stockQuantity < 0) {
       Alert.alert('Invalid Input', 'Please enter a valid stock quantity');
       return;
     }
-
     try {
       await firebaseService.stock.updateProductStock(selectedProduct.id, stockQuantity);
-      
-      // Update local state
       setProducts(prevProducts =>
         prevProducts.map(product =>
           product.id === selectedProduct.id
@@ -69,7 +59,6 @@ const StockManagementScreen = ({ navigation }) => {
             : product
         )
       );
-
       setStockModalVisible(false);
       setNewStock('');
       setSelectedProduct(null);
@@ -79,13 +68,11 @@ const StockManagementScreen = ({ navigation }) => {
       Alert.alert('Error', 'Failed to update stock');
     }
   };
-
   const openStockModal = (product) => {
     setSelectedProduct(product);
     setNewStock(product.stockQuantity?.toString() || '0');
     setStockModalVisible(true);
   };
-
   const getFilteredProducts = () => {
     switch (filter) {
       case 'low':
@@ -96,7 +83,6 @@ const StockManagementScreen = ({ navigation }) => {
         return products;
     }
   };
-
   const renderProductItem = ({ item: product }) => (
     <View style={styles.productCard}>
       <View style={styles.productInfo}>
@@ -104,7 +90,6 @@ const StockManagementScreen = ({ navigation }) => {
         <Text style={styles.productCategory}>{product.category}</Text>
         <Text style={styles.productPrice}>R{product.price.toFixed(2)}</Text>
       </View>
-      
       <View style={styles.stockInfo}>
         <View style={[
           styles.stockBadge,
@@ -114,7 +99,6 @@ const StockManagementScreen = ({ navigation }) => {
             {product.inStock ? `${product.stockQuantity || 0} in stock` : 'Out of stock'}
           </Text>
         </View>
-        
         <TouchableOpacity
           style={styles.updateButton}
           onPress={() => openStockModal(product)}
@@ -125,21 +109,17 @@ const StockManagementScreen = ({ navigation }) => {
       </View>
     </View>
   );
-
   const getStockColor = (quantity, inStock) => {
     if (!inStock || quantity === 0) return '#FF3B30';
     if (quantity <= 5) return '#FF9500';
     return '#34C759';
   };
-
   const filters = [
     { key: 'all', label: 'All Products', count: products.length },
     { key: 'low', label: 'Low Stock', count: products.filter(p => p.stockQuantity <= 5 && p.stockQuantity > 0).length },
     { key: 'out', label: 'Out of Stock', count: products.filter(p => !p.inStock || p.stockQuantity === 0).length },
   ];
-
   const filteredProducts = getFilteredProducts();
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -155,7 +135,6 @@ const StockManagementScreen = ({ navigation }) => {
         </View>
         <View style={styles.headerRight} />
       </View>
-
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {filters.map((filterItem) => (
@@ -188,7 +167,6 @@ const StockManagementScreen = ({ navigation }) => {
           ))}
         </ScrollView>
       </View>
-
       <FlatList
         data={filteredProducts}
         renderItem={renderProductItem}
@@ -210,8 +188,7 @@ const StockManagementScreen = ({ navigation }) => {
           </View>
         }
       />
-
-      {/* Stock Update Modal */}
+      {}
       <Modal
         visible={stockModalVisible}
         transparent
@@ -229,7 +206,6 @@ const StockManagementScreen = ({ navigation }) => {
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
-
             {selectedProduct && (
               <>
                 <View style={styles.productDetails}>
@@ -239,7 +215,6 @@ const StockManagementScreen = ({ navigation }) => {
                     Current Stock: {selectedProduct.stockQuantity || 0}
                   </Text>
                 </View>
-
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>New Stock Quantity</Text>
                   <TextInput
@@ -251,7 +226,6 @@ const StockManagementScreen = ({ navigation }) => {
                     autoFocus
                   />
                 </View>
-
                 <View style={styles.modalActions}>
                   <TouchableOpacity
                     style={styles.cancelButton}
@@ -274,7 +248,6 @@ const StockManagementScreen = ({ navigation }) => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -528,5 +501,4 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-
 export default StockManagementScreen;

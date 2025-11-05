@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
-
 const EmptyState = ({ 
   icon = "basket-outline", 
   title = "Nothing here yet", 
@@ -30,7 +29,6 @@ const EmptyState = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -60,5 +58,4 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
 });
-
 export default EmptyState;

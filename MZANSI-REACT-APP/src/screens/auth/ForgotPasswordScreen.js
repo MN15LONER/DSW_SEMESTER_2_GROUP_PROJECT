@@ -1,14 +1,3 @@
-/**
- * Forgot Password Screen
- * 
- * Allows users to request a password reset email.
- * Features:
- * - Email validation
- * - Rate limiting
- * - Generic success messages (prevents email enumeration)
- * - Clear error handling
- */
-
 import React, { useState } from 'react';
 import {
   View,
@@ -24,43 +13,29 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { sendPasswordReset } from '../../services/passwordResetService';
-
 const ForgotPasswordScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
-
-  /**
-   * Validate email format
-   */
   const validateEmail = () => {
     if (!email.trim()) {
       setError('Email is required');
       return false;
     }
-
     if (!/\S+@\S+\.\S+/.test(email)) {
       setError('Please enter a valid email address');
       return false;
     }
-
     setError('');
     return true;
   };
-
-  /**
-   * Handle password reset request
-   */
   const handleResetPassword = async () => {
     if (!validateEmail()) return;
-
     try {
       setLoading(true);
       setError('');
-
       const result = await sendPasswordReset(email.trim().toLowerCase());
-
       if (result.success) {
         setEmailSent(true);
         Alert.alert(
@@ -85,10 +60,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
       setLoading(false);
     }
   };
-
-  /**
-   * Render success state
-   */
   if (emailSent) {
     return (
       <View style={styles.container}>
@@ -100,15 +71,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
           <Text style={styles.successMessage}>
             If an account exists with this email, you will receive password reset instructions shortly.
           </Text>
-          
-          {/* Spam folder warning - prominent */}
+          {}
           <View style={styles.spamWarning}>
             <Ionicons name="warning-outline" size={20} color="#FF9500" />
             <Text style={styles.spamWarningText}>
               Check your spam/junk folder! The email often ends up there.
             </Text>
           </View>
-          
           <Text style={styles.successSubtext}>
             If you don't see the email within a few minutes, please check your spam folder first before requesting a new link.
           </Text>
@@ -122,10 +91,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
       </View>
     );
   }
-
-  /**
-   * Render form
-   */
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -135,14 +100,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {}
         <TouchableOpacity
           style={styles.backIconButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-
         <View style={styles.header}>
           <View style={styles.iconCircle}>
             <Ionicons name="lock-closed-outline" size={50} color="#007AFF" />
@@ -152,8 +116,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             Enter your email address and we'll send you instructions to reset your password.
           </Text>
         </View>
-
-        {/* Form */}
+        {}
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email Address</Text>
@@ -180,16 +143,14 @@ const ForgotPasswordScreen = ({ navigation }) => {
             </View>
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
           </View>
-
-          {/* Security Notice */}
+          {}
           <View style={styles.securityNotice}>
             <Ionicons name="shield-checkmark-outline" size={16} color="#666" />
             <Text style={styles.securityText}>
               For security, we'll send a time-limited reset link to your email.
             </Text>
           </View>
-
-          {/* Submit Button */}
+          {}
           <TouchableOpacity
             style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             onPress={handleResetPassword}
@@ -204,8 +165,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
               </>
             )}
           </TouchableOpacity>
-
-          {/* Back to Login */}
+          {}
           <TouchableOpacity
             style={styles.loginLink}
             onPress={() => navigation.goBack()}
@@ -215,8 +175,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             <Text style={styles.loginLinkText}>Back to Login</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Help Text */}
+        {}
         <View style={styles.helpContainer}>
           <Text style={styles.helpTitle}>Need help?</Text>
           <Text style={styles.helpText}>
@@ -236,7 +195,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -387,7 +345,6 @@ const styles = StyleSheet.create({
     color: '#CC8800',
     fontWeight: '600',
   },
-  // Success state styles
   successContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -450,5 +407,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
 export default ForgotPasswordScreen;

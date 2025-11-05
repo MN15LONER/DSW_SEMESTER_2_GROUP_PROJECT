@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebase';
 import { notificationService } from '../services/notificationService';
-
 const CustomerChat = ({ route, navigation }) => {
   const { orderId, driverId } = route.params;
   const { user } = useAuth();
@@ -23,24 +22,16 @@ const CustomerChat = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [driverInfo, setDriverInfo] = useState(null);
   const flatListRef = useRef(null);
-
   useEffect(() => {
     loadMessages();
     loadDriverInfo();
-
-    // Initialize notifications
     notificationService.initialize();
-
-    // Set up real-time listener for new messages
     const unsubscribe = firebaseService.chat.listenToMessages(orderId, (newMessages) => {
       setMessages(newMessages);
-
-      // Check for new driver messages and send notifications
       const previousMessageCount = messages.length;
       if (newMessages.length > previousMessageCount) {
         const latestMessage = newMessages[newMessages.length - 1];
         if (latestMessage.senderType === 'driver' && latestMessage.senderId !== user.uid) {
-          // Send notification for new driver message
           notificationService.sendChatNotification(
             orderId,
             latestMessage.senderName,
@@ -50,10 +41,8 @@ const CustomerChat = ({ route, navigation }) => {
         }
       }
     });
-
     return unsubscribe;
   }, [orderId, driverId]);
-
   const loadMessages = async () => {
     try {
       setLoading(true);
@@ -66,7 +55,6 @@ const CustomerChat = ({ route, navigation }) => {
       setLoading(false);
     }
   };
-
   const loadDriverInfo = async () => {
     try {
       if (driverId) {
@@ -77,10 +65,8 @@ const CustomerChat = ({ route, navigation }) => {
       console.error('Error loading driver info:', error);
     }
   };
-
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
-
     try {
       const messageData = {
         orderId,
@@ -91,11 +77,8 @@ const CustomerChat = ({ route, navigation }) => {
         timestamp: new Date(),
         isRead: false
       };
-
       await firebaseService.chat.sendMessage(messageData);
       setNewMessage('');
-      
-      // Scroll to bottom after sending
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
@@ -104,10 +87,8 @@ const CustomerChat = ({ route, navigation }) => {
       Alert.alert('Error', 'Failed to send message');
     }
   };
-
   const renderMessage = ({ item: message }) => {
     const isCustomer = message.senderType === 'customer';
-    
     return (
       <View style={[
         styles.messageContainer,
@@ -143,7 +124,6 @@ const CustomerChat = ({ route, navigation }) => {
       </View>
     );
   };
-
   return (
     <KeyboardAvoidingView 
       style={styles.container}
@@ -165,7 +145,6 @@ const CustomerChat = ({ route, navigation }) => {
         </View>
         <View style={styles.headerRight} />
       </View>
-
       <FlatList
         ref={flatListRef}
         data={messages}
@@ -187,7 +166,6 @@ const CustomerChat = ({ route, navigation }) => {
           </View>
         }
       />
-
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.textInput}
@@ -215,7 +193,6 @@ const CustomerChat = ({ route, navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -353,5 +330,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
 export default CustomerChat;

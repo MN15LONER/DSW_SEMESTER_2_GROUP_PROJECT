@@ -5,9 +5,7 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import DriverLoginScreen from '../screens/auth/DriverLoginScreen';
 import DriverRegisterScreen from '../screens/auth/DriverRegisterScreen';
-
 const Stack = createStackNavigator();
-
 const AuthStack = () => {
   return (
     <Stack.Navigator
@@ -57,5 +55,4 @@ const AuthStack = () => {
     </Stack.Navigator>
   );
 };
-
 export default AuthStack;
