@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
   onAuthStateChanged,
   updateProfile,
   deleteUser
@@ -10,7 +10,7 @@ import {
 import { auth, db } from '../services/firebase';
 import { firebaseService } from '../services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import AsyncStoragePackage from '@react-native-async-storage/async-storage';
 let AsyncStorage = AsyncStoragePackage;
 
@@ -25,6 +25,13 @@ if (Platform.OS === 'web') {
 import { signInWithGoogle } from '../services/googleAuth';
 import { sendPasswordReset } from '../services/passwordResetService';
 
+// Session timeout configuration (3 hours in milliseconds)
+const SESSION_TIMEOUT = 3 * 60 * 60 * 1000; // 3 hours
+const SESSION_KEYS = {
+  LAST_ACTIVITY: 'session_last_activity',
+  SESSION_START: 'session_start_time'
+};
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -36,6 +43,10 @@ export const AuthProvider = ({ children }) => {
   // Track latest user in a ref so the auth listener can consult it without creating
   // a dependency cycle that re-subscribes on every user change.
   const currentUserRef = useRef(null);
+
+  // Session timeout refs
+  const inactivityTimerRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
 
   useEffect(() => {
     currentUserRef.current = user;
@@ -58,6 +69,119 @@ export const AuthProvider = ({ children }) => {
 
     loadStoredUser();
   }, []);
+
+  // Session timeout functions
+  const updateLastActivity = async () => {
+    const now = Date.now();
+    lastActivityRef.current = now;
+    try {
+      await AsyncStorage.setItem(SESSION_KEYS.LAST_ACTIVITY, now.toString());
+    } catch (error) {
+      console.error('Error updating last activity:', error);
+    }
+  };
+
+  const checkSessionValidity = async () => {
+    try {
+      const lastActivityStr = await AsyncStorage.getItem(SESSION_KEYS.LAST_ACTIVITY);
+      if (lastActivityStr) {
+        const lastActivity = parseInt(lastActivityStr, 10);
+        const now = Date.now();
+        if (now - lastActivity > SESSION_TIMEOUT) {
+          console.log('Session expired, logging out...');
+          await autoLogout();
+          return false;
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Error checking session validity:', error);
+      return true; // Default to valid if error
+    }
+  };
+
+  const autoLogout = async () => {
+    try {
+      console.log('Auto-logging out due to inactivity...');
+      setUser(null);
+      setUserProfile(null);
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem(SESSION_KEYS.LAST_ACTIVITY);
+      await AsyncStorage.removeItem(SESSION_KEYS.SESSION_START);
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error during auto logout:', error);
+    }
+  };
+
+  const startInactivityTimer = () => {
+    // Clear existing timer
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+
+    // Start new timer
+    inactivityTimerRef.current = setTimeout(async () => {
+      console.log('Inactivity timeout reached');
+      await checkSessionValidity();
+      // Restart timer to check again
+      startInactivityTimer();
+    }, SESSION_TIMEOUT);
+  };
+
+  const resetInactivityTimer = () => {
+    updateLastActivity();
+    startInactivityTimer();
+  };
+
+  // Initialize session on user login
+  const initializeSession = async () => {
+    const now = Date.now();
+    lastActivityRef.current = now;
+    try {
+      await AsyncStorage.setItem(SESSION_KEYS.LAST_ACTIVITY, now.toString());
+      await AsyncStorage.setItem(SESSION_KEYS.SESSION_START, now.toString());
+    } catch (error) {
+      console.error('Error initializing session:', error);
+    }
+    startInactivityTimer();
+  };
+
+  // App state listener for background/foreground transitions
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'active' && user) {
+        // App came to foreground, check session validity
+        const isValid = await checkSessionValidity();
+        if (isValid) {
+          resetInactivityTimer();
+        }
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [user]);
+
+  // Start session when user logs in
+  useEffect(() => {
+    if (user) {
+      initializeSession();
+    } else {
+      // Clear timer when user logs out
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, [user]);
 
   // Subscribe to Firebase auth changes once (on mount)
   useEffect(() => {

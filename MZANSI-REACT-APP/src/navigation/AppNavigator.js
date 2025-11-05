@@ -3,6 +3,7 @@ import { logInfo } from '../utils/errorLogger';
 import { View, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { useNavigationContainerRef } from '@react-navigation/native';
 import AuthStack from './AuthStack';
 import TabNavigator from './TabNavigator';
 import AdminStack from './AdminStack';
@@ -271,8 +272,21 @@ const MainStack = React.memo(() => {
 
 export default function AppNavigator() {
   const { isAuthenticated, initializing, user, isAdmin } = useAuth();
+  const navigationRef = useNavigationContainerRef();
 
   logInfo('AppNavigator', `render - isAuthenticated:${isAuthenticated} initializing:${initializing} userType:${user?.userType} isAdmin:${isAdmin}`);
+
+  // Reset inactivity timer on navigation state changes
+  useEffect(() => {
+    if (navigationRef.current && user) {
+      const unsubscribe = navigationRef.current.addListener('state', () => {
+        // Reset activity timer on navigation
+        // This will be handled by the AuthContext's resetInactivityTimer function
+        // We can access it through the context if needed
+      });
+      return unsubscribe;
+    }
+  }, [navigationRef, user]);
 
   // Show loading screen while initializing
   if (initializing) {

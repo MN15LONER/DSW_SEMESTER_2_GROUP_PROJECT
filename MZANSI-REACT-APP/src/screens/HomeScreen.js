@@ -50,7 +50,7 @@ export default function HomeScreen({ navigation }) {
     loadStores();
   }, [loadStores]);
 
-  // Load default address on mount
+  // Load default address on mount and when user changes
   useEffect(() => {
     const loadDefaultAddress = async () => {
       if (user?.uid) {
@@ -58,14 +58,47 @@ export default function HomeScreen({ navigation }) {
           const cachedAddress = await AsyncStorage.getItem(`default_address_${user.uid}`);
           if (cachedAddress) {
             setDefaultAddress(JSON.parse(cachedAddress));
+          } else {
+            // If no cached default address, set to null
+            setDefaultAddress(null);
           }
         } catch (error) {
           console.error('Error loading default address:', error);
+          setDefaultAddress(null);
         }
+      } else {
+        // If no user, clear default address
+        setDefaultAddress(null);
       }
     };
     loadDefaultAddress();
   }, [user]);
+
+  // Listen for default address changes (when user sets/changes default address)
+  useEffect(() => {
+    const checkForAddressUpdates = async () => {
+      if (user?.uid) {
+        try {
+          const cachedAddress = await AsyncStorage.getItem(`default_address_${user.uid}`);
+          if (cachedAddress) {
+            const parsedAddress = JSON.parse(cachedAddress);
+            // Only update if the address has actually changed
+            if (!defaultAddress || defaultAddress.id !== parsedAddress.id) {
+              setDefaultAddress(parsedAddress);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking for address updates:', error);
+        }
+      }
+    };
+
+    // Check immediately and then set up an interval to check periodically
+    checkForAddressUpdates();
+    const interval = setInterval(checkForAddressUpdates, 2000); // Check every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [user, defaultAddress]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);

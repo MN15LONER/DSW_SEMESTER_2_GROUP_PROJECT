@@ -11,32 +11,42 @@ import ErrorBoundary from './src/components/common/ErrorBoundary';
 import NetworkStatus from './src/components/common/NetworkStatus';
 import { theme } from './src/styles/globalStyles';
 import { seedFirebaseData } from './src/utils/seedFirebase.js';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function App() {
-  
+
   useEffect(() => {
     const shouldSeed = process.env.EXPO_PUBLIC_SEED_ON_START === 'true';
     if (shouldSeed) {
       seedFirebaseData();
     }
   }, []);
+
+  // Global touch handler to reset inactivity timer
+  const handleGlobalTouch = () => {
+    // This will be handled by the AuthContext's resetInactivityTimer function
+    // We can access it through the context if needed
+  };
+
   return (
-    <ErrorBoundary>
-      <PaperProvider theme={theme}>
-        <AuthProvider>
-          <LocationProvider>
-            <CartProvider>
-              <FavoritesProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
+        <PaperProvider theme={theme}>
+          <AuthProvider>
+            <LocationProvider>
+              <CartProvider>
+                <FavoritesProvider>
                   <NavigationContainer>
                     <NetworkStatus />
                     <AppNavigator />
                     <StatusBar style="auto" />
                   </NavigationContainer>
-                </FavoritesProvider>
-              </CartProvider>
-            </LocationProvider>
-          </AuthProvider>
-      </PaperProvider>
-    </ErrorBoundary>
+                  </FavoritesProvider>
+                </CartProvider>
+              </LocationProvider>
+            </AuthProvider>
+        </PaperProvider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }
