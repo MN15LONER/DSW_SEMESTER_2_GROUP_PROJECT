@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { logInfo } from '../utils/errorLogger';
 import { View, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { useNavigationContainerRef } from '@react-navigation/native';
 import AuthStack from './AuthStack';
 import TabNavigator from './TabNavigator';
+import AdminStack from './AdminStack';
 import StoreDetailScreen from '../screens/StoreDetailScreen';
 import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
@@ -21,11 +24,22 @@ import CategoryProductsScreen from '../screens/CategoryProductsScreen';
 import ProductSearchScreen from '../screens/ProductSearchScreen';
 import DailyDealsScreen from '../screens/DailyDealsScreen';
 import StoreFinderScreen from '../screens/StoreFinderScreen';
+import HomeScreen from '../screens/HomeScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+// New driver and chat screens
+import DriverLoginScreen from '../screens/auth/DriverLoginScreen';
+import DriverDashboard from '../screens/DriverDashboard';
+import DriverChat from '../screens/DriverChat';
+import CustomerChat from '../screens/CustomerChat';
+import StockManagementScreen from '../screens/StockManagementScreen';
+import OrderTrackingScreen from '../screens/OrderTrackingScreen';
+import LeafletBrowserScreen from '../screens/LeafletBrowserScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import { COLORS } from '../styles/colors';
 
 const Stack = createStackNavigator();
 
-const MainStack = () => {
+const DriverStack = () => {
   return (
     <Stack.Navigator
       screenOptions={{
@@ -39,8 +53,50 @@ const MainStack = () => {
       }}
     >
       <Stack.Screen 
+        name="DriverDashboard" 
+        component={DriverDashboard}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="DriverChat" 
+        component={DriverChat}
+        options={{
+          headerShown: false,
+        }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+const MainStack = React.memo(() => {
+  const { user } = useAuth();
+  
+  logInfo('MainStack', `render - userType: ${user?.userType}`);
+  
+  return (
+    <Stack.Navigator
+      initialRouteName="Main"
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: COLORS.primary,
+        },
+        headerTintColor: COLORS.white,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
+      <Stack.Screen 
         name="Main" 
         component={TabNavigator} 
+        options={{ headerShown: false }}
+      />
+      {/* Compatibility route: allow actions that directly target 'Home' to be handled */}
+      <Stack.Screen
+        name="Home"
+        component={HomeScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen 
@@ -148,13 +204,91 @@ const MainStack = () => {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{ title: 'Edit Profile' }}
+      />
+      {/* Driver and Chat Screens */}
+      <Stack.Screen 
+        name="DriverLogin" 
+        component={DriverLoginScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="DriverDashboard" 
+        component={DriverDashboard}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="DriverChat" 
+        component={DriverChat}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="CustomerChat" 
+        component={CustomerChat}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="StockManagement" 
+        component={StockManagementScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="OrderTracking" 
+        component={OrderTrackingScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="Leaflets"
+        component={LeafletBrowserScreen}
+        options={{
+          title: 'Browse Leaflets',
+        }}
+      />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          title: 'Notifications',
+        }}
+      />
     </Stack.Navigator>
   );
-};
+});
 
 export default function AppNavigator() {
-  const { isAuthenticated, initializing } = useAuth();
+  const { isAuthenticated, initializing, user, isAdmin } = useAuth();
+  const navigationRef = useNavigationContainerRef();
 
+  logInfo('AppNavigator', `render - isAuthenticated:${isAuthenticated} initializing:${initializing} userType:${user?.userType} isAdmin:${isAdmin}`);
+
+  // Reset inactivity timer on navigation state changes
+  useEffect(() => {
+    if (navigationRef.current && user) {
+      const unsubscribe = navigationRef.current.addListener('state', () => {
+        // Reset activity timer on navigation
+        // This will be handled by the AuthContext's resetInactivityTimer function
+        // We can access it through the context if needed
+      });
+      return unsubscribe;
+    }
+  }, [navigationRef, user]);
+
+  // Show loading screen while initializing
   if (initializing) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
@@ -163,5 +297,23 @@ export default function AppNavigator() {
     );
   }
 
-  return isAuthenticated ? <MainStack /> : <AuthStack />;
+  // Check authentication first
+  if (!isAuthenticated) return <AuthStack />;
+
+  // If authenticated, check user type in priority order
+  // Admin takes precedence
+  if (isAdmin) {
+    logInfo('AppNavigator', 'Rendering AdminStack for admin');
+    return <AdminStack />;
+  }
+
+  // Then check for driver
+  if (user?.userType === 'driver') {
+    logInfo('AppNavigator', 'Rendering DriverStack for driver');
+    return <DriverStack />;
+  }
+
+  // Default authenticated user (regular user)
+  logInfo('AppNavigator', 'Rendering MainStack for regular user');
+  return <MainStack />;
 }

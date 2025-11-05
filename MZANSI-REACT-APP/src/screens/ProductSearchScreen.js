@@ -18,6 +18,8 @@ import { useCart } from '../context/CartContext';
 import { COLORS } from '../styles/colors';
 import EmptyState from '../components/common/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import ImageWithFallback from '../components/common/ImageWithFallback';
+import { getImageForProduct } from '../utils/imageHelper';
 
 export default function ProductSearchScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,13 +106,20 @@ export default function ProductSearchScreen({ navigation }) {
 
   const renderProductItem = ({ item: product }) => (
     <View style={styles.productCard}>
-      <View style={styles.productHeader}>
-        <Text style={styles.productName}>{product.name}</Text>
-        <Text style={styles.productBrand}>{product.brand}</Text>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={14} color="#FFD700" />
-          <Text style={styles.rating}>{product.rating}</Text>
-          <Text style={styles.reviews}>({product.reviews} reviews)</Text>
+      <View style={styles.productRow}>
+        <ImageWithFallback
+          source={{ uri: product.image || getImageForProduct(product) }}
+          style={styles.thumbnail}
+          resizeMode="cover"
+        />
+        <View style={styles.productHeader}>
+          <Text style={styles.productName}>{product.name}</Text>
+          <Text style={styles.productBrand}>{product.brand}</Text>
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={14} color="#FFD700" />
+            <Text style={styles.rating}>{product.rating}</Text>
+            <Text style={styles.reviews}>({product.reviews} reviews)</Text>
+          </View>
         </View>
       </View>
 
@@ -460,12 +469,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 12,
     margin: 8,
-    padding: 16,
+    padding: 12,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  thumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: '#f8f9fa',
   },
   productHeader: {
     marginBottom: 12,

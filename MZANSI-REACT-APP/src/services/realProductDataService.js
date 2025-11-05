@@ -33,9 +33,6 @@ class RealProductDataService {
         case 'electronics':
           products = await this.getElectronicsProducts(limit);
           break;
-        case 'health':
-          products = await this.getHealthProducts(limit);
-          break;
         default:
           products = await this.getMixedProducts(limit);
       }
@@ -160,33 +157,7 @@ class RealProductDataService {
     return this.shuffleArray(electronicsProducts).slice(0, limit);
   }
 
-  // Health & beauty products
-  async getHealthProducts(limit) {
-    const healthProducts = [
-      // Personal Care
-      { name: 'Colgate Toothpaste 100ml', brand: 'Colgate', category: 'Oral Care', basePrice: 24.99, unit: '100ml' },
-      { name: 'Head & Shoulders Shampoo', brand: 'Head & Shoulders', category: 'Hair Care', basePrice: 89.99, unit: '400ml' },
-      { name: 'Dove Soap 4 Pack', brand: 'Dove', category: 'Body Care', basePrice: 45.99, unit: '4 pack' },
-      { name: 'Nivea Body Lotion 400ml', brand: 'Nivea', category: 'Body Care', basePrice: 79.99, unit: '400ml' },
-      
-      // Vitamins & Supplements
-      { name: 'Vitamin C 1000mg', brand: 'Clicks', category: 'Vitamins', basePrice: 149.99, unit: '30 tablets' },
-      { name: 'Multivitamins', brand: 'Dis-Chem', category: 'Vitamins', basePrice: 199.99, unit: '60 tablets' },
-      { name: 'Omega 3 Fish Oil', brand: 'Solal', category: 'Supplements', basePrice: 299.99, unit: '60 capsules' },
-      
-      // Medicine & First Aid
-      { name: 'Panado 24 Tablets', brand: 'Panado', category: 'Medicine', basePrice: 34.99, unit: '24 tablets' },
-      { name: 'Allergex 30 Tablets', brand: 'Allergex', category: 'Medicine', basePrice: 89.99, unit: '30 tablets' },
-      { name: 'First Aid Kit', brand: 'Clicks', category: 'First Aid', basePrice: 199.99, unit: 'kit' },
-      
-      // Baby Care
-      { name: 'Pampers Nappies Size 3', brand: 'Pampers', category: 'Baby Care', basePrice: 199.99, unit: '44 pack' },
-      { name: 'Johnson\'s Baby Lotion', brand: 'Johnson\'s', category: 'Baby Care', basePrice: 69.99, unit: '300ml' },
-      { name: 'Baby Formula 900g', brand: 'Nan', category: 'Baby Care', basePrice: 299.99, unit: '900g' }
-    ];
-
-    return this.shuffleArray(healthProducts).slice(0, limit);
-  }
+  
 
   // Add realistic South African pricing and promotional deals
   async addPricingAndDeals(products) {
@@ -313,22 +284,14 @@ class RealProductDataService {
 
   // Get product image URL
   getProductImageUrl(productName, category) {
-    // Use Unsplash for realistic product images
-    const searchTerms = {
-      'Dairy': 'milk dairy products',
-      'Bakery': 'bread bakery',
-      'Meat': 'meat butcher',
-      'Produce': 'fruits vegetables',
-      'Pantry': 'grocery pantry',
-      'Beverages': 'drinks beverages',
-      'Snacks': 'snacks chips',
-      'Electronics': 'electronics gadgets',
-      'Clothing': 'clothing fashion',
-      'Health': 'health pharmacy'
-    };
-
-    const searchTerm = searchTerms[category] || productName;
-    return `https://images.unsplash.com/photo-${Date.now()}?w=300&h=300&fit=crop&q=80`;
+    // Prefer a focused Unsplash Source URL (no API key required) as a sensible fallback
+    try {
+      const { getImageForProduct } = require('../utils/imageHelper');
+      return getImageForProduct({ name: productName, category });
+    } catch (e) {
+      // Last resort: use a generic placeholder
+      return `https://via.placeholder.com/300x300/cccccc/666666?text=${encodeURIComponent(productName)}`;
+    }
   }
 
   // Utility functions
@@ -360,7 +323,7 @@ class RealProductDataService {
 
   getMixedProducts(limit) {
     // Return a mix of products from all categories
-    const categories = ['food', 'clothing', 'electronics', 'health'];
+  const categories = ['food', 'clothing', 'electronics'];
     const productsPerCategory = Math.ceil(limit / categories.length);
     
     return Promise.all(

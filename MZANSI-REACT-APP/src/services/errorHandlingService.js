@@ -1,6 +1,7 @@
 // Comprehensive error handling and offline support service
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-netinfo/netinfo';
+import { logError, logWarn, logInfo } from '../utils/errorLogger';
 
 class ErrorHandlingService {
   constructor() {
@@ -37,7 +38,7 @@ class ErrorHandlingService {
         this.notifyNetworkChange(this.isOnline);
       });
     } catch (error) {
-      console.error('Error initializing network listener:', error);
+      logError('ErrorHandlingService - initializeNetworkListener', error);
     }
   }
 
@@ -49,7 +50,7 @@ class ErrorHandlingService {
         this.offlineQueue = JSON.parse(stored);
       }
     } catch (error) {
-      console.error('Error loading offline queue:', error);
+      logError('ErrorHandlingService - loadOfflineQueue', error);
     }
   }
 
@@ -58,7 +59,7 @@ class ErrorHandlingService {
     try {
       await AsyncStorage.setItem('offline_queue', JSON.stringify(this.offlineQueue));
     } catch (error) {
-      console.error('Error saving offline queue:', error);
+      logError('ErrorHandlingService - saveOfflineQueue', error);
     }
   }
 
@@ -126,7 +127,7 @@ class ErrorHandlingService {
   async processOfflineQueue() {
     if (this.offlineQueue.length === 0) return;
 
-    console.log(`Processing ${this.offlineQueue.length} offline operations`);
+  logInfo('ErrorHandlingService', `Processing ${this.offlineQueue.length} offline operations`);
 
     const processedItems = [];
     
@@ -135,7 +136,7 @@ class ErrorHandlingService {
         await this.executeOperation(item.operation);
         processedItems.push(item.id);
       } catch (error) {
-        console.error('Error processing offline operation:', error);
+        logError('ErrorHandlingService - processOfflineQueue - item', error);
         item.attempts++;
         
         // Remove from queue if too many attempts
@@ -284,7 +285,7 @@ class ErrorHandlingService {
         });
       }
     } catch (error) {
-      console.error('Error reporting to analytics:', error);
+      logError('ErrorHandlingService - reportErrorToAnalytics', error);
     }
   }
 
@@ -299,7 +300,7 @@ class ErrorHandlingService {
       
       await AsyncStorage.setItem(`cache_${key}`, JSON.stringify(cacheItem));
     } catch (error) {
-      console.error('Error caching data:', error);
+      logError('ErrorHandlingService - cacheData', error);
     }
   }
 
@@ -320,7 +321,7 @@ class ErrorHandlingService {
 
       return cacheItem.data;
     } catch (error) {
-      console.error('Error getting cached data:', error);
+      logError('ErrorHandlingService - getCachedData', error);
       return null;
     }
   }
@@ -343,7 +344,7 @@ class ErrorHandlingService {
         }
       }
     } catch (error) {
-      console.error('Error clearing expired cache:', error);
+      logError('ErrorHandlingService - clearExpiredCache', error);
     }
   }
 
@@ -358,7 +359,7 @@ class ErrorHandlingService {
         return data;
       }
     } catch (error) {
-      console.warn('Primary source failed, trying fallback:', error.message);
+      logWarn('ErrorHandlingService - getDataWithFallback - primaryFailed', error.message);
     }
 
     try {
@@ -366,7 +367,7 @@ class ErrorHandlingService {
       const fallbackData = await fallbackSource();
       return fallbackData;
     } catch (fallbackError) {
-      console.warn('Fallback source failed, trying cache:', fallbackError.message);
+      logWarn('ErrorHandlingService - getDataWithFallback - fallbackFailed', fallbackError.message);
       
       // Try cached data as last resort
       const cachedData = await this.getCachedData(cacheKey);
@@ -392,22 +393,22 @@ class ErrorHandlingService {
       try {
         listener(errorInfo);
       } catch (error) {
-        console.error('Error in error listener:', error);
+        logError('ErrorHandlingService - notifyErrorListeners - listener', error);
       }
     });
   }
 
   notifyNetworkChange(isOnline) {
     // Notify components of network status change
-    console.log(`Network status changed: ${isOnline ? 'Online' : 'Offline'}`);
+  logInfo('ErrorHandlingService - Network', `Network status changed: ${isOnline ? 'Online' : 'Offline'}`);
   }
 
   notifyOfflineOperationsProcessed(count) {
-    console.log(`${count} offline operations processed successfully`);
+  logInfo('ErrorHandlingService - Offline', `${count} offline operations processed successfully`);
   }
 
   notifyOfflineOperationFailed(operation) {
-    console.error('Offline operation failed permanently:', operation);
+  logError('ErrorHandlingService - Offline operation failed permanently', operation);
   }
 
   // Utility methods

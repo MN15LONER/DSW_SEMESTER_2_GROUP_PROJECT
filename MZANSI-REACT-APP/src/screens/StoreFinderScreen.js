@@ -85,7 +85,8 @@ export default function StoreFinderScreen({ navigation }) {
 
   const calculateDistance = (storeCoords) => {
     if (!userLocation) return null;
-    
+    if (!storeCoords || typeof storeCoords.latitude !== 'number' || typeof storeCoords.longitude !== 'number') return null;
+
     const R = 6371; // Earth's radius in km
     const dLat = (storeCoords.latitude - userLocation.latitude) * Math.PI / 180;
     const dLon = (storeCoords.longitude - userLocation.longitude) * Math.PI / 180;
@@ -95,7 +96,7 @@ export default function StoreFinderScreen({ navigation }) {
       Math.sin(dLon/2) * Math.sin(dLon/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     const distance = R * c;
-    
+
     return distance;
   };
 
@@ -104,23 +105,31 @@ export default function StoreFinderScreen({ navigation }) {
 
     // Filter by search query
     if (searchQuery.trim()) {
-      filtered = filtered.filter(store =>
-        store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        store.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        store.area.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(store => {
+        const name = (store.name || '').toLowerCase();
+        const address = (store.address || '').toLowerCase();
+        const area = (store.area || store.location || '').toLowerCase();
+        return (
+          name.includes(q) ||
+          address.includes(q) ||
+          area.includes(q)
+        );
+      });
     }
 
     // Filter by store chain
     if (selectedChain !== 'all') {
-      filtered = filtered.filter(store => store.id === selectedChain);
+      // selectedChain ids are normalized (e.g. 'pick-n-pay'), map to brand match
+      const normalized = selectedChain.replace(/-/g, ' ').toLowerCase();
+      filtered = filtered.filter(store => (store.brand || '').toLowerCase().includes(normalized));
     }
 
     // Calculate distances and sort by distance if user location is available
     if (userLocation) {
       filtered = filtered.map(store => ({
         ...store,
-        distance: calculateDistance(store.coordinates)
+        distance: store.coordinates ? calculateDistance(store.coordinates) : null
       })).sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity));
     }
 
@@ -144,9 +153,13 @@ export default function StoreFinderScreen({ navigation }) {
   };
 
   const handleGetDirections = (store) => {
+    if (!store.coordinates || typeof store.coordinates.latitude !== 'number' || typeof store.coordinates.longitude !== 'number') {
+      Alert.alert('No coordinates', 'This store does not have location coordinates available.');
+      return;
+    }
+
     const { latitude, longitude } = store.coordinates;
-    const label = encodeURIComponent(store.name);
-    
+    const label = encodeURIComponent(store.name || 'Store');
     let url;
     if (Platform.OS === 'ios') {
       url = `maps:0,0?q=${latitude},${longitude}(${label})`;
@@ -175,7 +188,7 @@ export default function StoreFinderScreen({ navigation }) {
       <View style={styles.storeHeader}>
         <View style={styles.storeInfo}>
           <Text style={styles.storeName}>{store.name}</Text>
-          <Text style={styles.storeChain}>{store.chain}</Text>
+          <Text style={styles.storeChain}>{store.brand}</Text>
         </View>
         
         <View style={styles.storeStatus}>
@@ -195,10 +208,10 @@ export default function StoreFinderScreen({ navigation }) {
       <View style={styles.storeDetails}>
         <View style={styles.addressContainer}>
           <Ionicons name="location" size={16} color={COLORS.textSecondary} />
-          <Text style={styles.address}>{store.address}</Text>
+          <Text style={styles.address}>{store.address || store.location || 'Address not available'}</Text>
         </View>
         
-        {store.distance && (
+        {typeof store.distance === 'number' && (
           <View style={styles.distanceContainer}>
             <Ionicons name="navigate" size={16} color={COLORS.primary} />
             <Text style={styles.distance}>{store.distance.toFixed(1)} km away</Text>

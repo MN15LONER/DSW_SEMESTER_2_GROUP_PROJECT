@@ -1,18 +1,35 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, orderBy, limit, setDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, orderBy, limit, setDoc, onSnapshot } from 'firebase/firestore';
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import { getStorage } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+// Static import to avoid Metro dynamic import resolution issues
+import { mockStores, getMockStores, getStoreProducts } from '../data/mockData';
 
-
-const firebaseConfig = {
+// PRODUCTION CONFIG (BOSS'S FIREBASE)
+const productionConfig = {
   apiKey: "AIzaSyDsxqzXw5XEifHbelAYHqdkMUPoZVvg6ro",
   authDomain: "mzansi-react.firebaseapp.com",
   projectId: "mzansi-react",
-  storageBucket: "mzansi-react.firebasestorage.app",
+  storageBucket: "mzansi-react-storage",
   messagingSenderId: "239626456292",
   appId: "1:239626456292:web:7bdfeebb778f7cededf0f1"
 };
+
+// TEST CONFIG (YOUR FIREBASE) - Your new test project
+const testConfig = {
+  apiKey: "AIzaSyC0BGeREyZQNvLDAT4CW4avAqFSkUK6Pys",
+  authDomain: "project-9944b.firebaseapp.com",
+  projectId: "project-9944b",
+  storageBucket: "project-9944b.firebasestorage.app",
+  messagingSenderId: "23598729763",
+  appId: "1:23598729763:web:0e0ff5f511fe35535d3f96"
+};
+
+// Switch between configs easily
+const firebaseConfig = testConfig; // ✅ Currently using TEST database (project-9944b)
+// const firebaseConfig = productionConfig; // Switch to this for production (mzansi-react)
 
 const app = initializeApp(firebaseConfig);
 
@@ -22,6 +39,8 @@ export const auth = initializeAuth(app, {
 });
 export const storage = getStorage(app);
 
+// Track whether we've already warned about Firestore permission issues to avoid log spam
+let _warnedFirestorePermissions = false;
 
 // Firebase Services
 export const firebaseService = {
@@ -33,9 +52,14 @@ export const firebaseService = {
         const snapshot = await getDocs(storesRef);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error('Error fetching stores:', error);
+        // If permission error, warn once and fallback to mock data to keep the app usable in dev
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected. Falling back to mock stores.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching stores:', error);
+        }
         // Fallback to mock data
-        const { mockStores } = await import('../data/mockData');
         return mockStores;
       }
     },
@@ -47,9 +71,13 @@ export const firebaseService = {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error('Error fetching stores by location:', error);
-        // Fallback to mock data
-        const { getMockStores } = await import('../data/mockData');
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected. Falling back to mock stores by location.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching stores by location:', error);
+        }
+        // Fallback to mock data filtered by location
         return getMockStores(location);
       }
     },
@@ -61,7 +89,8 @@ export const firebaseService = {
         return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
       } catch (error) {
         console.error('Error fetching store:', error);
-        return null;
+        // Fallback to mock data
+        return mockStores.find(s => s.id === storeId) || null;
       }
     },
 
@@ -90,9 +119,13 @@ export const firebaseService = {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error('Error fetching products:', error);
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected. Falling back to mock products.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching products:', error);
+        }
         // Fallback to mock data
-        const { getStoreProducts } = await import('../data/mockData');
         return getStoreProducts(storeId);
       }
     },
@@ -123,57 +156,42 @@ export const firebaseService = {
     }
   },
 
-  // ORDERS
-  orders: {
-    create: async (orderData) => {
-      try {
-        const ordersRef = collection(db, 'orders');
-        const docRef = await addDoc(ordersRef, {
-          ...orderData,
-          createdAt: new Date(),
-          status: 'pending'
-        });
-        return docRef.id;
-      } catch (error) {
-        console.error('Error creating order:', error);
-        // For prototype, return mock order ID
-        return 'order_' + Date.now();
-      }
-    },
-
-    getByUser: async (userId) => {
-      try {
-        const ordersRef = collection(db, 'orders');
-        const q = query(
-          ordersRef, 
-          where('userId', '==', userId),
-          orderBy('createdAt', 'desc')
-        );
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      } catch (error) {
-        console.error('Error fetching user orders:', error);
-        return [];
-      }
-    },
-
-    updateStatus: async (orderId, status) => {
-      try {
-        const orderRef = doc(db, 'orders', orderId);
-        await updateDoc(orderRef, { 
-          status,
-          updatedAt: new Date()
-        });
-        return true;
-      } catch (error) {
-        console.error('Error updating order status:', error);
-        return false;
-      }
-    }
-  },
-
   // USERS
   users: {
+    uploadProfilePicture: async (userId, uri) => {
+      try {
+        if (!uri) return null;
+
+        // For React Native, use Expo FileSystem to read the file as base64
+        const fileInfo = await FileSystem.getInfoAsync(uri);
+        if (!fileInfo.exists) {
+          throw new Error('File does not exist');
+        }
+
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        // Convert base64 to Uint8Array
+        const binaryString = atob(base64);
+        const uint8Array = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          uint8Array[i] = binaryString.charCodeAt(i);
+        }
+
+        const fileName = `profile_pictures/${userId}_${Date.now()}.jpg`;
+        const sRef = storageRef(storage, fileName);
+
+        const snapshot = await uploadBytes(sRef, uint8Array, {
+          contentType: 'image/jpeg'
+        });
+        const url = await getDownloadURL(snapshot.ref);
+        return url;
+      } catch (error) {
+        console.error('Error uploading profile picture to storage:', error);
+        return null;
+      }
+    },
     create: async (userId, userData) => {
       try {
         const userRef = doc(db, 'users', userId);
@@ -194,7 +212,12 @@ export const firebaseService = {
         const snapshot = await getDoc(userRef);
         return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
       } catch (error) {
-        console.error('Error fetching user:', error);
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected when fetching user. Falling back to null user.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching user:', error);
+        }
         return null;
       }
     },
@@ -211,6 +234,17 @@ export const firebaseService = {
         console.error('Error updating user:', error);
         return false;
       }
+    },
+
+    delete: async (userId) => {
+      try {
+        const userRef = doc(db, 'users', userId);
+        await deleteDoc(userRef);
+        return true;
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        return false;
+      }
     }
   },
 
@@ -223,7 +257,12 @@ export const firebaseService = {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error('Error fetching addresses:', error);
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected when fetching addresses. Falling back to empty list.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching addresses:', error);
+        }
         return [];
       }
     },
@@ -279,7 +318,12 @@ export const firebaseService = {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (error) {
-        console.error('Error fetching payment methods:', error);
+        if (! _warnedFirestorePermissions && /permission/i.test(error.message)) {
+          console.warn('Firestore permission error detected when fetching payment methods. Falling back to empty list.');
+          _warnedFirestorePermissions = true;
+        } else if (!/permission/i.test(error.message)) {
+          console.error('Error fetching payment methods:', error);
+        }
         return [];
       }
     },
@@ -326,6 +370,344 @@ export const firebaseService = {
       } catch (error) {
         console.error('Error deleting payment method:', error);
         throw error;
+      }
+    }
+  },
+
+  // CHAT SYSTEM
+  chat: {
+    sendMessage: async (messageData) => {
+      try {
+        const messagesRef = collection(db, 'messages');
+        const docRef = await addDoc(messagesRef, {
+          ...messageData,
+          timestamp: new Date(),
+          createdAt: new Date()
+        });
+        return docRef.id;
+      } catch (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+    },
+
+    getMessages: async (orderId) => {
+      try {
+        const messagesRef = collection(db, 'messages');
+        const q = query(
+          messagesRef,
+          where('orderId', '==', orderId)
+        );
+        const snapshot = await getDocs(q);
+        const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort messages by timestamp on the client side
+        return messages.sort((a, b) => {
+          const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+          const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+          return timeA - timeB;
+        });
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        return [];
+      }
+    },
+
+    listenToMessages: (orderId, callback) => {
+      const messagesRef = collection(db, 'messages');
+      const q = query(
+        messagesRef,
+        where('orderId', '==', orderId)
+      );
+      
+      return onSnapshot(q, (snapshot) => {
+        const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort messages by timestamp on the client side
+        const sortedMessages = messages.sort((a, b) => {
+          const timeA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+          const timeB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+          return timeA - timeB;
+        });
+        
+        callback(sortedMessages);
+      });
+    },
+
+    markAsRead: async (messageId) => {
+      try {
+        const messageRef = doc(db, 'messages', messageId);
+        await updateDoc(messageRef, { isRead: true });
+        return true;
+      } catch (error) {
+        console.error('Error marking message as read:', error);
+        return false;
+      }
+    }
+  },
+
+  // DRIVER SERVICES
+  drivers: {
+    create: async (driverId, driverData) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        await setDoc(driverRef, {
+          ...driverData,
+          userType: 'driver',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error creating driver:', error);
+        return false;
+      }
+    },
+
+    get: async (driverId) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        const snapshot = await getDoc(driverRef);
+        return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null;
+      } catch (error) {
+        console.error('Error fetching driver:', error);
+        return null;
+      }
+    },
+
+    update: async (driverId, driverData) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        await updateDoc(driverRef, {
+          ...driverData,
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating driver:', error);
+        return false;
+      }
+    },
+
+    updateLocation: async (driverId, location) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        await updateDoc(driverRef, {
+          currentLocation: location,
+          lastLocationUpdate: new Date(),
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating driver location:', error);
+        return false;
+      }
+    },
+
+    setAvailability: async (driverId, isAvailable) => {
+      try {
+        const driverRef = doc(db, 'drivers', driverId);
+        await updateDoc(driverRef, {
+          isAvailable,
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating driver availability:', error);
+        return false;
+      }
+    }
+  },
+
+  // ENHANCED ORDERS SERVICE
+  orders: {
+    create: async (orderData) => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const docRef = await addDoc(ordersRef, {
+          ...orderData,
+          status: 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        return docRef.id;
+      } catch (error) {
+        console.error('Error creating order:', error);
+        // For prototype, return mock order ID
+        return 'order_' + Date.now();
+      }
+    },
+
+    getAll: async () => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const snapshot = await getDocs(ordersRef);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching all orders:', error);
+        return [];
+      }
+    },
+
+    getByUser: async (userId) => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(
+          ordersRef, 
+          where('userId', '==', userId)
+        );
+        const snapshot = await getDocs(q);
+        const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Sort orders by creation date on the client side
+        return orders.sort((a, b) => {
+          const timeA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.orderDate);
+          const timeB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.orderDate);
+          return timeB - timeA; // Most recent first
+        });
+      } catch (error) {
+        console.error('Error fetching user orders:', error);
+        return [];
+      }
+    },
+
+    getByDriver: async (driverId) => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(
+          ordersRef,
+          where('driverId', '==', driverId),
+          orderBy('createdAt', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching driver orders:', error);
+        return [];
+      }
+    },
+
+    getPending: async () => {
+      try {
+        const ordersRef = collection(db, 'orders');
+        const q = query(
+          ordersRef,
+          where('status', '==', 'pending'),
+          orderBy('createdAt', 'asc')
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching pending orders:', error);
+        return [];
+      }
+    },
+
+    assignDriver: async (orderId, driverId) => {
+      try {
+        const orderRef = doc(db, 'orders', orderId);
+        await updateDoc(orderRef, {
+          driverId,
+          status: 'assigned',
+          assignedAt: new Date(),
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error assigning driver:', error);
+        return false;
+      }
+    },
+
+    updateStatus: async (orderId, status, driverName = null) => {
+      try {
+        const orderRef = doc(db, 'orders', orderId);
+        const updateData = {
+          status,
+          updatedAt: new Date()
+        };
+
+        // Add specific timestamps based on status
+        switch (status) {
+          case 'accepted':
+            updateData.acceptedAt = new Date();
+            break;
+          case 'in_transit':
+            updateData.startedAt = new Date();
+            break;
+          case 'delivered':
+            updateData.deliveredAt = new Date();
+            break;
+          case 'rejected':
+            updateData.rejectedAt = new Date();
+            break;
+        }
+
+        await updateDoc(orderRef, updateData);
+
+        // Send notification for status update
+        if (status !== 'pending') {
+          // Import notification service dynamically to avoid circular dependency
+          import('../services/notificationService').then(({ notificationService }) => {
+            notificationService.sendOrderStatusNotification(orderId, status, driverName);
+          });
+        }
+
+        return true;
+      } catch (error) {
+        console.error('Error updating order status:', error);
+        return false;
+      }
+    }
+  },
+
+  // STOCK MANAGEMENT
+  stock: {
+    updateProductStock: async (productId, newStock) => {
+      try {
+        const productRef = doc(db, 'products', productId);
+        await updateDoc(productRef, {
+          inStock: newStock > 0,
+          stockQuantity: newStock,
+          updatedAt: new Date()
+        });
+        return true;
+      } catch (error) {
+        console.error('Error updating product stock:', error);
+        return false;
+      }
+    },
+
+    getLowStockProducts: async (storeId, threshold = 5) => {
+      try {
+        const productsRef = collection(db, 'products');
+        const q = query(
+          productsRef,
+          where('storeId', '==', storeId),
+          where('stockQuantity', '<=', threshold)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching low stock products:', error);
+        return [];
+      }
+    },
+
+    getOutOfStockProducts: async (storeId) => {
+      try {
+        const productsRef = collection(db, 'products');
+        const q = query(
+          productsRef,
+          where('storeId', '==', storeId),
+          where('inStock', '==', false)
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        console.error('Error fetching out of stock products:', error);
+        return [];
       }
     }
   }

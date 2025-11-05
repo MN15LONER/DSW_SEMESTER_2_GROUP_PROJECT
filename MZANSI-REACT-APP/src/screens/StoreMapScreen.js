@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
-  Image,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,10 +14,13 @@ import StoreMapView from '../components/common/StoreMapView';
 import { firebaseService } from '../services/firebase';
 import { mockStores } from '../data/mockData';
 import { COLORS } from '../styles/colors';
+import ImageWithFallback from '../components/common/ImageWithFallback';
+import { getImageForProduct } from '../utils/imageHelper';
 
 export default function StoreMapScreen({ navigation, route }) {
   const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState(null);
+  const [directionsToStore, setDirectionsToStore] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showStoreModal, setShowStoreModal] = useState(false);
 
@@ -62,20 +64,10 @@ export default function StoreMapScreen({ navigation, route }) {
   };
 
   const handleGetDirections = () => {
-    const { latitude, longitude, name } = selectedStore;
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}&destination_place_id=${name}`;
-    
-    Alert.alert(
-      'Get Directions',
-      `Open directions to ${name} in Google Maps?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open Maps', onPress: () => {
-          // In a real app, you would use Linking.openURL(url)
-          console.log('Opening directions:', url);
-        }}
-      ]
-    );
+    // Request directions to be rendered on the map view
+    if (!selectedStore) return;
+    setShowStoreModal(false);
+    setDirectionsToStore(selectedStore);
   };
 
   if (loading) {
@@ -119,6 +111,8 @@ export default function StoreMapScreen({ navigation, route }) {
         stores={stores}
         onStoreSelect={handleStoreSelect}
         selectedStore={selectedStore}
+        directionsToStore={directionsToStore}
+        onClearDirections={() => setDirectionsToStore(null)}
       />
 
       {/* Store Details Modal */}
@@ -142,8 +136,8 @@ export default function StoreMapScreen({ navigation, route }) {
                   </TouchableOpacity>
                 </View>
 
-                <Image
-                  source={{ uri: selectedStore.image }}
+                <ImageWithFallback
+                  source={{ uri: selectedStore.image || getImageForProduct({ name: selectedStore.name, category: selectedStore.category }) }}
                   style={styles.storeImage}
                   resizeMode="cover"
                 />

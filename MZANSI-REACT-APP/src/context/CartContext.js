@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { imageCache, getOptimizedImageUrl } from '../services/unsplashApi';
+import { getImageForProduct } from '../utils/imageHelper';
 
 const CartContext = createContext();
 
@@ -109,7 +111,30 @@ export const CartProvider = ({ children }) => {
   };
 
   const addToCart = (item) => {
-    dispatch({ type: 'ADD_TO_CART', payload: item });
+    // ensure a stable image URL is attached to cart item
+    let image = item.image;
+    try {
+      if (!image) {
+        const key = `product:${item.name}::${item.category || ''}`;
+        if (imageCache && imageCache.has(key)) {
+          const cached = imageCache.get(key);
+          const raw = cached && (cached.url || cached.downloadUrl || cached.small || cached.thumb);
+          image = getOptimizedImageUrl(raw, 600, 600, 85) || raw;
+        }
+      }
+    } catch (e) {
+      // ignore cache errors
+    }
+
+    if (!image) {
+      try {
+        image = getImageForProduct(item);
+      } catch (e) {
+        image = item.image || null;
+      }
+    }
+
+    dispatch({ type: 'ADD_TO_CART', payload: { ...item, image } });
   };
 
   const removeFromCart = (id, storeId) => {

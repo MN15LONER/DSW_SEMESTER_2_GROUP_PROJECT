@@ -7,17 +7,18 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { Searchbar, FAB, IconButton } from 'react-native-paper';
+import { Searchbar, FAB, IconButton, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import FlyerGrid from '../components/flyers/FlyerGrid';
 import LocationPicker from '../components/common/LocationPicker';
 import SearchFilter from '../components/common/SearchFilter';
 import { useLocation } from '../context/LocationContext';
-// Using mock data only for stores
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { mockStores, getMockStores } from '../data/mockData';
 import { firebaseService } from '../services/firebase';
 import { COLORS } from '../styles/colors';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,49 +26,119 @@ export default function HomeScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({});
-  const { selectedLocation, userLocation } = useLocation();
+  const { selectedLocation } = useLocation();
   const { cartItems } = useCart();
+  const { user } = useAuth();
+  const [defaultAddress, setDefaultAddress] = useState(null);
 
   const loadStores = useCallback(async () => {
-    // Mock-only mode: ignore Places and Firebase
-    let data = selectedLocation ? getMockStores(selectedLocation) : mockStores;
-    if (userLocation && data && data.length > 0) {
-      data = [...data].sort((a, b) => {
-        const da = Math.hypot((a.latitude || 0) - userLocation.latitude, (a.longitude || 0) - userLocation.longitude);
-        const db = Math.hypot((b.latitude || 0) - userLocation.latitude, (b.longitude || 0) - userLocation.longitude);
-        return da - db;
-      });
-    }
-    setStores(data);
-  }, [selectedLocation, userLocation]);
+    // ONLY use mock data - show ALL stores (no location filtering)
+    const storeData = mockStores;
+
+    console.log('✅ Loaded ALL mock stores:', storeData.length);
+    console.log('Sample stores:', storeData.slice(0, 5).map(s => `${s.name} (${s.category})`));
+    console.log('📊 Category breakdown:', {
+      Food: storeData.filter(s => s.category === 'Food').length,
+      Clothing: storeData.filter(s => s.category === 'Clothing').length,
+      Electronics: storeData.filter(s => s.category === 'Electronics').length
+    });
+
+    setStores(storeData);
+  }, []);
 
   useEffect(() => {
     loadStores();
-  }, [selectedLocation, userLocation]);
+  }, [loadStores]);
 
-  const onRefresh = React.useCallback(() => {
+  // Load default address on mount and when user changes
+  useEffect(() => {
+    const loadDefaultAddress = async () => {
+      if (user?.uid) {
+        try {
+          const cachedAddress = await AsyncStorage.getItem(`default_address_${user.uid}`);
+          if (cachedAddress) {
+            setDefaultAddress(JSON.parse(cachedAddress));
+          } else {
+            // If no cached default address, set to null
+            setDefaultAddress(null);
+          }
+        } catch (error) {
+          console.error('Error loading default address:', error);
+          setDefaultAddress(null);
+        }
+      } else {
+        // If no user, clear default address
+        setDefaultAddress(null);
+      }
+    };
+    loadDefaultAddress();
+  }, [user]);
+
+  // Listen for default address changes (when user sets/changes default address)
+  useEffect(() => {
+    const checkForAddressUpdates = async () => {
+      if (user?.uid) {
+        try {
+          const cachedAddress = await AsyncStorage.getItem(`default_address_${user.uid}`);
+          if (cachedAddress) {
+            const parsedAddress = JSON.parse(cachedAddress);
+            // Only update if the address has actually changed
+            if (!defaultAddress || defaultAddress.id !== parsedAddress.id) {
+              setDefaultAddress(parsedAddress);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking for address updates:', error);
+        }
+      }
+    };
+
+    // Check immediately and then set up an interval to check periodically
+    checkForAddressUpdates();
+    const interval = setInterval(checkForAddressUpdates, 2000); // Check every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [user, defaultAddress]);
+
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadStores();
-    setTimeout(() => setRefreshing(false), 1000);
-  }, [selectedLocation, userLocation]);
+    loadStores().finally(() => {
+      setTimeout(() => setRefreshing(false), 1000);
+    });
+  }, [loadStores]);
 
   const applyFilters = (newFilters) => {
     setFilters(newFilters);
   };
 
-  const handleCategoryPress = (category) => {
-    // Navigate to category products screen
-    navigation.navigate('CategoryProducts', { category });
-  };
-
   const filteredStores = stores.filter(store => {
-    // Text search
-    const matchesSearch = store.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      store.category.toLowerCase().includes(searchQuery.toLowerCase());
+    // Normalize search query
+    const query = searchQuery.toLowerCase().trim().replace(/\s+/g, ' ');
     
-    // Category filter
-    const matchesCategory = !filters.category || filters.category === 'All' || 
-      store.category === filters.category;
+    // Build searchable text from all store fields
+    const searchableText = [
+      store.name,
+      store.brand,
+      store.category,
+      store.location,
+      store.address,
+      store.description,
+      ...(store.services || []),
+      ...(store.specialties || [])
+    ]
+      .filter(Boolean)
+      .join(' ') 
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+    
+    // Check if query appears anywhere in searchable text
+    const matchesSearch = !query || searchableText.includes(query);
+    
+    // Category filter - Direct match with your mock data categories
+    let matchesCategory = true;
+    if (filters.category && filters.category !== 'All') {
+      matchesCategory = store.category === filters.category;
+    }
     
     // Open only filter
     const matchesOpen = !filters.openOnly || store.isOpen;
@@ -78,6 +149,17 @@ export default function HomeScreen({ navigation }) {
     
     return matchesSearch && matchesCategory && matchesOpen && matchesSpecials;
   });
+
+  // Debug log when filters change
+  useEffect(() => {
+    if (filters.category) {
+      console.log('🔍 Active filter:', filters.category);
+      console.log('📊 Filtered results:', filteredStores.length);
+      if (filteredStores.length > 0) {
+        console.log('Sample filtered:', filteredStores.slice(0, 3).map(s => s.name));
+      }
+    }
+  }, [filters, filteredStores.length]);
 
   const cartItemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -96,83 +178,136 @@ export default function HomeScreen({ navigation }) {
         {/* Welcome Section */}
         <View style={styles.welcomeContainer}>
           <Text style={styles.welcomeText}>
-            Discover the best deals in {selectedLocation || 'your area'}
+            Discover the best deals in {defaultAddress?.city || 'your area'}
           </Text>
           <Text style={styles.subText}>
             Browse flyers and shop from local retailers
           </Text>
+          <Button
+            mode="contained"
+            style={styles.leafletsBtn}
+            onPress={() => navigation.navigate('Leaflets')}
+          >
+            Browse Leaflets
+          </Button>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.quickActionsContainer}>
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            onPress={() => navigation.navigate('OrderTracking')}
+          >
+            <Ionicons name="receipt-outline" size={24} color="#007AFF" />
+            <Text style={styles.quickActionText}>Track Orders</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.quickActionButton}
+            onPress={() => navigation.navigate('OrderHistory')}
+          >
+            <Ionicons name="time-outline" size={24} color="#007AFF" />
+            <Text style={styles.quickActionText}>Order History</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <TouchableOpacity 
-            style={styles.searchBar} 
-            onPress={() => navigation.navigate('ProductSearch')}
-          >
-            <Ionicons name="search" size={20} color="#666" />
-            <Text style={styles.searchText}>Search stores, products, deals...</Text>
-            <TouchableOpacity 
-              style={styles.mapButton}
-              onPress={() => navigation.navigate('StoreMap')}
-            >
-              <Ionicons name="map" size={20} color={COLORS.primary} />
-            </TouchableOpacity>
-          </TouchableOpacity>
+          <View style={styles.searchRow}>
+            <Searchbar
+              placeholder="Search stores, products, deals..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={styles.searchBar}
+            />
+            <IconButton
+              icon="tune"
+              size={24}
+              iconColor={COLORS.primary}
+              style={styles.filterButton}
+              onPress={() => setShowFilters(true)}
+            />
+          </View>
         </View>
 
         {/* Quick Stats */}
         <View style={styles.statsContainer}>
-          <TouchableOpacity 
-            style={styles.statCard}
-            onPress={() => navigation.navigate('StoreFinder')}
-          >
+          <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stores.length}</Text>
             <Text style={styles.statLabel}>Stores Available</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.statCard}
-            onPress={() => navigation.navigate('DailyDeals')}
-          >
+          </View>
+          <View style={styles.statCard}>
             <Text style={styles.statNumber}>50+</Text>
             <Text style={styles.statLabel}>Daily Deals</Text>
-          </TouchableOpacity>
+          </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>Free</Text>
             <Text style={styles.statLabel}>Delivery*</Text>
           </View>
         </View>
 
-        {/* Featured Stores */}
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Featured Stores & Deals</Text>
-          <FlyerGrid 
-            stores={filteredStores} 
-            onStorePress={(store) => 
-              navigation.navigate('StoreDetail', { store, storeName: store.name })
-            }
-          />
-        </View>
-
         {/* Categories */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Shop by Category</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {[
-              { name: 'Food', icon: 'restaurant-outline' },
-              { name: 'Clothing', icon: 'shirt-outline' },
-              { name: 'Electronics', icon: 'phone-portrait-outline' },
-              { name: 'Health', icon: 'medical-outline' }
-            ].map((category) => (
+            {['All', 'Food', 'Clothing', 'Electronics'].map((category) => (
               <TouchableOpacity 
-                key={category.name} 
-                style={styles.categoryCard}
-                onPress={() => handleCategoryPress(category.name)}
+                key={category} 
+                style={[
+                  styles.categoryCard,
+                  filters.category === category && styles.categoryCardActive
+                ]}
+                onPress={() => {
+                  console.log('🔘 Category button clicked:', category);
+                  setFilters({ ...filters, category });
+                }}
               >
-                <Ionicons name={category.icon} size={30} color={COLORS.primary} />
-                <Text style={styles.categoryText}>{category.name}</Text>
+                <Ionicons 
+                  name="storefront-outline" 
+                  size={30} 
+                  color={filters.category === category ? COLORS.white : COLORS.primary} 
+                />
+                <Text style={[
+                  styles.categoryText,
+                  filters.category === category && styles.categoryTextActive
+                ]}>{category}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
+        </View>
+
+        {/* Featured Stores */}
+        <View style={styles.sectionContainer}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Stores & Deals</Text>
+            <Text style={styles.resultsCount}>
+              {filteredStores.length} {filteredStores.length === 1 ? 'store' : 'stores'}
+            </Text>
+          </View>
+          {filteredStores.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="search-outline" size={48} color={COLORS.lightGray} />
+              <Text style={styles.emptyText}>No stores found</Text>
+              <Text style={styles.emptySubtext}>
+                {filters.category ? `Try selecting "All" or a different category` : 'Try adjusting your search'}
+              </Text>
+              {filters.category && (
+                <TouchableOpacity 
+                  style={styles.resetButton}
+                  onPress={() => setFilters({})}
+                >
+                  <Text style={styles.resetButtonText}>Clear Filters</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            <FlyerGrid 
+              stores={filteredStores} 
+              onStorePress={(store) => 
+                navigation.navigate('StoreDetail', { store, storeName: store.name })
+              }
+            />
+          )}
         </View>
       </ScrollView>
 
@@ -212,6 +347,30 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  quickActionButton: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    marginHorizontal: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  quickActionText: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
+    textAlign: 'center',
+  },
   welcomeText: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -223,6 +382,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.gray,
     textAlign: 'center',
+    marginBottom: 10,
+  },
+  leafletsBtn: {
+    marginTop: 10,
+    backgroundColor: COLORS.primary,
   },
   searchContainer: {
     paddingHorizontal: 16,
@@ -269,12 +433,21 @@ const styles = StyleSheet.create({
   sectionContainer: {
     marginBottom: 20,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.primary,
-    paddingHorizontal: 16,
-    marginBottom: 10,
+  },
+  resultsCount: {
+    fontSize: 14,
+    color: COLORS.gray,
   },
   categoryCard: {
     backgroundColor: COLORS.white,
@@ -284,12 +457,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
     width: 100,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  categoryCardActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   categoryText: {
     fontSize: 12,
     color: COLORS.gray,
     marginTop: 8,
     textAlign: 'center',
+    fontWeight: '600',
+  },
+  categoryTextActive: {
+    color: COLORS.white,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.gray,
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: COLORS.gray,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  resetButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+  },
+  resetButtonText: {
+    color: COLORS.white,
+    fontWeight: '600',
   },
   fab: {
     position: 'absolute',

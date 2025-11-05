@@ -5,13 +5,15 @@ import {
   Modal,
   TouchableOpacity,
   StyleSheet,
-  Image,
   ScrollView,
   Dimensions
 } from 'react-native';
+import ImageWithFallback from '../common/ImageWithFallback';
+import { getImageForProduct } from '../../utils/imageHelper';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../../context/CartContext';
 import { useFavorites } from '../../context/FavoritesContext';
+import { unsplashService, imageCache, getOptimizedImageUrl } from '../../services/unsplashApi';
 
 const { width } = Dimensions.get('window');
 
@@ -67,10 +69,30 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             {/* Product Image */}
             <View style={styles.imageContainer}>
-              <Image
-                source={{ uri: product.image }}
+              <ImageWithFallback
+                source={{ uri: product.image || getImageForProduct(product) }}
+                loader={async () => {
+                  const key = `product:${product.name}::${product.category}`;
+                  if (imageCache.has(key)) {
+                    const cached = imageCache.get(key);
+                    const url = cached.url || cached.thumb || cached.small || null;
+                    return getOptimizedImageUrl(url, 900, 600, 90) || url;
+                  }
+                  try {
+                    const img = await unsplashService.getProductImages(product.name || '', product.category || '');
+                    if (img) {
+                      imageCache.set(key, img);
+                      const raw = img.url || img.downloadUrl || img.small || img.thumb || null;
+                      return getOptimizedImageUrl(raw, 900, 600, 90) || raw;
+                    }
+                  } catch (e) {
+                    // ignore
+                  }
+                  return null;
+                }}
                 style={styles.productImage}
                 resizeMode="cover"
+                fallbackIcon="image"
               />
               {product.isSpecial && (
                 <View style={styles.specialBadge}>
@@ -85,9 +107,9 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
               <Text style={styles.productCategory}>{product.category}</Text>
               
               <View style={styles.priceContainer}>
-                <Text style={styles.currentPrice}>R{product.price.toFixed(2)}</Text>
+                <Text style={styles.currentPrice}>R{(product.price || 0).toFixed(2)}</Text>
                 {product.originalPrice && product.originalPrice > product.price && (
-                  <Text style={styles.originalPrice}>R{product.originalPrice.toFixed(2)}</Text>
+                  <Text style={styles.originalPrice}>R{(product.originalPrice || 0).toFixed(2)}</Text>
                 )}
               </View>
 
@@ -146,7 +168,7 @@ const ProductDetailModal = ({ visible, product, onClose }) => {
 
             <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
               <Text style={styles.addToCartText}>
-                Add to Cart - R{(product.price * quantity).toFixed(2)}
+                Add to Cart - R{((product.price || 0) * quantity).toFixed(2)}
               </Text>
             </TouchableOpacity>
           </View>

@@ -10,15 +10,29 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/colors';
 
 export default function OrderConfirmationScreen({ route, navigation }) {
-  const { orderId, total, deliveryAddress, storeGroups } = route.params;
+  const { orderId, total, deliveryAddress, storeGroups } = route.params || {};
 
   const handleContinueShopping = () => {
-    navigation.navigate('Home');
+    navigation.navigate('Main');
   };
 
   const handleViewOrders = () => {
     navigation.navigate('OrderHistory');
   };
+
+  const handleChatWithDriver = () => {
+    // For now, we'll navigate to a placeholder since we don't have driverId yet
+    // In a real app, you'd get the driverId from the order data
+    navigation.navigate('CustomerChat', { 
+      orderId: orderId,
+      driverId: 'placeholder' // This would be the actual driver ID
+    });
+  };
+
+  // Handle undefined values
+  const safeTotal = total || 0;
+  const safeDeliveryAddress = deliveryAddress || 'Address not provided';
+  const safeStoreGroups = storeGroups || {};
 
   return (
     <View style={styles.container}>
@@ -44,11 +58,11 @@ export default function OrderConfirmationScreen({ route, navigation }) {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Total Amount:</Text>
-              <Text style={styles.detailValue}>R{total.toFixed(2)}</Text>
+              <Text style={styles.detailValue}>R{safeTotal.toFixed(2)}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Delivery Address:</Text>
-              <Text style={styles.detailValue}>{deliveryAddress}</Text>
+              <Text style={styles.detailValue}>{safeDeliveryAddress}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Estimated Delivery:</Text>
@@ -61,19 +75,19 @@ export default function OrderConfirmationScreen({ route, navigation }) {
         <Card style={styles.section}>
           <Card.Title title="Order Items" />
           <Card.Content>
-            {Object.entries(storeGroups).map(([storeId, group]) => (
+            {Object.entries(safeStoreGroups).map(([storeId, group]) => (
               <View key={storeId} style={styles.storeGroup}>
                 <Text style={styles.storeName}>{group.storeName}</Text>
                 {group.items.map((item) => (
                   <View key={`${item.id}-${item.storeId}`} style={styles.orderItem}>
                     <Text style={styles.itemName}>{item.name}</Text>
                     <Text style={styles.itemDetails}>
-                      {item.quantity}x R{item.price.toFixed(2)}
+                      {item.quantity}x R{(item.price || 0).toFixed(2)}
                     </Text>
                   </View>
                 ))}
                 <Text style={styles.storeSubtotal}>
-                  Subtotal: R{group.subtotal.toFixed(2)}
+                  Subtotal: R{(group.subtotal || 0).toFixed(2)}
                 </Text>
               </View>
             ))}
@@ -115,6 +129,15 @@ export default function OrderConfirmationScreen({ route, navigation }) {
           contentStyle={styles.buttonContent}
         >
           View Order History
+        </Button>
+        <Button
+          mode="outlined"
+          onPress={handleChatWithDriver}
+          style={[styles.secondaryButton, styles.chatButton]}
+          contentStyle={styles.buttonContent}
+        >
+          <Ionicons name="chatbubble-outline" size={20} color={COLORS.primary} style={{ marginRight: 8 }} />
+          Chat with Driver
         </Button>
         <Button
           mode="contained"
@@ -240,6 +263,11 @@ const styles = StyleSheet.create({
   secondaryButton: {
     borderColor: COLORS.primary,
     flex: 1,
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonContent: {
     height: 48,

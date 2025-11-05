@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   Image,
   TouchableOpacity,
 } from 'react-native';
@@ -12,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ProductGrid from '../components/store/ProductGrid';
 import StoreHeader from '../components/store/StoreHeader';
 import { useCart } from '../context/CartContext';
-import { getStoreProducts } from '../data/mockData';
+import { getStoreProducts, generateProductsForStore } from '../data/mockData';
 import { firebaseService } from '../services/firebase';
 import { COLORS } from '../styles/colors';
 
@@ -25,25 +24,33 @@ export default function StoreDetailScreen({ route, navigation }) {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        // Try Firebase first, fallback to mock data
+        // Try Firebase first, then fallback to local generated data
         const storeProducts = await firebaseService.products.getByStore(store.id);
-        setProducts(storeProducts);
+        if (!storeProducts || (Array.isArray(storeProducts) && storeProducts.length === 0)) {
+          // If store isn't in mockStores, generate products from the store's category
+          const generated = generateProductsForStore(store, 24);
+          setProducts(generated);
+        } else {
+          setProducts(storeProducts);
+        }
       } catch (error) {
         console.error('Error loading products:', error);
-        // Fallback to mock data
-        const fallbackProducts = getStoreProducts(store.id);
-        setProducts(fallbackProducts);
+        // Fallback to generated data
+        const generated = generateProductsForStore(store, 24);
+        setProducts(generated);
       }
     };
     
     loadProducts();
   }, [store.id]);
 
-  const categories = ['All', 'Specials', 'Fresh Produce', 'Meat', 'Dairy', 'Bakery'];
-  
-  const filteredProducts = selectedCategory === 'All' 
-    ? products 
-    : products.filter(product => product.category === selectedCategory);
+  const categories = ['All', 'Specials'];
+
+  const filteredProducts = selectedCategory === 'All'
+    ? products
+    : selectedCategory === 'Specials'
+      ? products.filter(product => product.isSpecial)
+      : products;
 
   const handleAddToCart = (product) => {
     addToCart({
@@ -56,91 +63,89 @@ export default function StoreDetailScreen({ route, navigation }) {
     });
   };
 
+  const Header = () => (
+    <>
+      <StoreHeader store={store} />
+
+      <View style={styles.storeInfo}>
+        <View style={styles.infoRow}>
+          <Ionicons name="time-outline" size={16} color={COLORS.gray} />
+          <Text style={styles.infoText}>
+            Delivery: {store.deliveryTime || 'Same day for food items'}
+          </Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="location-outline" size={16} color={COLORS.gray} />
+          <Text style={styles.infoText}>
+            Serves: {store.location}
+          </Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="star" size={16} color={COLORS.warning} />
+          <Text style={styles.infoText}>
+            {store.rating} ({store.reviews} reviews)
+          </Text>
+        </View>
+      </View>
+
+      {store.promotions && store.promotions.length > 0 && (
+        <View style={styles.promotionsContainer}>
+          <Text style={styles.sectionTitle}>Current Promotions</Text>
+          {store.promotions.map((promo, index) => (
+            <View key={index} style={styles.promoCard}>
+              <Ionicons name="pricetag-outline" size={20} color={COLORS.success} />
+              <Text style={styles.promoText}>{promo}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.categoryContainer}>
+        <Text style={styles.sectionTitle}>Browse Products</Text>
+        <View style={styles.categoryChipsRow}>
+          {categories.map((category) => (
+            <Chip
+              key={category}
+              mode="outlined"
+              style={[
+                styles.categoryChip,
+                selectedCategory === category && styles.selectedCategoryChip
+              ]}
+              textStyle={[
+                styles.categoryChipText,
+                selectedCategory === category && styles.selectedCategoryChipText
+              ]}
+              onPress={() => setSelectedCategory(category)}
+            >
+              {category}
+            </Chip>
+          ))}
+        </View>
+      </View>
+    </>
+  );
+
+  const EmptyComponent = () => (
+    <View style={styles.emptyState}>
+      <Ionicons name="basket-outline" size={50} color={COLORS.gray} />
+      <Text style={styles.emptyStateText}>
+        No products found in {selectedCategory}
+      </Text>
+      <Text style={styles.emptyStateSubText}>
+        Try selecting a different category
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <ScrollView>
-        {/* Store Header */}
-        <StoreHeader store={store} />
-
-        {/* Store Info */}
-        <View style={styles.storeInfo}>
-          <View style={styles.infoRow}>
-            <Ionicons name="time-outline" size={16} color={COLORS.gray} />
-            <Text style={styles.infoText}>
-              Delivery: {store.deliveryTime || 'Same day for food items'}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="location-outline" size={16} color={COLORS.gray} />
-            <Text style={styles.infoText}>
-              Serves: {store.location}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="star" size={16} color={COLORS.warning} />
-            <Text style={styles.infoText}>
-              {store.rating} ({store.reviews} reviews)
-            </Text>
-          </View>
-        </View>
-
-        {/* Current Promotions */}
-        {store.promotions && store.promotions.length > 0 && (
-          <View style={styles.promotionsContainer}>
-            <Text style={styles.sectionTitle}>Current Promotions</Text>
-            {store.promotions.map((promo, index) => (
-              <View key={index} style={styles.promoCard}>
-                <Ionicons name="pricetag-outline" size={20} color={COLORS.success} />
-                <Text style={styles.promoText}>{promo}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Category Filter */}
-        <View style={styles.categoryContainer}>
-          <Text style={styles.sectionTitle}>Browse Products</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {categories.map((category) => (
-              <Chip
-                key={category}
-                style={[
-                  styles.categoryChip,
-                  selectedCategory === category && styles.selectedCategoryChip
-                ]}
-                textStyle={[
-                  styles.categoryChipText,
-                  selectedCategory === category && styles.selectedCategoryChipText
-                ]}
-                onPress={() => setSelectedCategory(category)}
-              >
-                {category}
-              </Chip>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Products Grid */}
-        <View style={styles.productsContainer}>
-          <ProductGrid 
-            products={filteredProducts}
-            onAddToCart={handleAddToCart}
-          />
-        </View>
-
-        {/* Empty State */}
-        {filteredProducts.length === 0 && (
-          <View style={styles.emptyState}>
-            <Ionicons name="basket-outline" size={50} color={COLORS.gray} />
-            <Text style={styles.emptyStateText}>
-              No products found in {selectedCategory}
-            </Text>
-            <Text style={styles.emptyStateSubText}>
-              Try selecting a different category
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+      <ProductGrid
+        products={filteredProducts}
+        onAddToCart={handleAddToCart}
+        ListHeaderComponent={<Header />}
+        ListEmptyComponent={EmptyComponent}
+        extraData={selectedCategory}
+      />
 
       {/* Contact Store Button */}
       <View style={styles.contactContainer}>
@@ -210,15 +215,23 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 10,
   },
+  categoryChipsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   categoryChip: {
-    marginRight: 8,
+    flex: 1,
+    marginHorizontal: 6,
     backgroundColor: COLORS.lightGray,
+    justifyContent: 'center',
   },
   selectedCategoryChip: {
     backgroundColor: COLORS.primary,
   },
   categoryChipText: {
     color: COLORS.gray,
+    textAlign: 'center',
   },
   selectedCategoryChipText: {
     color: COLORS.white,

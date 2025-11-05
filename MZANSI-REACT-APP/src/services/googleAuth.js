@@ -1,7 +1,6 @@
 
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -23,9 +22,9 @@ const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
  * The proxy redirect URI resolves to: https://auth.expo.io/@mn15loner/mzansi-react
  * This must be added to Firebase Console > Authentication > Google provider > Authorized redirect URIs
  */
-const redirectUri = makeRedirectUri({
-  useProxy: true,
-});
+// Force the Expo AuthSession proxy redirect URI so Google sees a compliant https:// URL
+// Replace owner/slug if your Expo account or project are different
+const redirectUri = 'https://auth.expo.io/@mn15loner/mzansi-react';
 
 /**
  * Hook to manage Google authentication flow
@@ -39,18 +38,16 @@ const redirectUri = makeRedirectUri({
  * @returns {Object} Authentication request, response, and prompt function
  */
 export const useGoogleAuth = () => {
+  // Request an ID token explicitly and standard OIDC scopes
   const [request, response, promptAsync] = Google.useAuthRequest(
     {
-      // Use only the Web Client ID from Google Cloud Console
       clientId: GOOGLE_WEB_CLIENT_ID,
-      // Force Google account chooser to appear every time
-      // This ensures users can select which account to use, even if already signed in
       prompt: 'select_account',
+      responseType: 'id_token',
+      scopes: ['openid', 'profile', 'email'],
     },
     {
-      // Always use Expo's AuthSession proxy - never use exp:// redirects
       useProxy: true,
-      // Explicitly set the redirect URI to prevent fallback to exp:// URIs
       redirectUri: redirectUri,
     }
   );
@@ -98,17 +95,16 @@ export const signInWithGoogle = async (promptAsync) => {
       };
     }
 
-    // Get the ID token from Google
-    const { id_token } = result.params;
+    // Extract ID token - different SDK versions may place it on result.params or result.authentication
+    const idToken = result.params?.id_token || result.authentication?.idToken || result.authentication?.id_token;
 
-    if (!id_token) {
-      throw new Error('No ID token received from Google');
+    if (!idToken) {
+      console.error('Full response object:', result);
+      throw new Error('No ID token received from Google. Make sure responseType: "id_token" is set and the Web Client ID is correct.');
     }
 
-    // Create Firebase credential with Google ID token
-    const credential = GoogleAuthProvider.credential(id_token);
-
-    // Sign in to Firebase with the Google credential
+    // Create Firebase credential with Google ID token and sign in
+    const credential = GoogleAuthProvider.credential(idToken);
     const userCredential = await signInWithCredential(auth, credential);
     const firebaseUser = userCredential.user;
 

@@ -1,31 +1,66 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
   onAuthStateChanged,
-  updateProfile 
+  updateProfile,
+  deleteUser
 } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { auth, db } from '../services/firebase';
 import { firebaseService } from '../services/firebase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { doc, getDoc } from 'firebase/firestore';
+import { Platform, AppState } from 'react-native';
+import AsyncStoragePackage from '@react-native-async-storage/async-storage';
+let AsyncStorage = AsyncStoragePackage;
+
+// For web compatibility
+if (Platform.OS === 'web') {
+  import('@react-native-async-storage/async-storage').then(module => {
+    AsyncStorage = module.default;
+  }).catch(error => {
+    console.error('Error loading AsyncStorage for web:', error);
+  });
+}
 import { signInWithGoogle } from '../services/googleAuth';
 import { sendPasswordReset } from '../services/passwordResetService';
+
+// Session timeout configuration (3 hours in milliseconds)
+const SESSION_TIMEOUT = 3 * 60 * 60 * 1000; // 3 hours
+const SESSION_KEYS = {
+  LAST_ACTIVITY: 'session_last_activity',
+  SESSION_START: 'session_start_time'
+};
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true);
 
+  // Track latest user in a ref so the auth listener can consult it without creating
+  // a dependency cycle that re-subscribes on every user change.
+  const currentUserRef = useRef(null);
+
+  // Session timeout refs
+  const inactivityTimerRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
+
   useEffect(() => {
-    // Load user from AsyncStorage first for faster startup
+    currentUserRef.current = user;
+  }, [user]);
+
+  // Load stored user only once on mount (avoids resetting `user` repeatedly)
+  useEffect(() => {
     const loadStoredUser = async () => {
       try {
         const storedUser = await AsyncStorage.getItem('user');
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
+          const parsed = JSON.parse(storedUser);
+          // Only set if different uid to avoid unnecessary state churn
+          setUser(prev => (prev && prev.uid === parsed.uid ? prev : parsed));
         }
       } catch (error) {
         console.error('Error loading stored user:', error);
@@ -33,22 +68,159 @@ export const AuthProvider = ({ children }) => {
     };
 
     loadStoredUser();
+  }, []);
 
+  // Session timeout functions
+  const updateLastActivity = async () => {
+    const now = Date.now();
+    lastActivityRef.current = now;
+    try {
+      await AsyncStorage.setItem(SESSION_KEYS.LAST_ACTIVITY, now.toString());
+    } catch (error) {
+      console.error('Error updating last activity:', error);
+    }
+  };
+
+  const checkSessionValidity = async () => {
+    try {
+      const lastActivityStr = await AsyncStorage.getItem(SESSION_KEYS.LAST_ACTIVITY);
+      if (lastActivityStr) {
+        const lastActivity = parseInt(lastActivityStr, 10);
+        const now = Date.now();
+        if (now - lastActivity > SESSION_TIMEOUT) {
+          console.log('Session expired, logging out...');
+          await autoLogout();
+          return false;
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Error checking session validity:', error);
+      return true; // Default to valid if error
+    }
+  };
+
+  const autoLogout = async () => {
+    try {
+      console.log('Auto-logging out due to inactivity...');
+      setUser(null);
+      setUserProfile(null);
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem(SESSION_KEYS.LAST_ACTIVITY);
+      await AsyncStorage.removeItem(SESSION_KEYS.SESSION_START);
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error during auto logout:', error);
+    }
+  };
+
+  const startInactivityTimer = () => {
+    // Clear existing timer
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+
+    // Start new timer
+    inactivityTimerRef.current = setTimeout(async () => {
+      console.log('Inactivity timeout reached');
+      await checkSessionValidity();
+      // Restart timer to check again
+      startInactivityTimer();
+    }, SESSION_TIMEOUT);
+  };
+
+  const resetInactivityTimer = () => {
+    updateLastActivity();
+    startInactivityTimer();
+  };
+
+  // Initialize session on user login
+  const initializeSession = async () => {
+    const now = Date.now();
+    lastActivityRef.current = now;
+    try {
+      await AsyncStorage.setItem(SESSION_KEYS.LAST_ACTIVITY, now.toString());
+      await AsyncStorage.setItem(SESSION_KEYS.SESSION_START, now.toString());
+    } catch (error) {
+      console.error('Error initializing session:', error);
+    }
+    startInactivityTimer();
+  };
+
+  // App state listener for background/foreground transitions
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'active' && user) {
+        // App came to foreground, check session validity
+        const isValid = await checkSessionValidity();
+        if (isValid) {
+          resetInactivityTimer();
+        }
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [user]);
+
+  // Start session when user logs in
+  useEffect(() => {
+    if (user) {
+      initializeSession();
+    } else {
+      // Clear timer when user logs out
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+        inactivityTimerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, [user]);
+
+  // Subscribe to Firebase auth changes once (on mount)
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
+        console.log('Auth state changed - firebaseUser:', firebaseUser?.uid);
         if (firebaseUser) {
-          // Get additional user data from Firestore
-          const userData = await firebaseService.users.get(firebaseUser.uid);
-          const userProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            ...userData
-          };
-          setUser(userProfile);
-          await AsyncStorage.setItem('user', JSON.stringify(userProfile));
+          // Only fetch user data if we don't already have the same user
+          if (!currentUserRef.current || currentUserRef.current.uid !== firebaseUser.uid) {
+            console.log('Fetching user data from Firestore for:', firebaseUser.uid);
+
+            const userDocRef = doc(db, 'users', firebaseUser.uid);
+            const snap = await getDoc(userDocRef);
+            const userData = snap && snap.exists() ? snap.data() : null;
+
+            if (userData) {
+              const combinedProfile = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                ...userData
+              };
+
+              console.log('Setting user profile:', combinedProfile);
+
+              setUser(combinedProfile);
+              setUserProfile(userData);
+              await AsyncStorage.setItem('user', JSON.stringify(combinedProfile));
+            } else {
+              console.log('No user data found in Firestore');
+              setUser(null);
+              setUserProfile(null);
+              await AsyncStorage.removeItem('user');
+            }
+          }
         } else {
+          console.log('No firebase user - setting user to null');
           setUser(null);
+          setUserProfile(null);
           await AsyncStorage.removeItem('user');
         }
       } catch (error) {
@@ -57,28 +229,52 @@ export const AuthProvider = ({ children }) => {
         try {
           const storedUser = await AsyncStorage.getItem('user');
           if (storedUser && !firebaseUser) {
-            // Keep stored user if Firebase is offline but we had a user
             setUser(JSON.parse(storedUser));
           }
         } catch (storageError) {
           console.error('Error accessing stored user:', storageError);
         }
       } finally {
-        if (initializing) {
-          setInitializing(false);
-        }
+        // Initialization complete on first event
+        setInitializing(false);
         setLoading(false);
       }
     });
 
     return unsubscribe;
-  }, [initializing]);
+  }, []);
 
   const login = async (email, password) => {
     try {
+      console.log('AuthContext login called with:', email);
       setLoading(true);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return { success: true, user: userCredential.user };
+      
+      console.log('Firebase auth successful, fetching user data...');
+      // Get additional user data from Firestore
+      const userData = await firebaseService.users.get(userCredential.user.uid);
+      console.log('User data from Firestore:', userData);
+      
+      if (!userData) {
+        console.error('No user data found in Firestore for:', userCredential.user.uid);
+        return { success: false, error: 'User profile not found. Please contact support.' };
+      }
+      
+      const userProfile = {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        displayName: userCredential.user.displayName,
+        ...userData
+      };
+      
+      console.log('Complete user profile:', userProfile);
+      console.log('User type:', userProfile.userType);
+      
+      // Set user immediately to prevent navigation issues
+      setUser(userProfile);
+      await AsyncStorage.setItem('user', JSON.stringify(userProfile));
+      
+      return { success: true, user: userProfile };
     } catch (error) {
       console.error('Login error:', error);
       let errorMessage = 'Login failed. Please try again.';
@@ -95,6 +291,9 @@ export const AuthProvider = ({ children }) => {
           break;
         case 'auth/too-many-requests':
           errorMessage = 'Too many failed attempts. Please try again later.';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password. Please check your credentials.';
           break;
         default:
           errorMessage = error.message;
@@ -129,6 +328,7 @@ export const AuthProvider = ({ children }) => {
         address: userData.address || '',
         city: userData.city || '',
         postalCode: userData.postalCode || '',
+        userType: userData.userType || 'customer', // Include userType
         createdAt: new Date().toISOString()
       };
 
@@ -266,8 +466,68 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const isAdmin = userProfile?.role === 'admin' || user?.role === 'admin';
+  
+  useEffect(() => {
+    try {
+      // Use lightweight logging to avoid console spam during renders
+      // eslint-disable-next-line no-console
+      console.log('AuthContext role check:', { userProfile, user, isAdmin });
+    } catch (e) {}
+  }, [userProfile, user, isAdmin]);
+
+  /**
+   * Delete User Account
+   * Permanently deletes the user's account and all associated data
+   * @returns {Promise<Object>} Result object with success status
+   */
+  const deleteAccount = async () => {
+    try {
+      if (!user) return { success: false, error: 'No user logged in' };
+      
+      setLoading(true);
+      
+      // Delete user data from Firestore first
+      try {
+        await firebaseService.users.delete(user.uid);
+      } catch (error) {
+        console.error('Error deleting user data from Firestore:', error);
+        // Continue with Firebase Auth deletion even if Firestore deletion fails
+      }
+      
+      // Delete the Firebase Auth user
+      await deleteUser(auth.currentUser);
+      
+      // Clear local state and storage
+      setUser(null);
+      await AsyncStorage.removeItem('user');
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Delete account error:', error);
+      let errorMessage = 'Failed to delete account. Please try again.';
+      
+      switch (error.code) {
+        case 'auth/requires-recent-login':
+          errorMessage = 'For security reasons, you need to sign in again before deleting your account.';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'User account not found.';
+          break;
+        default:
+          errorMessage = error.message || errorMessage;
+      }
+      
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     user,
+    userProfile,
+    isAdmin,
     loading,
     initializing,
     login,
@@ -276,6 +536,7 @@ export const AuthProvider = ({ children }) => {
     updateUserProfile,
     loginWithGoogle,
     requestPasswordReset,
+    deleteAccount,
     isAuthenticated: !!user
   };
 

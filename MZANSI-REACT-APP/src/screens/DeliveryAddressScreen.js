@@ -12,6 +12,7 @@ import { Card, Button, FAB, Chip } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../styles/colors';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../context/LocationContext';
 import { firebaseService } from '../services/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -19,10 +20,19 @@ export default function DeliveryAddressScreen({ navigation }) {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { updateLocation, updateUserLocation } = useLocation();
 
   useEffect(() => {
     loadAddresses();
   }, []);
+
+  // Reload addresses when this screen regains focus (e.g., after adding/editing)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadAddresses();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const loadAddresses = async () => {
     try {
@@ -73,49 +83,11 @@ export default function DeliveryAddressScreen({ navigation }) {
   };
 
   const handleAddAddress = () => {
-    navigation.navigate('AddEditAddress', { 
-      mode: 'add',
-      onSave: async (newAddress) => {
-        try {
-          // Save to Firebase first
-          const firebaseId = await saveAddressToFirebase(newAddress);
-          const addressWithId = { ...newAddress, id: firebaseId || Date.now().toString() };
-          
-          const updatedAddresses = [...addresses, addressWithId];
-          setAddresses(updatedAddresses);
-          
-          // Save to AsyncStorage as backup
-          await AsyncStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedAddresses));
-        } catch (error) {
-          console.error('Error adding address:', error);
-          Alert.alert('Error', 'Failed to save address. Please try again.');
-        }
-      }
-    });
+    navigation.navigate('AddEditAddress', { mode: 'add' });
   };
 
   const handleEditAddress = (address) => {
-    navigation.navigate('AddEditAddress', { 
-      mode: 'edit',
-      address,
-      onSave: async (updatedAddress) => {
-        try {
-          // Update in Firebase
-          await saveAddressToFirebase(updatedAddress, true, address.id);
-          
-          const updatedAddresses = addresses.map(addr => 
-            addr.id === address.id ? { ...updatedAddress, id: address.id } : addr
-          );
-          setAddresses(updatedAddresses);
-          
-          // Save to AsyncStorage as backup
-          await AsyncStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedAddresses));
-        } catch (error) {
-          console.error('Error updating address:', error);
-          Alert.alert('Error', 'Failed to update address. Please try again.');
-        }
-      }
-    });
+    navigation.navigate('AddEditAddress', { mode: 'edit', address });
   };
 
   const handleDeleteAddress = (addressId) => {
@@ -163,6 +135,21 @@ export default function DeliveryAddressScreen({ navigation }) {
       
       // Save to AsyncStorage as backup
       await AsyncStorage.setItem(`addresses_${user.uid}`, JSON.stringify(updatedAddresses));
+
+      // Also cache the selected default address and notify LocationContext so UI updates immediately
+      const defaultAddr = updatedAddresses.find(a => 
+        a.isDefault);
+      if (defaultAddr) {
+        try {
+          await AsyncStorage.setItem(`default_address_${user.uid}`, JSON.stringify(defaultAddr));
+        } catch (e) {
+          console.error('Error caching default address:', e);
+        }
+
+        const formatted = defaultAddr.formattedAddress || [defaultAddr.street, defaultAddr.city, defaultAddr.province].filter(Boolean).join(', ');
+        if (updateLocation) updateLocation(formatted);
+        if (updateUserLocation && defaultAddr.latitude && defaultAddr.longitude) updateUserLocation({ latitude: defaultAddr.latitude, longitude: defaultAddr.longitude });
+      }
     } catch (error) {
       console.error('Error setting default address:', error);
       Alert.alert('Error', 'Failed to set default address. Please try again.');

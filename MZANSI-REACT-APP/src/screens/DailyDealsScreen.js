@@ -15,6 +15,8 @@ import { productSearchService } from '../services/productSearchService';
 import { useCart } from '../context/CartContext';
 import { COLORS } from '../styles/colors';
 import EmptyState from '../components/common/EmptyState';
+import ImageWithFallback from '../components/common/ImageWithFallback';
+import { getImageForProduct } from '../utils/imageHelper';
 
 export default function DailyDealsScreen({ navigation }) {
   const [deals, setDeals] = useState([]);
@@ -60,7 +62,7 @@ export default function DailyDealsScreen({ navigation }) {
 
   const renderDealItem = ({ item: deal }) => (
     <TouchableOpacity style={styles.dealCard}>
-      <Image source={{ uri: deal.image }} style={styles.dealImage} />
+      <ImageWithFallback source={{ uri: deal.image }} style={styles.dealImage} />
       <View style={styles.dealContent}>
         <View style={styles.dealHeader}>
           <Text style={styles.dealTitle}>{deal.title}</Text>
@@ -99,8 +101,8 @@ export default function DailyDealsScreen({ navigation }) {
     }, null);
 
     return (
-      <View style={styles.productCard}>
-        <Image source={{ uri: product.image }} style={styles.productImage} />
+    <View style={styles.productCard}>
+      <ImageWithFallback source={{ uri: product.image || getImageForProduct(product) }} style={styles.productImage} />
         
         <View style={styles.productInfo}>
           <Text style={styles.productName}>{product.name}</Text>

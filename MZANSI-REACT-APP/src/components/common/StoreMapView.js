@@ -7,12 +7,12 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
 
-export default function StoreMapView({ stores, onStoreSelect, selectedStore }) {
+export default function StoreMapView({ stores, onStoreSelect, selectedStore, directionsToStore, onClearDirections }) {
   const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mapRegion, setMapRegion] = useState({
@@ -88,6 +88,92 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore }) {
     }
   };
 
+  // Directions polyline coordinates
+  const [routeCoords, setRouteCoords] = useState(null);
+
+  // Decode polyline (Google encoded polyline algorithm)
+  const decodePolyline = (encoded) => {
+    if (!encoded) return [];
+    const coords = [];
+    let index = 0, len = encoded.length;
+    let lat = 0, lng = 0;
+
+    while (index < len) {
+      let b, shift = 0, result = 0;
+      do {
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      const deltaLat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lat += deltaLat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      const deltaLon = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lng += deltaLon;
+
+      coords.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+    }
+    return coords;
+  };
+
+  // Fetch directions from Google Directions API and decode polyline
+  useEffect(() => {
+    const fetchDirections = async () => {
+      if (!directionsToStore || !userLocation) return;
+      try {
+        const key = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+        if (!key) {
+          console.warn('Google Maps API key not configured in EXPO_PUBLIC_GOOGLE_MAPS_API_KEY');
+          return;
+        }
+
+        const origin = `${userLocation.latitude},${userLocation.longitude}`;
+        const destination = `${directionsToStore.latitude},${directionsToStore.longitude}`;
+        const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=driving&key=${key}`;
+
+        const res = await fetch(url);
+        const json = await res.json();
+        if (json.routes && json.routes.length > 0) {
+          const encoded = json.routes[0].overview_polyline?.points;
+          const coords = decodePolyline(encoded);
+          setRouteCoords(coords);
+
+          // Fit map to route and user/store markers
+          const markers = [userLocation, { latitude: directionsToStore.latitude, longitude: directionsToStore.longitude }];
+          if (coords && coords.length > 0) {
+            const latitudes = coords.map(c => c.latitude).concat(markers.map(m => m.latitude));
+            const longitudes = coords.map(c => c.longitude).concat(markers.map(m => m.longitude));
+            const minLat = Math.min(...latitudes);
+            const maxLat = Math.max(...latitudes);
+            const minLng = Math.min(...longitudes);
+            const maxLng = Math.max(...longitudes);
+            const midLat = (minLat + maxLat) / 2;
+            const midLng = (minLng + maxLng) / 2;
+            setMapRegion({
+              latitude: midLat,
+              longitude: midLng,
+              latitudeDelta: (maxLat - minLat) * 1.5 || 0.0922,
+              longitudeDelta: (maxLng - minLng) * 1.5 || 0.0421,
+            });
+          }
+        } else {
+          console.warn('No routes found in Google Directions response', json);
+        }
+      } catch (error) {
+        console.error('Error fetching directions:', error);
+      }
+    };
+
+    fetchDirections();
+  }, [directionsToStore, userLocation]);
+
   const centerOnUserLocation = () => {
     if (userLocation) {
       setMapRegion({
@@ -154,6 +240,14 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore }) {
             </View>
           </Marker>
         ))}
+          {/* Route Polyline */}
+          {routeCoords && routeCoords.length > 0 && (
+            <Polyline
+              coordinates={routeCoords}
+              strokeColor={COLORS.primary}
+              strokeWidth={4}
+            />
+          )}
       </MapView>
 
       {/* Control Buttons */}
@@ -164,6 +258,17 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore }) {
         >
           <Ionicons name="locate" size={24} color={COLORS.primary} />
         </TouchableOpacity>
+        {routeCoords && (
+          <TouchableOpacity
+            style={[styles.controlButton, { marginTop: 0 }]}
+            onPress={() => {
+              setRouteCoords(null);
+              if (onClearDirections) onClearDirections();
+            }}
+          >
+            <Ionicons name="close" size={24} color={COLORS.primary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Legend */}

@@ -21,7 +21,7 @@ export default function OrderHistoryScreen({ navigation }) {
 
   useEffect(() => {
     fetchUserOrders();
-  }, [user]);
+  }, [user?.uid]);
 
   const fetchUserOrders = async () => {
     if (!user?.uid) {
@@ -68,13 +68,38 @@ export default function OrderHistoryScreen({ navigation }) {
     }
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-ZA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+  const formatDate = (order) => {
+    try {
+      // Handle different date field names and Firestore Timestamps
+      const dateValue = order.createdAt || order.orderDate || order.date;
+      if (!dateValue) return 'Date not available';
+      
+      // Convert Firestore Timestamp to Date if needed
+      const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
+      
+      return date.toLocaleDateString('en-ZA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Date not available';
+    }
+  };
+
+  // Convert Firestore Timestamps to serializable format for navigation
+  const serializeOrder = (order) => {
+    const serialized = { ...order };
+    
+    // Convert all Firestore Timestamps to ISO strings
+    Object.keys(serialized).forEach(key => {
+      if (serialized[key]?.toDate) {
+        serialized[key] = serialized[key].toDate().toISOString();
+      }
     });
+    
+    return serialized;
   };
 
   // Loading state
@@ -110,9 +135,9 @@ export default function OrderHistoryScreen({ navigation }) {
         <Text style={styles.emptySubtitle}>
           Your order history will appear here once you place your first order
         </Text>
-        <TouchableOpacity 
-          style={styles.shopNowButton} 
-          onPress={() => navigation.navigate('Main')}
+        <TouchableOpacity
+          style={styles.shopNowButton}
+          onPress={() => navigation.navigate('Main', { screen: 'Home' })}
         >
           <Text style={styles.shopNowButtonText}>Start Shopping</Text>
         </TouchableOpacity>
@@ -126,7 +151,7 @@ export default function OrderHistoryScreen({ navigation }) {
         {orders.map((order) => (
           <TouchableOpacity
             key={order.id}
-            onPress={() => navigation.navigate('OrderDetail', { order })}
+            onPress={() => navigation.navigate('OrderTracking', { orderId: order.id })}
           >
             <Card style={styles.orderCard}>
               <Card.Content>
@@ -134,7 +159,7 @@ export default function OrderHistoryScreen({ navigation }) {
                 <View style={styles.orderHeader}>
                   <View style={styles.orderInfo}>
                     <Text style={styles.orderId}>#{order.id}</Text>
-                    <Text style={styles.orderDate}>{formatDate(order.date)}</Text>
+                    <Text style={styles.orderDate}>{formatDate(order)}</Text>
                   </View>
                   <Chip
                     style={[styles.statusChip, { backgroundColor: getStatusColor(order.status) }]}
@@ -170,9 +195,21 @@ export default function OrderHistoryScreen({ navigation }) {
                   <Text style={styles.totalAmount}>
                     Total: R{order.total.toFixed(2)}
                   </Text>
-                  <View style={styles.viewMore}>
-                    <Text style={styles.viewMoreText}>View Details</Text>
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+                  <View style={styles.orderActions}>
+                    <TouchableOpacity
+                      style={styles.chatButton}
+                      onPress={() => navigation.navigate('CustomerChat', { 
+                        orderId: order.id, 
+                        driverId: order.driverId || 'placeholder' 
+                      })}
+                    >
+                      <Ionicons name="chatbubble-outline" size={16} color={COLORS.primary} />
+                      <Text style={styles.chatButtonText}>Chat</Text>
+                    </TouchableOpacity>
+                    <View style={styles.viewMore}>
+                      <Text style={styles.viewMoreText}>View Details</Text>
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.primary} />
+                    </View>
                   </View>
                 </View>
               </Card.Content>
@@ -335,6 +372,25 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
     paddingTop: 12,
+  },
+  orderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  chatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 12,
+    borderRadius: 16,
+    backgroundColor: COLORS.lightBlue,
+  },
+  chatButtonText: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '500',
   },
   totalAmount: {
     fontSize: 16,

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   View,
   Text,
@@ -9,10 +10,20 @@ import {
 import { TextInput, Button, Switch, HelperText } from 'react-native-paper';
 import { COLORS } from '../styles/colors';
 import { validators, sanitizers } from '../utils/validation';
+import AddressLocationPicker from '../components/common/AddressLocationPicker';
+import AddressMapPreview from '../components/common/AddressMapPreview';
+import { logError } from '../utils/errorLogger';
+import { firebaseService } from '../services/firebase';
+import { useAuth } from '../context/AuthContext';
+import { useLocation } from '../context/LocationContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AddEditAddressScreen({ route, navigation }) {
-  const { mode, address, onSave } = route.params;
+  const { mode, address } = route.params;
+  const { user } = useAuth();
+  const { updateLocation, updateUserLocation } = useLocation();
   const isEditMode = mode === 'edit';
+  const insets = useSafeAreaInsets();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -22,10 +33,15 @@ export default function AddEditAddressScreen({ route, navigation }) {
     postalCode: '',
     phone: '',
     isDefault: false,
+    latitude: null,
+    longitude: null,
+    formattedAddress: '',
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const addressPickerRef = useRef(null);
+  const [pickerSignal, setPickerSignal] = useState(0);
 
   useEffect(() => {
     if (isEditMode && address) {
@@ -83,12 +99,38 @@ export default function AddEditAddressScreen({ route, navigation }) {
         postalCode: sanitizers.postalCode(formData.postalCode),
         phone: formData.phone ? sanitizers.phone(formData.phone) : '',
         isDefault: formData.isDefault,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        formattedAddress: formData.formattedAddress,
       };
 
-      onSave(sanitizedData);
+      // Save directly to backend (Firebase) — DeliveryAddressScreen reloads on focus
+      if (isEditMode && address?.id) {
+        await firebaseService.addresses.update(address.id, sanitizedData);
+      } else {
+        await firebaseService.addresses.create(user.uid, sanitizedData);
+      }
+
+      // If this address was marked as default, cache it and notify LocationContext so Home/Checkout update quickly.
+      if (sanitizedData.isDefault) {
+        const defaultToCache = {
+          ...sanitizedData,
+          id: address?.id || null
+        };
+        try {
+          await AsyncStorage.setItem(`default_address_${user.uid}`, JSON.stringify(defaultToCache));
+        } catch (e) {
+          console.error('Error caching default address after save:', e);
+        }
+
+        const formatted = defaultToCache.formattedAddress || [defaultToCache.street, defaultToCache.city, defaultToCache.province].filter(Boolean).join(', ');
+        if (updateLocation) updateLocation(formatted);
+        if (updateUserLocation && defaultToCache.latitude && defaultToCache.longitude) updateUserLocation({ latitude: defaultToCache.latitude, longitude: defaultToCache.longitude });
+      }
+
       navigation.goBack();
     } catch (error) {
-      console.error('Error saving address:', error);
+      logError('AddEditAddressScreen - Error saving address', error);
       Alert.alert('Error', 'Failed to save address. Please try again.');
     } finally {
       setLoading(false);
@@ -114,9 +156,11 @@ export default function AddEditAddressScreen({ route, navigation }) {
     'Western Cape'
   ];
 
+  const scrollStyle = [styles.scrollContainer, { paddingBottom: 20 }]; // Reduced padding since buttons are now below
+
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollContainer}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={scrollStyle}>
         <Text style={styles.headerText}>
           {isEditMode ? 'Edit your delivery address' : 'Add a new delivery address'}
         </Text>
@@ -199,6 +243,40 @@ export default function AddEditAddressScreen({ route, navigation }) {
           {errors.phone}
         </HelperText>
 
+        {/* Address Location Picker */}
+        <AddressLocationPicker
+          onAddressSelect={(addressData) => {
+            setFormData(prev => ({
+              ...prev,
+              street: addressData.street,
+              city: addressData.city,
+              province: addressData.province,
+              postalCode: addressData.postalCode,
+              latitude: addressData.latitude,
+              longitude: addressData.longitude,
+              formattedAddress: addressData.formattedAddress,
+            }));
+          }}
+          currentAddress={formData.formattedAddress}
+          ref={addressPickerRef}
+          pickerSignal={pickerSignal}
+        />
+
+        {/* Map Preview */}
+        <AddressMapPreview
+          address={formData}
+          onEdit={() => {
+            // Trigger the address location picker via ref (primary) and signal (fallback)
+            if (addressPickerRef.current && addressPickerRef.current.open) {
+              addressPickerRef.current.open();
+            } else {
+              setPickerSignal(s => s + 1);
+            }
+            // also always increment the signal to be safe
+            setPickerSignal(s => s + 1);
+          }}
+        />
+
         <View style={styles.switchContainer}>
           <Text style={styles.switchLabel}>Set as default address</Text>
           <Switch
@@ -207,28 +285,28 @@ export default function AddEditAddressScreen({ route, navigation }) {
             color={COLORS.primary}
           />
         </View>
-
-        <View style={styles.buttonContainer}>
-          <Button
-            mode="outlined"
-            onPress={() => navigation.goBack()}
-            style={styles.cancelButton}
-            disabled={loading}
-          >
-            Cancel
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleSave}
-            style={styles.saveButton}
-            loading={loading}
-            disabled={loading}
-          >
-            {isEditMode ? 'Update Address' : 'Save Address'}
-          </Button>
-        </View>
       </ScrollView>
-    </View>
+
+      <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 12, paddingHorizontal: 16 }]}>
+        <Button
+          mode="outlined"
+          onPress={() => navigation.goBack()}
+          style={styles.cancelButton}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button
+          mode="contained"
+          onPress={handleSave}
+          style={styles.saveButton}
+          loading={loading}
+          disabled={loading}
+        >
+          {isEditMode ? 'Update Address' : 'Save Address'}
+        </Button>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -240,6 +318,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     padding: 16,
+    paddingBottom: 72, // extra space so buttons sit higher and are not hidden by keyboard
   },
   headerText: {
     fontSize: 16,
@@ -265,8 +344,8 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 32,
-    marginBottom: 20,
+    marginTop: 12, // move buttons slightly upward
+    marginBottom: 12,
   },
   cancelButton: {
     flex: 1,

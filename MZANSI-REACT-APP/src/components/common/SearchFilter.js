@@ -19,7 +19,6 @@ const CATEGORIES = [
   'Clothing',
   'Wholesale',
   'Electronics',
-  'Health',
 ];
 
 const PRICE_RANGES = [

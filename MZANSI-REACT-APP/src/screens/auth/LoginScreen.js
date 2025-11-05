@@ -13,19 +13,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { useGoogleAuth } from '../../services/googleAuth';
-import GoogleSignInButton from '../../components/GoogleSignInButton';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  const [googleLoading, setGoogleLoading] = useState(false);
   const { login, loading, loginWithGoogle } = useAuth();
   
-  // Google authentication hook
-  const { request, response, promptAsync } = useGoogleAuth();
 
   const validateForm = () => {
     const newErrors = {};
@@ -54,6 +49,7 @@ const LoginScreen = ({ navigation }) => {
     if (!result.success) {
       Alert.alert('Login Failed', result.error);
     }
+
   };
 
   const handleForgotPassword = () => {
@@ -65,34 +61,14 @@ const LoginScreen = ({ navigation }) => {
    * Handle Google Sign-In Response
    * This effect listens for the Google authentication response
    */
-  useEffect(() => {
-    if (response?.type === 'success') {
-      handleGoogleSignIn();
-    }
-  }, [response]);
+  // Google flow removed — no-op
 
   /**
    * Handle Google Sign-In
    * Processes the Google authentication and handles errors
    */
   const handleGoogleSignIn = async () => {
-    try {
-      setGoogleLoading(true);
-      const result = await loginWithGoogle(promptAsync);
-      
-      if (!result.success) {
-        // Don't show alert if user cancelled
-        if (!result.cancelled) {
-          Alert.alert('Google Sign-In Failed', result.error);
-        }
-      }
-      // Success case is handled by AuthContext and navigation
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-    } finally {
-      setGoogleLoading(false);
-    }
+    // Google sign-in removed — keep function stub in case we re-add later
   };
 
   /**
@@ -100,14 +76,7 @@ const LoginScreen = ({ navigation }) => {
    * Starts the Google authentication process
    */
   const initiateGoogleSignIn = async () => {
-    try {
-      setGoogleLoading(true);
-      await promptAsync();
-    } catch (error) {
-      console.error('Error initiating Google sign-in:', error);
-      Alert.alert('Error', 'Failed to start Google sign-in. Please try again.');
-      setGoogleLoading(false);
-    }
+    // Google sign-in removed — no-op
   };
 
   return (
@@ -179,8 +148,8 @@ const LoginScreen = ({ navigation }) => {
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
+          <TouchableOpacity
+            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
             onPress={handleLogin}
             disabled={loading}
           >
@@ -197,12 +166,7 @@ const LoginScreen = ({ navigation }) => {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Google Sign-In Button */}
-          <GoogleSignInButton
-            onPress={initiateGoogleSignIn}
-            loading={googleLoading}
-            disabled={loading || !request}
-          />
+          {/* Google Sign-In removed per request */}
 
           <View style={styles.signupContainer}>
             <Text style={styles.signupText}>Don't have an account? </Text>
@@ -210,6 +174,22 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.signupLink}>Sign Up</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity 
+            style={styles.driverLoginButton}
+            onPress={() => navigation.navigate('DriverLogin')}
+          >
+            <Ionicons name="car-outline" size={20} color="#007AFF" />
+            <Text style={styles.driverLoginText}>Driver Login</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.driverSignupButton}
+            onPress={() => navigation.navigate('DriverRegister')}
+          >
+            <Ionicons name="person-add-outline" size={20} color="#34C759" />
+            <Text style={styles.driverSignupText}>Become a Driver</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -336,6 +316,40 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  driverLoginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+    borderRadius: 12,
+    backgroundColor: '#f0f8ff',
+  },
+  driverLoginText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  driverSignupButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#34C759',
+    borderRadius: 12,
+    backgroundColor: '#f0fff4',
+  },
+  driverSignupText: {
+    color: '#34C759',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
 

@@ -3,6 +3,7 @@
 
 const UNSPLASH_ACCESS_KEY = process.env.EXPO_PUBLIC_UNSPLASH_ACCESS_KEY || '';
 const UNSPLASH_BASE_URL = 'https://api.unsplash.com';
+const HAS_UNSPLASH_KEY = !!UNSPLASH_ACCESS_KEY;
 
 class UnsplashService {
   constructor() {
@@ -10,15 +11,30 @@ class UnsplashService {
   }
 
   async searchPhotos(query, count = 10) {
+    // If no access key is configured, avoid calling Unsplash API (401) and use Source or curated fallbacks
+    if (!HAS_UNSPLASH_KEY) {
+      // Use Unsplash Source (no API key) to get a search-relevant image
+      const url = `https://source.unsplash.com/600x400/?${encodeURIComponent(query)}`;
+      return Array.from({ length: count }).map((_, i) => ({
+        id: `source-${query}-${i}`,
+        url,
+        thumb: url,
+        small: url,
+        alt: query,
+        photographer: 'Unsplash Source',
+        downloadUrl: url
+      }));
+    }
+
     try {
       const response = await fetch(
         `${UNSPLASH_BASE_URL}/search/photos?query=${encodeURIComponent(query)}&per_page=${count}&client_id=${this.accessKey}`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       return data.results.map(photo => ({
         id: photo.id,
@@ -104,7 +120,6 @@ class UnsplashService {
       'Food': 'grocery food fresh',
       'Clothing': 'clothing fashion store',
       'Electronics': 'electronics technology store',
-      'Health': 'pharmacy health wellness',
       'Home': 'home decor furniture',
       'Beauty': 'cosmetics beauty products'
     };

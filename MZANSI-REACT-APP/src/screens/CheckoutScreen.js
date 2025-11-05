@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,17 @@ import {
 import { Card, TextInput, RadioButton, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { firebaseService } from '../services/firebase';
 import { validators, sanitizers, validateForm, sanitizeFormData } from '../utils/validation';
 import { useLocation } from '../context/LocationContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS } from '../styles/colors';
 
 export default function CheckoutScreen({ navigation }) {
   const { cartItems, getCartTotal, getStoreGroups, clearCart } = useCart();
-  const { selectedLocation } = useLocation();
+  const { user } = useAuth();
+  const { selectedLocation, updateLocation, updateUserLocation } = useLocation();
   
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [contactNumber, setContactNumber] = useState('');
@@ -60,17 +63,38 @@ export default function CheckoutScreen({ navigation }) {
     try {
       // Create order data
       const orderData = {
-        userId: 'user_' + Date.now(), // In real app, get from auth
-        items: cartItems,
-        total: total,
-        deliveryAddress: formData.deliveryAddress,
-        contactNumber: formData.contactNumber,
-        paymentMethod,
-        specialInstructions: formData.specialInstructions,
-        location: selectedLocation,
+        userId: user?.uid || 'anonymous',
+        customerName: user?.displayName || 'Customer',
+        items: (cartItems || []).map(item => ({
+          id: item.id || '',
+          name: item.name || '',
+          price: item.price || 0,
+          quantity: item.quantity || 1,
+          storeId: item.storeId || '',
+          storeName: item.storeName || '',
+          category: item.category || '',
+          image: item.image || ''
+        })),
+        total: total || 0,
+        deliveryAddress: formData.deliveryAddress || '',
+        contactNumber: formData.contactNumber || '',
+        paymentMethod: paymentMethod || 'cash',
+        specialInstructions: formData.specialInstructions || '',
+        location: selectedLocation || 'Cape Town',
         estimatedDelivery: '45-60 minutes',
-        orderDate: new Date().toISOString()
+        orderDate: new Date().toISOString(),
+        status: 'pending'
       };
+
+      // Debug: Log the order data to see what might be undefined
+      console.log('Order data being sent to Firebase:', JSON.stringify(orderData, null, 2));
+      
+      // Check for undefined values
+      Object.entries(orderData).forEach(([key, value]) => {
+        if (value === undefined) {
+          console.error(`Undefined field found: ${key}`);
+        }
+      });
 
       // Create order in Firebase
       const orderId = await firebaseService.orders.create(orderData);
@@ -79,7 +103,9 @@ export default function CheckoutScreen({ navigation }) {
       clearCart();
       navigation.replace('OrderConfirmation', {
         orderId,
-        orderDetails: orderData
+        total: total,
+        deliveryAddress: formData.deliveryAddress,
+        storeGroups: getStoreGroups()
       });
       
     } catch (error) {
@@ -89,6 +115,50 @@ export default function CheckoutScreen({ navigation }) {
       setIsProcessing(false);
     }
   };
+
+  // Try to prefill delivery address from the user's default address
+  useEffect(() => {
+    let mounted = true;
+    const loadDefault = async () => {
+      try {
+        if (!user?.uid) return;
+
+        // Try AsyncStorage cached default first
+        const cached = await AsyncStorage.getItem(`default_address_${user.uid}`);
+        if (cached) {
+          const addr = JSON.parse(cached);
+          const formatted = addr.formattedAddress || [addr.street, addr.city, addr.province].filter(Boolean).join(', ');
+          if (mounted) {
+            setDeliveryAddress(formatted);
+            if (addr.phone) setContactNumber(addr.phone);
+            // sync LocationContext so Home deliver-to displays the same default
+            if (updateLocation) updateLocation(formatted);
+            if (updateUserLocation && addr.latitude && addr.longitude) updateUserLocation({ latitude: addr.latitude, longitude: addr.longitude });
+          }
+          return;
+        }
+
+        // Fallback to Firestore addresses for the user
+        const addresses = await firebaseService.addresses.getByUser(user.uid);
+        if (addresses && addresses.length > 0) {
+          const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
+          const formatted = defaultAddr.formattedAddress || [defaultAddr.street, defaultAddr.city, defaultAddr.province].filter(Boolean).join(', ');
+          if (mounted) {
+            setDeliveryAddress(formatted);
+            if (defaultAddr.phone) setContactNumber(defaultAddr.phone);
+            // sync LocationContext so Home deliver-to displays the same default
+            if (updateLocation) updateLocation(formatted);
+            if (updateUserLocation && defaultAddr.latitude && defaultAddr.longitude) updateUserLocation({ latitude: defaultAddr.latitude, longitude: defaultAddr.longitude });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading default delivery address:', error);
+      }
+    };
+
+    loadDefault();
+    return () => { mounted = false; };
+  }, [user?.uid]);
 
   return (
     <View style={styles.container}>

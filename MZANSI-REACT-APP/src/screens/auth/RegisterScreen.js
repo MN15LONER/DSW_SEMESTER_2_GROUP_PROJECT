@@ -21,7 +21,8 @@ const RegisterScreen = ({ navigation }) => {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    acceptTerms: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -91,7 +92,13 @@ const RegisterScreen = ({ navigation }) => {
       userData
     );
     
-    if (!result.success) {
+    if (result.success) {
+      Alert.alert(
+        'Registration Successful!',
+        'Your account has been created successfully. Welcome to Mzansi!',
+        [{ text: 'OK' }]
+      );
+    } else {
       Alert.alert('Registration Failed', result.error);
     }
   };

@@ -4,23 +4,92 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
+import ImageWithFallback from '../common/ImageWithFallback';
+import { getImageForProduct } from '../../utils/imageHelper';
+
+// Local logo assets for featured brands (static requires only)
+const localLogos = {
+   // Food
+  'pick n pay': require('../../../assets/images/Store_Logos/Pick_N_Pay.jpg'),
+  'shoprite': require('../../../assets/images/Store_Logos/Shoprite.png'),
+  'checkers': require('../../../assets/images/Store_Logos/checkers.png'),
+  'woolworths food': require('../../../assets/images/Store_Logos/Woolworths-food.jpg'),
+  'spar': require('../../../assets/images/Store_Logos/SPAR.jpeg'),
+  'food lovers': require('../../../assets/images/Store_Logos/Food-Lovers.png'),
+  'boxer': require('../../../assets/images/Store_Logos/BOXER.png'),
+  'makro food': require('../../../assets/images/Store_Logos/makro-food.png'),
+  'ok foods': require('../../../assets/images/Store_Logos/ok-foods.jpg'),
+  'cambridge foods': require('../../../assets/images/Store_Logos/Cambridge-food.jpg'),
+
+  // Clothing
+  'mr price': require('../../../assets/images/Store_Logos/mr-price.jpg'),
+  'mr price (legacy)': require('../../../assets/images/Store_Logos/Mr-Price-logo.jpg'),
+  'truworths': require('../../../assets/images/Store_Logos/truworths.jpeg'),
+  'foschini': require('../../../assets/images/Store_Logos/Foschini.png'),
+  'ackermans': require('../../../assets/images/Store_Logos/Ackermans.png'),
+  'edgars': require('../../../assets/images/Store_Logos/edgars.jpg'),
+  'pep': require('../../../assets/images/Store_Logos/pep.jpeg'),
+  'jet': require('../../../assets/images/Store_Logos/Jet.png'),
+  'exact': require('../../../assets/images/Store_Logos/exact.jpg'),
+  'cotton on': require('../../../assets/images/Store_Logos/Cotton-On.jpg'),
+  'h&m': require('../../../assets/images/Store_Logos/h-and-m.png'),
+
+  // Electronics
+  'incredible connection': require('../../../assets/images/Store_Logos/Incredible_connections.png'),
+  'game electronics': require('../../../assets/images/Store_Logos/game-electronics.jpg'),
+  'makro tech': require('../../../assets/images/Store_Logos/makro-tech.jpg'),
+  'takealot pickup': require('../../../assets/images/Store_Logos/takealot-pickup.png'),
+  'vodacom shop': require('../../../assets/images/Store_Logos/vodacom-shop.png'),
+  'mtn store': require('../../../assets/images/Store_Logos/mtn-store.jpg'),
+  'cell c': require('../../../assets/images/Store_Logos/cell-c.jpg'),
+  'istore': require('../../../assets/images/Store_Logos/istore.png'),
+  'computer mania': require('../../../assets/images/Store_Logos/Computer-Mania.jpg'),
+};
+
+const normalizeBrand = (text = '') => text.toLowerCase().replace(/&/g, 'and').replace(/\s+/g, ' ').trim();
+
+const getLocalLogoForStore = (store) => {
+  if (!store) return null;
+  const brand = normalizeBrand(store.brand || '');
+  const name = normalizeBrand(store.name || '');
+
+  // Direct brand mapping
+  if (brand && localLogos[brand]) return localLogos[brand];
+
+  // Fallback: detect by name substrings
+  const candidates = Object.keys(localLogos);
+  for (const key of candidates) {
+    if (brand.includes(key) || name.includes(key)) {
+      return localLogos[key];
+    }
+  }
+  
+  return null;
+};
 
 const { width } = Dimensions.get('window');
 
 export default function FlyerCard({ store, onPress }) {
+  // Prioritize logoUrl from API, then local logos, then fallback images
+  const localLogo = getLocalLogoForStore(store);
+  const logoSource = store.logoUrl 
+    ? { uri: store.logoUrl } 
+    : (localLogo || { uri: store.image });
+  
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      {/* Store Image/Flyer */}
-      <Image 
-        source={{ uri: store.flyerImage }} 
-        style={styles.flyerImage}
-        resizeMode="cover"
-      />
+      {/* Store Image/Flyer - Hero Section */}
+      <View style={styles.heroContainer}>
+        <ImageWithFallback
+          source={logoSource}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
+      </View>
       
       {/* Special Badge */}
       {store.promotions && store.promotions.length > 0 && (
@@ -32,11 +101,13 @@ export default function FlyerCard({ store, onPress }) {
       {/* Store Info */}
       <View style={styles.storeInfo}>
         <View style={styles.storeHeader}>
-          <Image 
-            source={{ uri: store.image }} 
-            style={styles.storeLogo}
-            resizeMode="cover"
-          />
+          <View style={styles.logoContainer}>
+            <ImageWithFallback
+              source={logoSource}
+              style={styles.storeLogo}
+              resizeMode="contain"
+            />
+          </View>
           <View style={styles.storeDetails}>
             <Text style={styles.storeName}>{store.name}</Text>
             <Text style={styles.storeCategory}>{store.category}</Text>
@@ -97,10 +168,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     overflow: 'hidden',
+    marginBottom: 16,
+  },
+  heroContainer: {
+    width: '100%',
+    height: 180,
+    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   flyerImage: {
     width: '100%',
-    height: 180,
+    height: '100%',
+  },
+  logoImage: {
+    width: '70%',
+    height: '70%',
   },
   specialBadge: {
     position: 'absolute',
@@ -110,6 +194,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
+    zIndex: 10,
   },
   specialText: {
     color: COLORS.white,
@@ -123,11 +208,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 12,
   },
-  storeLogo: {
+  logoContainer: {
     width: 50,
     height: 50,
     borderRadius: 8,
     marginRight: 12,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    overflow: 'hidden',
+    padding: 4,
+  },
+  storeLogo: {
+    width: '100%',
+    height: '100%',
   },
   storeDetails: {
     flex: 1,
