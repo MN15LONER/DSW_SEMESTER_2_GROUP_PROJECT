@@ -218,7 +218,7 @@ class RealProductDataService {
       const { getImageForProduct } = require('../utils/imageHelper');
       return getImageForProduct({ name: productName, category });
     } catch (e) {
-      return `https:
+      return `https://source.unsplash.com/400x400/?${encodeURIComponent(productName.toLowerCase())}`;
     }
   }
   shuffleArray(array) {
@@ -241,7 +241,7 @@ class RealProductDataService {
       rating: 4.0,
       reviews: 50,
       hasPromotion: false,
-      image: 'https:
+      image: 'https://source.unsplash.com/400x400/?product',
     }));
   }
   getMixedProducts(limit) {

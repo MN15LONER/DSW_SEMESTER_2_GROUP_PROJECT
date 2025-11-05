@@ -11,18 +11,21 @@ import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../../styles/colors';
+
 export default function StoreMapView({ stores, onStoreSelect, selectedStore, directionsToStore, onClearDirections }) {
   const [userLocation, setUserLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mapRegion, setMapRegion] = useState({
-    latitude: -26.2041, 
+    latitude: -26.2041, // Johannesburg default
     longitude: 28.0473,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
+
   useEffect(() => {
     getCurrentLocation();
   }, []);
+
   const getCurrentLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -35,13 +38,16 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
         setLoading(false);
         return;
       }
+
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
+
       const userCoords = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
+
       setUserLocation(userCoords);
       setMapRegion({
         ...userCoords,
@@ -55,8 +61,9 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
       setLoading(false);
     }
   };
+
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; 
+    const R = 6371; // Radius of the Earth in kilometers
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = 
@@ -67,23 +74,28 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
     const distance = R * c;
     return distance;
   };
+
   const getStoreMarkerColor = (store) => {
     if (selectedStore && selectedStore.id === store.id) {
       return COLORS.primary;
     }
     return store.isOpen ? '#4CAF50' : '#F44336';
   };
+
   const handleMarkerPress = (store) => {
     if (onStoreSelect) {
       onStoreSelect(store);
     }
   };
+
   const [routeCoords, setRouteCoords] = useState(null);
+
   const decodePolyline = (encoded) => {
     if (!encoded) return [];
     const coords = [];
     let index = 0, len = encoded.length;
     let lat = 0, lng = 0;
+
     while (index < len) {
       let b, shift = 0, result = 0;
       do {
@@ -93,6 +105,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
       } while (b >= 0x20);
       const deltaLat = ((result & 1) ? ~(result >> 1) : (result >> 1));
       lat += deltaLat;
+
       shift = 0;
       result = 0;
       do {
@@ -102,10 +115,12 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
       } while (b >= 0x20);
       const deltaLon = ((result & 1) ? ~(result >> 1) : (result >> 1));
       lng += deltaLon;
+
       coords.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
     }
     return coords;
   };
+
   useEffect(() => {
     const fetchDirections = async () => {
       if (!directionsToStore || !userLocation) return;
@@ -115,15 +130,18 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
           console.warn('Google Maps API key not configured in EXPO_PUBLIC_GOOGLE_MAPS_API_KEY');
           return;
         }
+
         const origin = `${userLocation.latitude},${userLocation.longitude}`;
         const destination = `${directionsToStore.latitude},${directionsToStore.longitude}`;
-        const url = `https:
+        const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=driving&key=${key}`;
+
         const res = await fetch(url);
         const json = await res.json();
         if (json.routes && json.routes.length > 0) {
           const encoded = json.routes[0].overview_polyline?.points;
           const coords = decodePolyline(encoded);
           setRouteCoords(coords);
+
           const markers = [userLocation, { latitude: directionsToStore.latitude, longitude: directionsToStore.longitude }];
           if (coords && coords.length > 0) {
             const latitudes = coords.map(c => c.latitude).concat(markers.map(m => m.latitude));
@@ -148,8 +166,10 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
         console.error('Error fetching directions:', error);
       }
     };
+
     fetchDirections();
   }, [directionsToStore, userLocation]);
+
   const centerOnUserLocation = () => {
     if (userLocation) {
       setMapRegion({
@@ -159,6 +179,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
       });
     }
   };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -167,6 +188,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
       </View>
     );
   }
+
   return (
     <View style={styles.container}>
       <MapView
@@ -188,6 +210,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
             pinColor={COLORS.secondary}
           />
         )}
+
         {}
         {stores.map((store) => (
           <Marker
@@ -222,6 +245,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
             />
           )}
       </MapView>
+
       {}
       <View style={styles.controls}>
         <TouchableOpacity
@@ -242,6 +266,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
           </TouchableOpacity>
         )}
       </View>
+
       {}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
@@ -260,6 +285,7 @@ export default function StoreMapView({ stores, onStoreSelect, selectedStore, dir
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

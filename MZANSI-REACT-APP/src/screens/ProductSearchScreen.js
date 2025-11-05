@@ -20,6 +20,7 @@ import EmptyState from '../components/common/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ImageWithFallback from '../components/common/ImageWithFallback';
 import { getImageForProduct } from '../utils/imageHelper';
+
 export default function ProductSearchScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
@@ -35,13 +36,17 @@ export default function ProductSearchScreen({ navigation }) {
   const [sortBy, setSortBy] = useState('relevance');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
   const { selectedLocation, userLocation } = useLocation();
   const { addToCart } = useCart();
+
   const categories = useMemo(() => productSearchService.getCategories(), []);
   const brands = useMemo(() => productSearchService.getBrands(), []);
+
   useEffect(() => {
     performSearch();
   }, [searchQuery, filters, sortBy]);
+
   const performSearch = async () => {
     setLoading(true);
     try {
@@ -55,6 +60,7 @@ export default function ProductSearchScreen({ navigation }) {
       setLoading(false);
     }
   };
+
   const handleAddToCart = (product, store) => {
     const cartItem = {
       id: product.id,
@@ -66,9 +72,11 @@ export default function ProductSearchScreen({ navigation }) {
       storeId: store.storeId,
       storeName: store.storeName
     };
+
     addToCart(cartItem);
     Alert.alert('Added to Cart', `${product.name} from ${store.storeName} added to cart.`);
   };
+
   const handleCallStore = (phone) => {
     const phoneUrl = `tel:${phone}`;
     Linking.canOpenURL(phoneUrl)
@@ -81,8 +89,9 @@ export default function ProductSearchScreen({ navigation }) {
       })
       .catch((err) => console.error('Error opening phone:', err));
   };
+
   const handleGetDirections = (coordinates, storeName) => {
-    const url = `https:
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${coordinates.latitude},${coordinates.longitude}&destination_place_id=${storeName}`;
     Linking.canOpenURL(url)
       .then((supported) => {
         if (supported) {
@@ -93,6 +102,7 @@ export default function ProductSearchScreen({ navigation }) {
       })
       .catch((err) => console.error('Error opening maps:', err));
   };
+
   const renderProductItem = ({ item: product }) => (
     <View style={styles.productCard}>
       <View style={styles.productRow}>
@@ -111,6 +121,7 @@ export default function ProductSearchScreen({ navigation }) {
           </View>
         </View>
       </View>
+
       <View style={styles.priceSection}>
         <Text style={styles.priceLabel}>Price Range:</Text>
         <Text style={styles.priceRange}>
@@ -120,6 +131,7 @@ export default function ProductSearchScreen({ navigation }) {
           <Text style={styles.savings}>Save up to R{product.priceRange.savings.toFixed(2)}</Text>
         )}
       </View>
+
       <View style={styles.storesSection}>
         <Text style={styles.storesLabel}>Available at {product.availableStores} stores:</Text>
         {product.stores.slice(0, 3).map((store, index) => (
@@ -139,6 +151,7 @@ export default function ProductSearchScreen({ navigation }) {
                 </Text>
               </View>
             </View>
+
             <View style={styles.storeActions}>
               <TouchableOpacity
                 style={[styles.actionButton, styles.addButton]}
@@ -150,6 +163,7 @@ export default function ProductSearchScreen({ navigation }) {
                   Add
                 </Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.actionButton, styles.contactButton]}
                 onPress={() => setSelectedProduct({ product, store })}
@@ -159,6 +173,7 @@ export default function ProductSearchScreen({ navigation }) {
             </View>
           </View>
         ))}
+
         {product.stores.length > 3 && (
           <TouchableOpacity
             style={styles.viewAllButton}
@@ -170,10 +185,12 @@ export default function ProductSearchScreen({ navigation }) {
       </View>
     </View>
   );
+
   const renderFilterModal = () => (
     <Portal>
       <Modal visible={showFilters} onDismiss={() => setShowFilters(false)} contentContainerStyle={styles.modalContainer}>
         <Text style={styles.modalTitle}>Filter & Sort</Text>
+
         <View style={styles.filterSection}>
           <Text style={styles.filterLabel}>Category</Text>
           <FlatList
@@ -193,6 +210,7 @@ export default function ProductSearchScreen({ navigation }) {
             keyExtractor={(item) => item}
           />
         </View>
+
         <View style={styles.filterSection}>
           <Text style={styles.filterLabel}>Sort By</Text>
           <FlatList
@@ -219,6 +237,7 @@ export default function ProductSearchScreen({ navigation }) {
             keyExtractor={(item) => item.key}
           />
         </View>
+
         <View style={styles.filterToggles}>
           <TouchableOpacity
             style={styles.toggleButton}
@@ -231,6 +250,7 @@ export default function ProductSearchScreen({ navigation }) {
             />
             <Text style={styles.toggleText}>In Stock Only</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.toggleButton}
             onPress={() => setFilters(prev => ({ ...prev, onPromotionOnly: !prev.onPromotionOnly }))}
@@ -243,12 +263,14 @@ export default function ProductSearchScreen({ navigation }) {
             <Text style={styles.toggleText}>On Promotion Only</Text>
           </TouchableOpacity>
         </View>
+
         <Button mode="contained" onPress={() => setShowFilters(false)} style={styles.applyButton}>
           Apply Filters
         </Button>
       </Modal>
     </Portal>
   );
+
   const renderStoreDetailModal = () => (
     <Portal>
       <Modal 
@@ -260,6 +282,7 @@ export default function ProductSearchScreen({ navigation }) {
           <>
             <Text style={styles.storeModalTitle}>{selectedProduct.store.storeName}</Text>
             <Text style={styles.storeModalLocation}>{selectedProduct.store.storeLocation}</Text>
+
             <View style={styles.storeModalActions}>
               <Button
                 mode="contained"
@@ -276,6 +299,7 @@ export default function ProductSearchScreen({ navigation }) {
               >
                 Call Store
               </Button>
+
               <Button
                 mode="outlined"
                 icon="map"
@@ -291,6 +315,7 @@ export default function ProductSearchScreen({ navigation }) {
                 Directions
               </Button>
             </View>
+
             <Button mode="text" onPress={() => setSelectedProduct(null)}>
               Close
             </Button>
@@ -299,6 +324,7 @@ export default function ProductSearchScreen({ navigation }) {
       </Modal>
     </Portal>
   );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -316,6 +342,7 @@ export default function ProductSearchScreen({ navigation }) {
           <Ionicons name="options" size={24} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
+
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color={COLORS.gray} style={styles.searchIcon} />
         <TextInput
@@ -326,6 +353,7 @@ export default function ProductSearchScreen({ navigation }) {
           autoCapitalize="none"
         />
       </View>
+
       <View style={styles.resultsHeader}>
         <Text style={styles.resultsCount}>
           {products.length} products found
@@ -334,6 +362,7 @@ export default function ProductSearchScreen({ navigation }) {
           Near {selectedLocation || 'your location'}
         </Text>
       </View>
+
       {loading ? (
         <LoadingSpinner />
       ) : products.length === 0 ? (
@@ -363,11 +392,13 @@ export default function ProductSearchScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
         />
       )}
+
       {renderFilterModal()}
       {renderStoreDetailModal()}
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

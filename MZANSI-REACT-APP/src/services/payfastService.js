@@ -5,8 +5,8 @@ const PAYFAST_CONFIG = {
   MERCHANT_KEY: 'YOUR_MERCHANT_KEY', 
   PASSPHRASE: 'YOUR_PASSPHRASE', 
   SANDBOX: true, 
-  SANDBOX_URL: 'https:
-  PRODUCTION_URL: 'https:
+  SANDBOX_URL: 'https://sandbox.payfast.co.za/eng/process',
+  PRODUCTION_URL: 'https://www.payfast.co.za/eng/process',
 };
 class PayFastService {
   constructor() {
@@ -33,9 +33,9 @@ class PayFastService {
     const paymentData = {
       merchant_id: this.merchantId,
       merchant_key: this.merchantKey,
-      return_url: returnUrl || 'https:
-      cancel_url: cancelUrl || 'https:
-      notify_url: notifyUrl || 'https:
+      return_url: returnUrl || 'https://mzansi-app.firebaseapp.com/payment-return',
+      cancel_url: cancelUrl || 'https://mzansi-app.firebaseapp.com/payment-cancel',
+      notify_url: notifyUrl || 'https://mzansi-app.firebaseapp.com/payment-notify',
       m_payment_id: orderId,
       amount: parseFloat(amount).toFixed(2),
       item_name: itemName || 'Mzansi App Order',

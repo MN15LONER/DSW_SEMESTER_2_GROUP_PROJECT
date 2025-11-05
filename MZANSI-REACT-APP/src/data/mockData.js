@@ -1,34 +1,36 @@
+
 const BRAND_LOGO_URLS = {
-  'Pick n Pay': 'https:
-  'Shoprite': 'https:
-  'Checkers': 'https:
-  'Woolworths Food': 'https:
-  'SPAR': 'https:
-  'Food Lovers': 'https:
-  'BOXER': 'https:
-  'Makro Food': 'https:
-  'OK Foods': 'https:
-  'Cambridge Foods': 'https:
-  'Mr Price': 'https:
-  'Truworths': 'https:
-  'Foschini': 'https:
-  'Ackermans': 'https:
-  'Edgars': 'https:
-  'PEP': 'https:
-  'Jet': 'https:
-  'Exact': 'https:
-  'Cotton On': 'https:
-  'H&M': 'https:
-  'Incredible Connection': 'https:
-  'Game Electronics': 'https:
-  'Makro Tech': 'https:
-  'Takealot Pickup': 'https:
-  'Vodacom Shop': 'https:
-  'MTN Store': 'https:
-  'Cell C': 'https:
-  'iStore': 'https:
-  'Computer Mania': 'https:
+  'Pick n Pay': 'https://logo.clearbit.com/pnp.co.za',
+  'Shoprite': 'https://logo.clearbit.com/shoprite.co.za',
+  'Checkers': 'https://logo.clearbit.com/checkers.co.za',
+  'Woolworths Food': 'https://logo.clearbit.com/woolworths.co.za',
+  'SPAR': 'https://logo.clearbit.com/spar.co.za',
+  'Food Lovers': 'https://logo.clearbit.com/foodloversmarket.co.za',
+  'BOXER': 'https://logo.clearbit.com/boxer.co.za',
+  'Makro Food': 'https://logo.clearbit.com/makro.co.za',
+  'OK Foods': 'https://logo.clearbit.com/okfoods.co.za',
+  'Cambridge Foods': 'https://logo.clearbit.com/cambridge.co.za',
+  'Mr Price': 'https://logo.clearbit.com/mrp.com',
+  'Truworths': 'https://logo.clearbit.com/truworths.co.za',
+  'Foschini': 'https://logo.clearbit.com/foschini.co.za',
+  'Ackermans': 'https://logo.clearbit.com/ackermans.co.za',
+  'Edgars': 'https://logo.clearbit.com/edgars.co.za',
+  'PEP': 'https://logo.clearbit.com/pepstores.com',
+  'Jet': 'https://logo.clearbit.com/jet.co.za',
+  'Exact': 'https://logo.clearbit.com/exact.co.za',
+  'Cotton On': 'https://logo.clearbit.com/cottonon.com',
+  'H&M': 'https://logo.clearbit.com/hm.com',
+  'Incredible Connection': 'https://logo.clearbit.com/incredible.co.za',
+  'Game Electronics': 'https://logo.clearbit.com/game.co.za',
+  'Makro Tech': 'https://logo.clearbit.com/makro.co.za',
+  'Takealot Pickup': 'https://logo.clearbit.com/takealot.com',
+  'Vodacom Shop': 'https://logo.clearbit.com/vodacom.co.za',
+  'MTN Store': 'https://logo.clearbit.com/mtn.co.za',
+  'Cell C': 'https://logo.clearbit.com/cellc.co.za',
+  'iStore': 'https://logo.clearbit.com/istore.co.za',
+  'Computer Mania': 'https://logo.clearbit.com/computermania.co.za',
 };
+
 const GAUTENG_CITIES = [
   { city: 'Johannesburg, Gauteng', lat: -26.2041, lng: 28.0473 },
   { city: 'Soweto, Gauteng', lat: -26.2485, lng: 27.8540 },
@@ -41,8 +43,10 @@ const GAUTENG_CITIES = [
   { city: 'Boksburg, Gauteng', lat: -26.2130, lng: 28.2590 },
   { city: 'Alberton, Gauteng', lat: -26.2679, lng: 28.1227 },
 ];
+
 export const SOUTH_AFRICAN_LOCATIONS = GAUTENG_CITIES.map(c => c.city);
 export const mockLocations = SOUTH_AFRICAN_LOCATIONS;
+
 const FOOD_BRANDS = [
   'Pick n Pay',
   'Shoprite', 
@@ -55,6 +59,7 @@ const FOOD_BRANDS = [
   'OK Foods',
   'Cambridge Foods'
 ];
+
 const CLOTHING_BRANDS = [
   'Mr Price',
   'Truworths',
@@ -67,6 +72,7 @@ const CLOTHING_BRANDS = [
   'Cotton On',
   'H&M'
 ];
+
 const ELECTRONICS_BRANDS = [
   'Incredible Connection',
   'Game Electronics',
@@ -78,11 +84,14 @@ const ELECTRONICS_BRANDS = [
   'iStore',
   'Computer Mania'
 ];
+
 const randomBetween = (min, max) => Math.random() * (max - min) + min;
 const pick = (arr, i) => arr[i % arr.length];
 const jitter = (val, delta = 0.02) => val + randomBetween(-delta, delta);
+
 let storeAutoId = 1000;
 const nextId = () => String(storeAutoId++);
+
 const createStore = (category, brand, cityInfo, index) => {
   const id = nextId();
   const cityName = cityInfo.city.split(',')[0];
@@ -92,8 +101,10 @@ const createStore = (category, brand, cityInfo, index) => {
   const rating = Math.round(randomBetween(3.8, 4.7) * 10) / 10;
   const reviews = Math.floor(randomBetween(180, 1500));
   const phone = `+27 11 ${Math.floor(100 + Math.random() * 900)} ${Math.floor(1000 + Math.random() * 9000)}`;
-  const isOpen = Math.random() > 0.15; 
+  const isOpen = Math.random() > 0.15; // 85% stores are open
+
     const logoUrl = BRAND_LOGO_URLS[brand] || null;
+
   let deliveryTime;
   if (category === 'Food') {
     deliveryTime = '20-45 min';
@@ -102,17 +113,19 @@ const createStore = (category, brand, cityInfo, index) => {
   } else {
     deliveryTime = '1-3 days';
   }
+
   let image, flyerImage;
   if (category === 'Food') {
-    image = 'https:
-    flyerImage = 'https:
+    image = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+    flyerImage = 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400';
   } else if (category === 'Clothing') {
-    image = 'https:
-    flyerImage = 'https:
+    image = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400';
+    flyerImage = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400';
   } else {
-    image = 'https:
-    flyerImage = 'https:
+    image = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400';
+    flyerImage = 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=400';
   }
+
   const promotions = [];
   if (Math.random() > 0.3) {
     promotions.push('Weekly specials available');
@@ -129,10 +142,11 @@ const createStore = (category, brand, cityInfo, index) => {
   if (category === 'Electronics' && Math.random() > 0.5) {
     promotions.push('Trade-in available on select items');
   }
+
   return {
     id,
     name,
-    brand, 
+    brand, // IMPORTANT: Always include brand field
     category,
     location: cityInfo.city,
     latitude,
@@ -165,6 +179,7 @@ const createStore = (category, brand, cityInfo, index) => {
       : ['Computers', 'Phones', 'Accessories', 'Repairs']
   };
 };
+
 const generateStoresForCategory = (category, brands, count = 10) => {
   const stores = [];
   for (let i = 0; i < count; i++) {
@@ -174,11 +189,13 @@ const generateStoresForCategory = (category, brands, count = 10) => {
   }
   return stores;
 };
+
 export const mockStores = [
   ...generateStoresForCategory('Food', FOOD_BRANDS, 10),
   ...generateStoresForCategory('Clothing', CLOTHING_BRANDS, 10),
   ...generateStoresForCategory('Electronics', ELECTRONICS_BRANDS, 9),
 ];
+
 const PRODUCT_TEMPLATES = {
   Food: [
     { name: 'Fresh Bananas (1kg)', category: 'Fresh Produce', price: [19.99, 29.99] },
@@ -209,30 +226,35 @@ const PRODUCT_TEMPLATES = {
     { name: 'USB-C Cable', category: 'Accessories', price: [49.99, 199.99] },
   ],
 };
+
 const productImage = (category) => {
   const images = {
-    'Fresh Produce': 'https:
-    'Dairy': 'https:
-    'Bakery': 'https:
-    'Meat': 'https:
-    'Tops': 'https:
-    'Bottoms': 'https:
-    'Footwear': 'https:
-    'Mobiles': 'https:
-    'Audio': 'https:
-    'Computers': 'https:
+    'Fresh Produce': 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=300',
+    'Dairy': 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=300',
+    'Bakery': 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300',
+    'Meat': 'https://images.unsplash.com/photo-1588347818481-c7c4b1b6a8a6?w=300',
+    'Tops': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300',
+    'Bottoms': 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=300',
+    'Footwear': 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=300',
+    'Mobiles': 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300',
+    'Audio': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300',
+    'Computers': 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300',
   };
-  return images[category] || 'https:
+  return images[category] || 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300';
 };
+
 const generatedProductsCache = new Map();
+
 export const generateProductsForStore = (store, count = 20) => {
   const templates = PRODUCT_TEMPLATES[store.category] || PRODUCT_TEMPLATES.Food;
   const products = [];
+
   for (let i = 0; i < count; i++) {
     const tpl = pick(templates, i);
     const price = Math.round(randomBetween(tpl.price[0], tpl.price[1]) * 100) / 100;
     const isSpecial = i < 5 ? true : Math.random() < 0.3;
     const originalPrice = isSpecial ? Math.round(price * randomBetween(1.1, 1.3) * 100) / 100 : null;
+
     products.push({
       id: `${store.id}-p-${i}`,
       name: tpl.name,
@@ -248,9 +270,12 @@ export const generateProductsForStore = (store, count = 20) => {
       storeName: store.name
     });
   }
+
   return products;
 };
+
 export const mockProducts = {};
+
 export const getMockStores = (location) => {
   if (!location) return mockStores;
   const normalizedLocation = location.toLowerCase().trim();
@@ -260,15 +285,19 @@ export const getMockStores = (location) => {
     store.name.toLowerCase().includes(normalizedLocation)
   );
 };
+
 export const getStoreProducts = (storeId) => {
   const cached = generatedProductsCache.get(storeId);
   if (cached) return cached;
+
   const store = mockStores.find(s => s.id === storeId);
   if (!store) return [];
+
   const products = generateProductsForStore(store, 24);
   generatedProductsCache.set(storeId, products);
   return products;
 };
+
 export const firebaseStructure = {
   stores: {
     storeId: {

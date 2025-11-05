@@ -110,7 +110,7 @@ export const sendPasswordReset = async (email) => {
     }
     await recordAttempt(normalizedEmail);
     await sendPasswordResetEmail(auth, normalizedEmail, {
-      url: 'https:
+      url: 'https://mzansi-app.firebaseapp.com/reset-password',
       handleCodeInApp: true,
     });
     await logPasswordResetRequest(normalizedEmail, 'success');
